@@ -1353,6 +1353,7 @@ dependencies = [
  "futures-util",
  "hex",
  "hound",
+ "libc",
  "reqwest",
  "rubato",
  "serde",
@@ -1366,6 +1367,7 @@ dependencies = [
  "uuid",
  "webrtc-vad",
  "whisper-rs",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]

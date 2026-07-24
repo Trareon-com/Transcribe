@@ -95,6 +95,20 @@ pub fn save_settings(settings: AppSettings) -> TrascribeResult<()> {
     crate::settings::save_settings(&settings)
 }
 
+// --- Singleton instance lock -----------------------------------------------------
+
+pub fn is_another_instance_running() -> TrascribeResult<bool> {
+    crate::singleton::is_another_instance_running()
+}
+
+pub fn acquire_instance_lock() -> TrascribeResult<()> {
+    crate::singleton::acquire_lock()
+}
+
+pub fn release_instance_lock() -> TrascribeResult<()> {
+    crate::singleton::release_lock()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
