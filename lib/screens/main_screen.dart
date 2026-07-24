@@ -8,6 +8,7 @@ import '../widgets/resource_hud.dart';
 import '../widgets/stream_toggle.dart';
 import '../widgets/transcript_view.dart';
 import '../widgets/vu_meter.dart';
+import 'library_screen.dart';
 import 'settings_screen.dart';
 
 class MainScreen extends ConsumerWidget {
@@ -39,6 +40,13 @@ class MainScreen extends ConsumerWidget {
                     onPressed: () => isRecording ? notifier.stop() : notifier.start(),
                     icon: Icon(isRecording ? Icons.stop : Icons.mic),
                     label: Text(isRecording ? 'Stop' : 'Mulai'),
+                  ),
+                  IconButton(
+                    tooltip: 'Library',
+                    icon: const Icon(Icons.folder_open_outlined),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const LibraryScreen()),
+                    ),
                   ),
                   IconButton(
                     tooltip: 'Pengaturan',
