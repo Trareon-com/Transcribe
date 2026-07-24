@@ -22,6 +22,9 @@ models/*.bin
 models/*.gguf
 !models/.gitkeep
 
+# Generated test fixtures (regenerate via `cargo run --bin gen_fixtures`)
+test/fixtures/
+
 # Env / secrets
 .env
 .env.*
