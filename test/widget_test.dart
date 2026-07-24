@@ -63,4 +63,15 @@ void main() {
 
     expect(find.text('Stop'), findsOneWidget);
   });
+
+  testWidgets('settings icon navigates to settings screen', (WidgetTester tester) async {
+    await tester.pumpWidget(buildApp());
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Pengaturan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Pengaturan'), findsWidgets);
+    expect(find.text('Tema'), findsOneWidget);
+  });
 }
