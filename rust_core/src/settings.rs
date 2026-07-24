@@ -1,0 +1,141 @@
+//! App settings persistence — JSON file under the OS config dir (never a
+//! hardcoded path; resolved via `dirs`).
+
+use std::fs;
+use std::path::PathBuf;
+
+use serde::{Deserialize, Serialize};
+
+use crate::audio::SessionMode;
+use crate::error::{TrascribeError, TrascribeResult};
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Theme {
+    Light,
+    Dark,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct AppSettings {
+    pub theme: Theme,
+    pub default_model: String,
+    pub default_mode: SessionMode,
+    pub library_path: String,
+    pub always_on_top: bool,
+    pub auto_save_interval_secs: u32,
+    pub vad_enabled: bool,
+    pub echo_dedupe_enabled: bool,
+    pub language: Option<String>,
+}
+
+impl Default for AppSettings {
+    fn default() -> Self {
+        Self {
+            theme: Theme::Light,
+            default_model: "tiny".to_string(),
+            default_mode: SessionMode::Online,
+            library_path: default_library_path(),
+            always_on_top: false,
+            auto_save_interval_secs: 10,
+            vad_enabled: true,
+            echo_dedupe_enabled: true,
+            language: None,
+        }
+    }
+}
+
+pub fn default_library_path() -> String {
+    dirs::document_dir()
+        .map(|d| d.join("Trascribe").to_string_lossy().to_string())
+        .unwrap_or_else(|| "./Trascribe".to_string())
+}
+
+fn settings_path() -> TrascribeResult<PathBuf> {
+    let dir = dirs::config_dir()
+        .ok_or_else(|| TrascribeError::InvalidInput("no config directory available".into()))?
+        .join("Trascribe");
+    Ok(dir.join("settings.json"))
+}
+
+pub fn load_settings() -> AppSettings {
+    load_settings_from(&settings_path().ok())
+}
+
+fn load_settings_from(path: &Option<PathBuf>) -> AppSettings {
+    let Some(path) = path else {
+        return AppSettings::default();
+    };
+    match fs::read_to_string(path) {
+        Ok(content) => serde_json::from_str(&content).unwrap_or_default(),
+        Err(_) => AppSettings::default(),
+    }
+}
+
+pub fn save_settings(settings: &AppSettings) -> TrascribeResult<()> {
+    let path = settings_path()?;
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(TrascribeError::Io)?;
+    }
+    let json = serde_json::to_string_pretty(settings)
+        .map_err(|e| TrascribeError::InvalidInput(e.to_string()))?;
+    fs::write(&path, json).map_err(TrascribeError::Io)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_settings_are_sane() {
+        let s = AppSettings::default();
+        assert_eq!(s.default_model, "tiny");
+        assert!(s.vad_enabled);
+        assert!(!s.library_path.is_empty());
+    }
+
+    #[test]
+    fn load_missing_file_returns_default() {
+        let path = Some(std::env::temp_dir().join("trascribe_settings_does_not_exist.json"));
+        let s = load_settings_from(&path);
+        assert_eq!(s.default_model, "tiny");
+    }
+
+    #[test]
+    fn save_then_load_roundtrip() {
+        let dir =
+            std::env::temp_dir().join(format!("trascribe_settings_test_{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.json");
+
+        let s = AppSettings {
+            theme: Theme::Dark,
+            default_model: "medium".to_string(),
+            ..AppSettings::default()
+        };
+
+        let json = serde_json::to_string_pretty(&s).unwrap();
+        std::fs::write(&path, json).unwrap();
+
+        let loaded = load_settings_from(&Some(path));
+        assert_eq!(loaded.default_model, "medium");
+        assert!(matches!(loaded.theme, Theme::Dark));
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn corrupt_settings_file_falls_back_to_default() {
+        let dir = std::env::temp_dir().join(format!(
+            "trascribe_settings_corrupt_{}",
+            uuid::Uuid::new_v4()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("settings.json");
+        std::fs::write(&path, "not valid json{{{").unwrap();
+
+        let loaded = load_settings_from(&Some(path));
+        assert_eq!(loaded.default_model, "tiny");
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+}

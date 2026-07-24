@@ -1,1 +1,94 @@
-//! audio module — implemented in Fase 1 (see project plan).
+//! Audio capture: device enumeration, ring buffering, and session types.
+//! Live dual-stream (mic+speaker) thread wiring is hardware-dependent and
+//! is exercised via manual smoke tests (see project test plan) rather than
+//! CI unit tests; the pieces here (device list, ring buffer, config/mode
+//! types) are pure logic and fully unit-tested.
+
+pub mod device;
+pub mod ring_buffer;
+
+use serde::{Deserialize, Serialize};
+
+pub use device::{get_loopback_device, list_input_devices, AudioDeviceInfo};
+pub use ring_buffer::RingBuffer;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SessionMode {
+    Webinar, // mic=off, speaker=on
+    Online,  // mic=on, speaker=on, echo-dedupe=on
+    Offline, // mic=on, speaker=off
+}
+
+impl SessionMode {
+    pub fn default_toggles(&self) -> (bool, bool) {
+        match self {
+            SessionMode::Webinar => (false, true),
+            SessionMode::Online => (true, true),
+            SessionMode::Offline => (true, false),
+        }
+    }
+
+    pub fn echo_dedupe_enabled(&self) -> bool {
+        matches!(self, SessionMode::Online)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionConfig {
+    pub mic_enabled: bool,
+    pub speaker_enabled: bool,
+    pub mode: SessionMode,
+    pub mic_device_id: Option<String>,
+    pub speaker_device_id: Option<String>,
+    pub model_path: String,
+    pub vad_enabled: bool,
+    pub sample_rate: u32,
+    pub chunk_duration_secs: u32,
+}
+
+impl SessionConfig {
+    pub fn for_mode(mode: SessionMode, model_path: String) -> Self {
+        let (mic_enabled, speaker_enabled) = mode.default_toggles();
+        Self {
+            mic_enabled,
+            speaker_enabled,
+            mode,
+            mic_device_id: None,
+            speaker_device_id: None,
+            model_path,
+            vad_enabled: true,
+            sample_rate: 16_000,
+            chunk_duration_secs: 30,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn webinar_mode_defaults() {
+        assert_eq!(SessionMode::Webinar.default_toggles(), (false, true));
+        assert!(!SessionMode::Webinar.echo_dedupe_enabled());
+    }
+
+    #[test]
+    fn online_mode_enables_dedupe() {
+        assert_eq!(SessionMode::Online.default_toggles(), (true, true));
+        assert!(SessionMode::Online.echo_dedupe_enabled());
+    }
+
+    #[test]
+    fn offline_mode_mic_only() {
+        assert_eq!(SessionMode::Offline.default_toggles(), (true, false));
+        assert!(!SessionMode::Offline.echo_dedupe_enabled());
+    }
+
+    #[test]
+    fn session_config_from_mode() {
+        let cfg = SessionConfig::for_mode(SessionMode::Online, "models/tiny.gguf".into());
+        assert!(cfg.mic_enabled && cfg.speaker_enabled);
+        assert_eq!(cfg.sample_rate, 16_000);
+    }
+}
