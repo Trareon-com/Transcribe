@@ -1,0 +1,33 @@
+.devswarm-temp/
+.DS_Store
+
+# Flutter / Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+*.iml
+.idea/
+
+# Rust
+target/
+**/*.rs.bk
+Cargo.lock.bak
+
+# Models (large binaries — downloaded, not committed)
+models/*.bin
+models/*.gguf
+!models/.gitkeep
+
+# Env / secrets
+.env
+.env.*
+*.pem
+*.p12
+*.keystore
+
+# OS
+Thumbs.db

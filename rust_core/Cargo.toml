@@ -1,0 +1,26 @@
+[package]
+name = "rust_core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Trascribe Rust engine — audio capture, VAD, STT, export"
+
+[lib]
+name = "rust_core"
+crate-type = ["staticlib", "cdylib", "lib"]
+
+[dependencies]
+thiserror = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "macros", "time"] }
+tracing = "0.1"
+uuid = { version = "1", features = ["v4"] }
+chrono = "0.4"
+
+[dev-dependencies]
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true
