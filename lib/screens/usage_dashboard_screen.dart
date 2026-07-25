@@ -1,9 +1,8 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 
-/// Aggregate stats shown to the user (total sessions, hours transcribed,
-/// most-used mode, etc.). Computed from real session data once the Rust
-/// bridge is wired — this screen defines the layout against a stats
-/// summary type so wiring real numbers in later is a drop-in.
 class UsageStats {
   final int totalSessions;
   final double totalMinutesTranscribed;
@@ -25,20 +24,123 @@ class UsageStats {
       );
 }
 
-class UsageDashboardScreen extends StatelessWidget {
-  static const _emptyStats = UsageStats(
-    totalSessions: 0,
-    totalMinutesTranscribed: 0,
-    totalSegments: 0,
-    sessionsByMode: {},
-  );
+/// Loads and displays real usage statistics by scanning the library directory.
+class UsageDashboardScreen extends StatefulWidget {
+  /// Optional library path to scan. When null and [stats] is null, shows empty state.
+  final String? libraryPath;
 
-  final UsageStats stats;
+  /// Optional pre-computed stats (used in tests to bypass the async disk scan).
+  final UsageStats? stats;
 
-  const UsageDashboardScreen({super.key, this.stats = _emptyStats});
+  const UsageDashboardScreen({super.key, this.libraryPath, this.stats});
+
+  @override
+  State<UsageDashboardScreen> createState() => _UsageDashboardScreenState();
+}
+
+class _UsageDashboardScreenState extends State<UsageDashboardScreen> {
+  UsageStats? _stats;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.stats != null) {
+      _stats = widget.stats;
+      _loading = false;
+    } else {
+      _loadStats();
+    }
+  }
+
+  Future<void> _loadStats() async {
+    final rawPath = widget.libraryPath;
+    if (rawPath == null || rawPath.isEmpty) {
+      setState(() {
+        _stats = UsageStats.empty();
+        _loading = false;
+      });
+      return;
+    }
+
+    final resolved = rawPath.startsWith('~/')
+        ? '${Platform.environment['HOME'] ?? ''}${rawPath.substring(1)}'
+        : rawPath;
+    final dir = Directory(resolved);
+
+    if (!dir.existsSync()) {
+      setState(() {
+        _stats = UsageStats.empty();
+        _loading = false;
+      });
+      return;
+    }
+
+    var totalSessions = 0;
+    var totalMinutes = 0.0;
+    var totalSegments = 0;
+    final byMode = <String, int>{};
+
+    try {
+      for (final entry in dir.listSync()) {
+        if (entry is! Directory) continue;
+        final files = entry.listSync().whereType<File>().toList();
+        final jsonFile = files
+            .where((f) => f.path.endsWith('.json'))
+            .firstOrNull;
+        if (jsonFile == null) continue;
+        try {
+          final raw = await jsonFile.readAsString();
+          final list = jsonDecode(raw);
+          if (list is! List || list.isEmpty) continue;
+
+          totalSessions++;
+          totalSegments += list.length;
+
+          final last = list.last as Map<String, dynamic>;
+          final lastTs = (last['timestamp'] as num?)?.toDouble() ?? 0;
+          final lastDur = (last['duration'] as num?)?.toDouble() ?? 0;
+          totalMinutes += (lastTs + lastDur) / 60;
+
+          // Source field ('mic'/'spk') approximates mode
+          final first = list.first as Map<String, dynamic>;
+          final source = (first['source'] as String?) ?? 'mic';
+          final modeLabel = _sourceModeLabel(source);
+          byMode[modeLabel] = (byMode[modeLabel] ?? 0) + 1;
+        } catch (_) {
+          continue;
+        }
+      }
+    } catch (_) {}
+
+    if (mounted) {
+      setState(() {
+        _stats = UsageStats(
+          totalSessions: totalSessions,
+          totalMinutesTranscribed: totalMinutes,
+          totalSegments: totalSegments,
+          sessionsByMode: byMode,
+        );
+        _loading = false;
+      });
+    }
+  }
+
+  String _sourceModeLabel(String source) => switch (source) {
+        'mic' => 'Rapat Offline',
+        'spk' => 'Webinar',
+        _ => 'Rapat Online',
+      };
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Statistik Penggunaan')),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+    final stats = _stats ?? UsageStats.empty();
     final hours = (stats.totalMinutesTranscribed / 60).toStringAsFixed(1);
 
     return Scaffold(
@@ -61,7 +163,7 @@ class UsageDashboardScreen extends StatelessWidget {
           _StatCard(label: 'Total Segmen Transkrip', value: '${stats.totalSegments}'),
           const SizedBox(height: 24),
           if (stats.sessionsByMode.isEmpty)
-            const Text('Belum ada data mode rapat.')
+            const Text('Belum ada data sesi tersimpan.')
           else ...[
             Text('Sesi per Mode', style: Theme.of(context).textTheme.titleMedium),
             const SizedBox(height: 8),

@@ -9,7 +9,7 @@ void main() {
 
     expect(find.text('0'), findsNWidgets(2));
     expect(find.text('0.0'), findsOneWidget);
-    expect(find.text('Belum ada data mode rapat.'), findsOneWidget);
+    expect(find.text('Belum ada data sesi tersimpan.'), findsOneWidget);
   });
 
   testWidgets('renders provided stats', (WidgetTester tester) async {

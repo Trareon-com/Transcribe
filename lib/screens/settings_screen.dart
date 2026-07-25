@@ -149,7 +149,11 @@ class SettingsScreen extends ConsumerWidget {
                 subtitle: 'Total sesi dan jam ditranskrip',
                 trailing: Icon(Icons.chevron_right, color: colors.textTertiary),
                 onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const UsageDashboardScreen()),
+                  MaterialPageRoute(
+                    builder: (_) => UsageDashboardScreen(
+                      libraryPath: settings.libraryPath,
+                    ),
+                  ),
                 ),
               ),
               _SettingsTile(

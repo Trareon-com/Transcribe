@@ -292,6 +292,10 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     );
   }
 
+  void setTitle(String title) {
+    state = state.copyWith(sessionTitle: title);
+  }
+
   void updateAutoStopMinutes(int? minutes) {
     _autoStopMinutes = minutes;
     if (state.lifecycle == SessionLifecycle.recording) {

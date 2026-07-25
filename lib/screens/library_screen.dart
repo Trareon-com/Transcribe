@@ -1,10 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../services/bridge_service.dart';
 import '../state/models.dart';
+import '../state/settings_model.dart';
 import '../theme/app_colors.dart';
 import '../widgets/file_upload_zone.dart';
 import 'transcript_player_screen.dart';
@@ -29,7 +33,7 @@ class SessionSummary {
   });
 }
 
-class LibraryScreen extends StatefulWidget {
+class LibraryScreen extends ConsumerStatefulWidget {
   /// Optional seed list used in tests to bypass the async disk load.
   final List<SessionSummary>? sessions;
 
@@ -40,10 +44,10 @@ class LibraryScreen extends StatefulWidget {
   const LibraryScreen({super.key, this.sessions, this.libraryPath});
 
   @override
-  State<LibraryScreen> createState() => _LibraryScreenState();
+  ConsumerState<LibraryScreen> createState() => _LibraryScreenState();
 }
 
-class _LibraryScreenState extends State<LibraryScreen> {
+class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   final _searchController = TextEditingController();
   String _query = '';
   List<SessionSummary> _sessions = [];
@@ -141,9 +145,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final index = _sessions.indexOf(session);
     if (index == -1) return;
     setState(() => _sessions.removeAt(index));
-    // Delete from disk immediately — the undo action restores the
-    // in-memory item so the list entry reappears, but won't recreate
-    // the folder on disk.
     final dir = Directory(session.id);
     if (dir.existsSync()) dir.deleteSync(recursive: true);
     ScaffoldMessenger.of(context).showSnackBar(
@@ -155,6 +156,17 @@ class _LibraryScreenState extends State<LibraryScreen> {
         ),
         duration: const Duration(seconds: 4),
       ),
+    );
+  }
+
+  Future<void> _exportSession(SessionSummary session) async {
+    final bridge = ref.read(rustBridgeProvider);
+    final settings = ref.read(settingsProvider);
+    await showExportDialog(
+      context,
+      session,
+      bridge: bridge,
+      defaultOutputDir: resolveTilde(settings.libraryPath),
     );
   }
 
@@ -247,6 +259,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                     return _SessionCard(
                                       session: session,
                                       onDelete: () => _deleteSession(session),
+                                      onExport: () => _exportSession(session),
                                       onTap: () => Navigator.of(context).push(
                                         MaterialPageRoute(
                                           builder: (_) => TranscriptPlayerScreen(
@@ -279,9 +292,15 @@ class _LibraryScreenState extends State<LibraryScreen> {
 class _SessionCard extends StatelessWidget {
   final SessionSummary session;
   final VoidCallback onDelete;
+  final VoidCallback onExport;
   final VoidCallback onTap;
 
-  const _SessionCard({required this.session, required this.onDelete, required this.onTap});
+  const _SessionCard({
+    required this.session,
+    required this.onDelete,
+    required this.onExport,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -331,7 +350,13 @@ class _SessionCard extends StatelessWidget {
                 ),
               ),
               IconButton(
+                icon: Icon(Icons.upload_outlined, size: 18, color: colors.textTertiary),
+                tooltip: 'Export',
+                onPressed: onExport,
+              ),
+              IconButton(
                 icon: Icon(Icons.delete_outline, size: 18, color: colors.textTertiary),
+                tooltip: 'Hapus',
                 onPressed: onDelete,
               ),
             ],
@@ -342,13 +367,19 @@ class _SessionCard extends StatelessWidget {
   }
 }
 
-Future<void> showExportDialog(BuildContext context, SessionSummary session) {
+/// Shows a format-selection dialog then writes the session to a user-chosen folder.
+Future<void> showExportDialog(
+  BuildContext context,
+  SessionSummary session, {
+  required RustBridge bridge,
+  String defaultOutputDir = '',
+}) async {
   final selected = <String>{'md'};
-  return showDialog(
+  final confirmed = await showDialog<bool>(
     context: context,
-    builder: (context) => StatefulBuilder(
-      builder: (context, setState) {
-        final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    builder: (dialogCtx) => StatefulBuilder(
+      builder: (dialogCtx, setState) {
+        final colors = Theme.of(dialogCtx).extension<AppColorSet>() ?? AppColors.light;
         return AlertDialog(
           backgroundColor: colors.surface,
           title: Text('Export "${session.title}"', style: TextStyle(color: colors.text)),
@@ -360,7 +391,7 @@ Future<void> showExportDialog(BuildContext context, SessionSummary session) {
                 children: [
                   for (final format in const [
                     ('md', 'Markdown'), ('txt', 'TXT'), ('json', 'JSON'),
-                    ('srt', 'SRT'), ('vtt', 'VTT'), ('wav', 'WAV'),
+                    ('srt', 'SRT'), ('vtt', 'VTT'),
                   ])
                     CheckboxListTile(
                       title: Text(format.$2, style: TextStyle(color: colors.text)),
@@ -382,18 +413,43 @@ Future<void> showExportDialog(BuildContext context, SessionSummary session) {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => Navigator.of(dialogCtx).pop(false),
               child: Text('Batal', style: TextStyle(color: colors.textSecondary)),
             ),
             FilledButton(
-              onPressed: selected.isEmpty ? null : () => Navigator.of(context).pop(),
-              child: const Text('Export'),
+              onPressed: selected.isEmpty ? null : () => Navigator.of(dialogCtx).pop(true),
+              child: const Text('Pilih Folder'),
             ),
           ],
         );
       },
     ),
   );
+
+  if (confirmed != true || !context.mounted) return;
+
+  final outputDir = await FilePicker.platform.getDirectoryPath(
+    dialogTitle: 'Pilih folder ekspor',
+    initialDirectory: defaultOutputDir.isNotEmpty ? defaultOutputDir : null,
+  );
+  if (outputDir == null || !context.mounted) return;
+
+  try {
+    await bridge.exportSession(
+      segments: session.segments,
+      outputDir: outputDir,
+      title: session.title,
+    );
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Export berhasil ke: $outputDir')),
+    );
+  } catch (e) {
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Export gagal: $e')),
+    );
+  }
 }
 
 Future<void> shareSessionSummary(SessionSummary session) {

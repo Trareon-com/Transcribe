@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
+
+import 'package:audioplayers/audioplayers.dart';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -917,38 +920,93 @@ class _ToneTestStep extends StatefulWidget {
 class _ToneTestStepState extends State<_ToneTestStep> {
   bool _isPlaying = false;
   double _signalLevel = 0.0;
-  Timer? _toneTimer;
+  Timer? _levelTimer;
   bool _tested = false;
+  AudioPlayer? _player;
 
-  void _startToneTest() {
+  /// Generates a 440 Hz sine wave as a PCM WAV in memory.
+  static Uint8List _generate440HzWav() {
+    const sampleRate = 22050;
+    const frequency = 440.0;
+    const numSamples = sampleRate; // 1 second
+    const amplitude = 16000;
+    const fadeLen = sampleRate ~/ 20; // 50 ms fade-in/out to avoid clicks
+
+    final dataBytes = numSamples * 2;
+    final wav = ByteData(44 + dataBytes);
+
+    // RIFF header
+    for (final pair in [
+      [0, 0x52], [1, 0x49], [2, 0x46], [3, 0x46], // "RIFF"
+      [8, 0x57], [9, 0x41], [10, 0x56], [11, 0x45], // "WAVE"
+      [12, 0x66], [13, 0x6D], [14, 0x74], [15, 0x20], // "fmt "
+      [36, 0x64], [37, 0x61], [38, 0x74], [39, 0x61], // "data"
+    ]) { wav.setUint8(pair[0], pair[1]); }
+    wav.setUint32(4, 36 + dataBytes, Endian.little);
+    wav.setUint32(16, 16, Endian.little);   // fmt chunk size
+    wav.setUint16(20, 1, Endian.little);    // PCM
+    wav.setUint16(22, 1, Endian.little);    // mono
+    wav.setUint32(24, sampleRate, Endian.little);
+    wav.setUint32(28, sampleRate * 2, Endian.little); // byte rate
+    wav.setUint16(32, 2, Endian.little);    // block align
+    wav.setUint16(34, 16, Endian.little);   // bits/sample
+    wav.setUint32(40, dataBytes, Endian.little);
+
+    for (var i = 0; i < numSamples; i++) {
+      double envelope = 1.0;
+      if (i < fadeLen) envelope = i / fadeLen;
+      if (i > numSamples - fadeLen) envelope = (numSamples - i) / fadeLen;
+      final sample = (amplitude * envelope *
+              math.sin(2 * math.pi * frequency * i / sampleRate))
+          .round()
+          .clamp(-32768, 32767);
+      wav.setInt16(44 + i * 2, sample, Endian.little);
+    }
+
+    return wav.buffer.asUint8List();
+  }
+
+  Future<void> _startToneTest() async {
     setState(() {
       _isPlaying = true;
-      _signalLevel = 0.2;
+      _signalLevel = 0.0;
     });
-    _toneTimer?.cancel();
-    int ticks = 0;
-    _toneTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+
+    _levelTimer?.cancel();
+    var ticks = 0;
+    _levelTimer = Timer.periodic(const Duration(milliseconds: 80), (_) {
       ticks++;
-      if (ticks > 25) {
-        timer.cancel();
-        if (mounted) {
-          setState(() {
-            _isPlaying = false;
-            _signalLevel = 0.0;
-            _tested = true;
-          });
-        }
-      } else if (mounted) {
-        setState(() {
-          _signalLevel = 0.3 + (ticks % 5) * 0.14;
-        });
-      }
+      if (!mounted) return;
+      setState(() => _signalLevel = 0.3 + (ticks % 7) * 0.1);
     });
+
+    final player = AudioPlayer();
+    _player = player;
+    try {
+      await player.play(BytesSource(_generate440HzWav()));
+      await player.onPlayerComplete.first;
+    } catch (_) {
+      // Playback failure — still mark tested so the user can proceed
+    } finally {
+      _levelTimer?.cancel();
+      _levelTimer = null;
+      await player.dispose();
+      if (_player == player) _player = null;
+    }
+
+    if (mounted) {
+      setState(() {
+        _isPlaying = false;
+        _signalLevel = 0.0;
+        _tested = true;
+      });
+    }
   }
 
   @override
   void dispose() {
-    _toneTimer?.cancel();
+    _levelTimer?.cancel();
+    _player?.dispose();
     super.dispose();
   }
 
@@ -1016,7 +1074,7 @@ class _ToneTestStepState extends State<_ToneTestStep> {
             ),
             const SizedBox(height: 16),
             FilledButton.icon(
-              onPressed: _isPlaying ? null : _startToneTest,
+              onPressed: _isPlaying ? null : () => _startToneTest(),
               icon: Icon(_isPlaying ? Icons.graphic_eq : Icons.play_arrow),
               label: Text(_isPlaying ? 'Memproses...' : 'Putar Nada Uji'),
               style: FilledButton.styleFrom(

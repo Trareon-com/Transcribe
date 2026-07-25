@@ -2,6 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:window_manager/window_manager.dart';
 
 import '../services/global_hotkey_service.dart';
 import '../state/audio_stream_model.dart';
@@ -166,6 +167,16 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     final isPaused = lifecycle == SessionLifecycle.paused;
     final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
     final vuLevel = ref.watch(vuLevelProvider).valueOrNull;
+
+    // Keep the title controller in sync with auto-detected session title
+    // (set by the Rust bridge on session start via detectFrontmostWindowTitle).
+    ref.listen(sessionProvider.select((s) => s.sessionTitle), (_, next) {
+      if (_titleController.text != next) {
+        _titleController.text = next;
+        _titleController.selection =
+            TextSelection.fromPosition(TextPosition(offset: next.length));
+      }
+    });
 
     return CallbackShortcuts(
       bindings: {
@@ -480,15 +491,15 @@ class _ControlBar extends StatelessWidget {
                   Icon(Icons.edit_outlined, color: colors.textTertiary, size: 16),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(
-                      session.sessionTitle.isNotEmpty
-                          ? session.sessionTitle
-                          : 'Judul sesi...',
-                      style: TextStyle(
-                        color: session.sessionTitle.isNotEmpty ? colors.text : colors.textTertiary,
-                        fontSize: 13,
+                    child: TextField(
+                      controller: titleController,
+                      onChanged: notifier.setTitle,
+                      onSubmitted: notifier.setTitle,
+                      style: TextStyle(color: colors.text, fontSize: 13),
+                      decoration: InputDecoration.collapsed(
+                        hintText: 'Judul sesi...',
+                        hintStyle: TextStyle(color: colors.textTertiary, fontSize: 13),
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                 ],
@@ -708,11 +719,22 @@ class _FooterBar extends StatelessWidget {
       child: Row(
         children: [
           // Minimize to tray
-          Icon(Icons.keyboard_arrow_down, color: colors.textTertiary, size: 16),
-          const SizedBox(width: 4),
-          Text(
-            'Minimize ke tray',
-            style: TextStyle(color: colors.textTertiary, fontSize: 12),
+          GestureDetector(
+            onTap: () => windowManager.hide(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.keyboard_arrow_down, color: colors.textTertiary, size: 16),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Minimize ke tray',
+                    style: TextStyle(color: colors.textTertiary, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
           ),
 
           const Spacer(),
