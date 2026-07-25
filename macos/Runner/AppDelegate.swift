@@ -1,5 +1,6 @@
 import Cocoa
 import FlutterMacOS
+import Carbon
 
 @main
 class AppDelegate: FlutterAppDelegate {
@@ -42,7 +43,7 @@ class AppDelegate: FlutterAppDelegate {
 
     guard hasControl && hasShift else { return }
 
-    switch event.keyCode {
+    switch Int(event.keyCode) {
     case kVK_ANSI_R:  // Ctrl+Shift+R → start/stop recording
       hotkeyChannel?.invokeMethod("startStop", arguments: nil)
     case kVK_ANSI_P:  // Ctrl+Shift+P → pause/resume
