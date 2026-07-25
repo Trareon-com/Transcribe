@@ -28,16 +28,41 @@ String _modelFileName(String modelId) => switch (modelId) {
 /// only on (2) works in dev but never in a sandboxed release build.
 String modelPathForId(String modelId, {String? libraryPath}) {
   final fileName = _modelFileName(modelId);
+
+  // Resolve ~ in libraryPath to full home path
+  String resolveTilde(String path) {
+    if (path.startsWith('~/')) {
+      final home = Platform.environment['HOME'] ?? '/tmp';
+      return '$home${path.substring(1)}';
+    }
+    return path;
+  }
+
+  // Known macOS model cache location
+  String? homeCachePath;
+  final home = Platform.environment['HOME'];
+  if (home != null) {
+    homeCachePath = '$home/Library/Caches/TrareonTranscribe/models/$fileName';
+  }
+  // Known Windows model cache location
+  String? localAppDataPath;
+  final localAppData = Platform.environment['LOCALAPPDATA'];
+  if (localAppData != null) {
+    localAppDataPath = '$localAppData\\TrareonTranscribe\\models\\$fileName';
+  }
+
   final candidates = [
-    if (libraryPath != null && libraryPath.isNotEmpty) '$libraryPath/$fileName',
+    if (libraryPath != null && libraryPath.isNotEmpty)
+      '${resolveTilde(libraryPath)}/$fileName',
+    if (homeCachePath != null) homeCachePath,
+    if (localAppDataPath != null) localAppDataPath,
     _bundledResourcesPath(fileName),
     ..._devTreePaths(fileName),
   ];
   for (final candidate in candidates) {
     if (File(candidate).existsSync()) return candidate;
   }
-  // Last-resort fallback: previous (often-broken) relative-path behavior,
-  // kept so callers still get a string even if resolution fails outright.
+  // Last-resort fallback
   return 'models/$fileName';
 }
 
@@ -48,8 +73,13 @@ String modelPathForId(String modelId, {String? libraryPath}) {
 /// exception — callers should check this before committing the choice.
 bool isModelAvailable(String modelId, {String? libraryPath}) {
   final fileName = _modelFileName(modelId);
+  final home = Platform.environment['HOME'];
+  final localAppData = Platform.environment['LOCALAPPDATA'];
   final candidates = [
-    if (libraryPath != null && libraryPath.isNotEmpty) '$libraryPath/$fileName',
+    if (libraryPath != null && libraryPath.isNotEmpty)
+      '${libraryPath.startsWith('~/') && home != null ? '$home${libraryPath.substring(1)}' : libraryPath}/$fileName',
+    if (home != null) '$home/Library/Caches/TrareonTranscribe/models/$fileName',
+    if (localAppData != null) '$localAppData\\TrareonTranscribe\\models\\$fileName',
     _bundledResourcesPath(fileName),
     ..._devTreePaths(fileName),
   ];
