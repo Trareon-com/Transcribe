@@ -12,6 +12,7 @@
 //! FRB handles Rust library loading automatically during flutter test.
 
 import 'dart:io';
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:trascribe/src/rust/api.dart' as rust_api;
@@ -36,7 +37,7 @@ void main() {
     test('engine version is non-empty', () async {
       final version = await rust_api.engineVersion();
       expect(version, isNotEmpty);
-      print('  Engine version: $version');
+      debugPrint('  Engine version: $version');
     });
 
     test('health check returns true', () async {
@@ -48,8 +49,8 @@ void main() {
       final settings = await rust_api.loadSettings();
       expect(settings.defaultModel, isNotEmpty);
       expect(settings.libraryPath, isNotEmpty);
-      print('  Default model: ${settings.defaultModel}');
-      print('  Library path: ${settings.libraryPath}');
+      debugPrint('  Default model: ${settings.defaultModel}');
+      debugPrint('  Library path: ${settings.libraryPath}');
     });
 
     test('model list includes tiny', () async {
@@ -85,7 +86,7 @@ void main() {
       final devices = await rust_api.listAudioDevices();
       // On CI, there may be no devices; on a real Mac there will be.
       // The important thing is the call doesn't crash or error.
-      print('  Found ${devices.length} audio device(s)');
+      debugPrint('  Found ${devices.length} audio device(s)');
     });
   });
 }
