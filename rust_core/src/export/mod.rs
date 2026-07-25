@@ -1,4 +1,4 @@
-//! Export module — Markdown / TXT / JSON / SRT / VTT / WAV.
+//! Export module — Markdown / TXT / JSON / SRT / VTT / HTML / DOCX / WAV.
 
 use std::fs;
 use std::io::Write;
@@ -27,6 +27,8 @@ pub enum ExportFormat {
     Json,
     Srt,
     Vtt,
+    Html,
+    Docx,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -67,22 +69,33 @@ pub fn export_segments(
 
     let mut results = Vec::new();
     for format in formats {
-        let (filename, content) = match format {
-            ExportFormat::Markdown => (format!("{safe_title}.md"), to_markdown(segments, title)),
-            ExportFormat::Txt => (format!("{safe_title}.txt"), to_txt(segments)),
+        let (filename, content): (String, Vec<u8>) = match format {
+            ExportFormat::Markdown => (
+                format!("{safe_title}.md"),
+                to_markdown(segments, title).into_bytes(),
+            ),
+            ExportFormat::Txt => (format!("{safe_title}.txt"), to_txt(segments).into_bytes()),
             ExportFormat::Json => (
                 format!("{safe_title}.json"),
                 serde_json::to_string_pretty(segments)
-                    .map_err(|e| TrascribeError::Export(e.to_string()))?,
+                    .map_err(|e| TrascribeError::Export(e.to_string()))?
+                    .into_bytes(),
             ),
-            ExportFormat::Srt => (format!("{safe_title}.srt"), to_srt(segments)),
-            ExportFormat::Vtt => (format!("{safe_title}.vtt"), to_vtt(segments)),
+            ExportFormat::Srt => (format!("{safe_title}.srt"), to_srt(segments).into_bytes()),
+            ExportFormat::Vtt => (format!("{safe_title}.vtt"), to_vtt(segments).into_bytes()),
+            ExportFormat::Html => (
+                format!("{safe_title}.html"),
+                to_html(segments, title).into_bytes(),
+            ),
+            ExportFormat::Docx => (
+                format!("{safe_title}.docx"),
+                to_docx_bytes(segments, title)?,
+            ),
         };
 
         let path: PathBuf = session_dir.join(&filename);
         let mut file = fs::File::create(&path).map_err(TrascribeError::Io)?;
-        file.write_all(content.as_bytes())
-            .map_err(TrascribeError::Io)?;
+        file.write_all(&content).map_err(TrascribeError::Io)?;
 
         let size_bytes = fs::metadata(&path).map_err(TrascribeError::Io)?.len();
         results.push(ExportedFile {
@@ -166,6 +179,54 @@ fn to_vtt(segments: &[Segment]) -> String {
     out
 }
 
+fn to_html(segments: &[Segment], title: &str) -> String {
+    let mut body = String::new();
+    for seg in segments {
+        body.push_str(&format!(
+            "<p><strong>[{}] {}</strong> — {}</p>\n",
+            fmt_timestamp(seg.timestamp),
+            html_escape(&seg.speaker),
+            html_escape(&seg.text)
+        ));
+    }
+    format!(
+        "<!DOCTYPE html>\n<html lang=\"id\"><head><meta charset=\"utf-8\"><title>{}</title></head>\n<body>\n<h1>{}</h1>\n{}</body></html>\n",
+        html_escape(title),
+        html_escape(title),
+        body
+    )
+}
+
+fn html_escape(raw: &str) -> String {
+    raw.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+}
+
+fn to_docx_bytes(segments: &[Segment], title: &str) -> TrascribeResult<Vec<u8>> {
+    use docx_rs::{Docx, Paragraph, Run};
+
+    let mut docx = Docx::new()
+        .add_paragraph(Paragraph::new().add_run(Run::new().add_text(title).bold().size(32)));
+
+    for seg in segments {
+        let line = format!(
+            "[{}] {}: {}",
+            fmt_timestamp(seg.timestamp),
+            seg.speaker,
+            seg.text
+        );
+        docx = docx.add_paragraph(Paragraph::new().add_run(Run::new().add_text(line)));
+    }
+
+    let mut cursor = std::io::Cursor::new(Vec::new());
+    docx.build()
+        .pack(&mut cursor)
+        .map_err(|e| TrascribeError::Export(format!("docx build failed: {e}")))?;
+    Ok(cursor.into_inner())
+}
+
 fn fmt_timestamp(secs: f64) -> String {
     let m = (secs / 60.0) as u64;
     let s = (secs % 60.0) as u64;
@@ -238,14 +299,45 @@ mod tests {
             ExportFormat::Json,
             ExportFormat::Srt,
             ExportFormat::Vtt,
+            ExportFormat::Html,
+            ExportFormat::Docx,
         ];
         let files = export_segments(&segments, &formats, &dir, "Rapat Q3").unwrap();
-        assert_eq!(files.len(), 5);
+        assert_eq!(files.len(), 7);
         for f in &files {
             assert!(Path::new(&f.path).exists());
             assert!(f.size_bytes > 0);
         }
         let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn html_export_escapes_and_contains_text() {
+        let segments = vec![Segment {
+            source: "mic".into(),
+            speaker: "MIC".into(),
+            text: "<script>alert(1)</script> & \"quoted\"".into(),
+            timestamp: 0.0,
+            duration: 1.0,
+            language: "id".into(),
+            confidence: 0.9,
+            is_partial: false,
+        }];
+        let html = to_html(&segments, "Rapat <Q3>");
+        assert!(!html.contains("<script>alert"));
+        assert!(html.contains("&lt;script&gt;"));
+        assert!(html.contains("&amp;"));
+        assert!(html.contains("Rapat &lt;Q3&gt;"));
+    }
+
+    #[test]
+    fn docx_export_produces_valid_zip() {
+        let segments = sample_segments();
+        let bytes = to_docx_bytes(&segments, "Rapat Q3").unwrap();
+        // DOCX is a ZIP container; the local file header signature is a
+        // cheap, dependency-free sanity check that we produced real output.
+        assert!(bytes.len() > 4);
+        assert_eq!(&bytes[0..2], b"PK");
     }
 
     #[test]

@@ -107,31 +107,38 @@ Future<void> showExportDialog(BuildContext context, SessionSummary session) {
     builder: (context) => StatefulBuilder(
       builder: (context, setState) => AlertDialog(
         title: Text('Export "${session.title}"'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final format in const [
-              ('md', 'Markdown'),
-              ('txt', 'TXT'),
-              ('json', 'JSON'),
-              ('srt', 'SRT'),
-              ('vtt', 'VTT'),
-              ('wav', 'WAV (audio)'),
-            ])
-              CheckboxListTile(
-                title: Text(format.$2),
-                value: selected.contains(format.$1),
-                onChanged: (checked) {
-                  setState(() {
-                    if (checked == true) {
-                      selected.add(format.$1);
-                    } else {
-                      selected.remove(format.$1);
-                    }
-                  });
-                },
-              ),
-          ],
+        content: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final format in const [
+                  ('md', 'Markdown'),
+                  ('txt', 'TXT'),
+                  ('json', 'JSON'),
+                  ('srt', 'SRT'),
+                  ('vtt', 'VTT'),
+                  ('html', 'HTML'),
+                  ('docx', 'DOCX (Word)'),
+                  ('wav', 'WAV (audio)'),
+                ])
+                  CheckboxListTile(
+                    title: Text(format.$2),
+                    value: selected.contains(format.$1),
+                    onChanged: (checked) {
+                      setState(() {
+                        if (checked == true) {
+                          selected.add(format.$1);
+                        } else {
+                          selected.remove(format.$1);
+                        }
+                      });
+                    },
+                  ),
+              ],
+            ),
+          ),
         ),
         actions: [
           TextButton(
