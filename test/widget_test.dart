@@ -39,7 +39,10 @@ class _NoopBridge implements RustBridge {
 void main() {
   Widget buildApp() {
     return ProviderScope(
-      overrides: [rustBridgeProvider.overrideWithValue(_NoopBridge())],
+      overrides: [
+        rustBridgeProvider.overrideWithValue(_NoopBridge()),
+        firstRunCompleteProvider.overrideWith((ref) => true),
+      ],
       child: const TrascribeApp(),
     );
   }
