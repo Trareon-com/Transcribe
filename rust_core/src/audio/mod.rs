@@ -4,11 +4,13 @@
 //! CI unit tests; the pieces here (device list, ring buffer, config/mode
 //! types) are pure logic and fully unit-tested.
 
+pub mod capture;
 pub mod device;
 pub mod ring_buffer;
 
 use serde::{Deserialize, Serialize};
 
+pub use capture::AudioCapture;
 pub use device::{get_loopback_device, list_input_devices, AudioDeviceInfo};
 pub use ring_buffer::RingBuffer;
 
