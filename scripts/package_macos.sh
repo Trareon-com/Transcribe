@@ -52,6 +52,16 @@ FRAMEWORKS="$APP_PATH/Contents/Frameworks"
 echo "==> Copying universal librust_core.dylib into bundle"
 cp rust_core/target/universal/librust_core.dylib "$FRAMEWORKS/"
 
+# ── Bundle the tiny model ──────────────────────────────────────────────
+# App Sandbox blocks reading arbitrary paths outside the bundle/container,
+# so the "bundled, no download needed" tiny model must physically live
+# inside Contents/Resources — lib/state/models.dart's modelPathForId()
+# looks there first.
+RESOURCES="$APP_PATH/Contents/Resources"
+echo "==> Bundling tiny model into $RESOURCES/models"
+mkdir -p "$RESOURCES/models"
+cp models/ggml-tiny.bin "$RESOURCES/models/"
+
 # ── Ad-hoc signing ────────────────────────────────────────────────────
 echo "==> Ad-hoc signing $APP_PATH"
 codesign --force --deep --sign - "$APP_PATH"

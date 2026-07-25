@@ -37,6 +37,9 @@ class _RecoveryBridge implements RustBridge {
   Future<void> downloadModel(String modelsDir, String modelId) async {}
   @override
   Future<List<rust_device.AudioDeviceInfo>> listAudioDevices() async => const [];
+
+  @override
+  Future<List<rust_device.AudioDeviceInfo>> listOutputAudioDevices() async => const [];
   @override
   Future<String> detectFrontmostWindowTitle() async => '';
 }

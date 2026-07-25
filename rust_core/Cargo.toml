@@ -22,6 +22,14 @@ path = "src/bin/trascribe.rs"
 name = "trascribe_cli"
 path = "src/bin/trascribe_cli.rs"
 
+[[bin]]
+name = "device_probe"
+path = "src/bin/device_probe.rs"
+
+[[bin]]
+name = "dual_capture_probe"
+path = "src/bin/dual_capture_probe.rs"
+
 [dependencies]
 thiserror = "2"
 serde = { version = "1", features = ["derive"] }

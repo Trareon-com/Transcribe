@@ -56,6 +56,9 @@ class _FakeBridge implements RustBridge {
   Future<List<rust_device.AudioDeviceInfo>> listAudioDevices() async => const [];
 
   @override
+  Future<List<rust_device.AudioDeviceInfo>> listOutputAudioDevices() async => const [];
+
+  @override
   Future<String> detectFrontmostWindowTitle() async => '';
 }
 

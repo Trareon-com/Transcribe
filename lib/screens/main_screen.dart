@@ -100,14 +100,19 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     }
   }
 
-  void _toggleStartStop(BuildContext context, WidgetRef ref) {
+  Future<void> _toggleStartStop(BuildContext context, WidgetRef ref) async {
     final lifecycle = ref.read(sessionProvider).lifecycle;
     final isActive =
         lifecycle == SessionLifecycle.recording || lifecycle == SessionLifecycle.paused;
     if (isActive) {
-      _handleStopPressed(context, ref);
-    } else {
-      ref.read(sessionProvider.notifier).start();
+      await _handleStopPressed(context, ref);
+      return;
+    }
+    try {
+      await ref.read(sessionProvider.notifier).start();
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
     }
   }
 
@@ -308,29 +313,18 @@ class _HeaderBar extends StatelessWidget {
                     isPaused ? 'Dijeda' : 'Mendengarkan',
                     style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w500),
                   ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Conf 90%',
-                    style: TextStyle(color: colors.textSecondary, fontSize: 12),
-                  ),
+                  if (session.averageConfidence != null) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      'Conf ${(session.averageConfidence! * 100).round()}%',
+                      style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                    ),
+                  ],
                 ],
               ),
             ),
 
           const Spacer(),
-
-          // System metrics
-          if (isActive)
-            Row(
-              children: [
-                _MetricChip(label: 'CPU', value: '18%'),
-                const SizedBox(width: 8),
-                _MetricChip(label: 'RAM', value: '46%'),
-                const SizedBox(width: 8),
-                _MetricChip(label: 'GPU', value: '12%'),
-                const SizedBox(width: 16),
-              ],
-            ),
 
           // Nav icons
           _NavIcon(
@@ -351,29 +345,6 @@ class _HeaderBar extends StatelessWidget {
             onTap: onShortcuts,
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _MetricChip extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _MetricChip({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: colors.chipBackground,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        '$label $value',
-        style: TextStyle(color: colors.textSecondary, fontSize: 11, fontWeight: FontWeight.w500),
       ),
     );
   }
@@ -482,7 +453,7 @@ class _ControlBar extends StatelessWidget {
             icon: Icons.mic,
             label: 'MIC',
             enabled: session.config.micEnabled,
-            level: 0.6,
+            level: session.micLevel,
           ),
           const SizedBox(width: 8),
 
@@ -491,7 +462,7 @@ class _ControlBar extends StatelessWidget {
             icon: Icons.speaker,
             label: 'SPK',
             enabled: session.config.speakerEnabled,
-            level: 0.4,
+            level: session.speakerLevel,
           ),
           const SizedBox(width: 12),
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -368,7 +369,8 @@ class _AudioSetupStep extends ConsumerStatefulWidget {
 
 class _AudioSetupStepState extends ConsumerState<_AudioSetupStep> {
   bool _loading = true;
-  List<AudioDeviceInfo> _devices = [];
+  List<AudioDeviceInfo> _inputDevices = [];
+  List<AudioDeviceInfo> _outputDevices = [];
   String? _selectedMic;
   String? _selectedSpeaker;
   bool _showGuide = false;
@@ -382,18 +384,36 @@ class _AudioSetupStepState extends ConsumerState<_AudioSetupStep> {
   Future<void> _loadDevices() async {
     setState(() => _loading = true);
     final bridge = ref.read(rustBridgeProvider);
-    final devices = await bridge.listAudioDevices();
+    final inputs = await bridge.listAudioDevices();
+    final outputs = await bridge.listOutputAudioDevices();
     if (mounted) {
       setState(() {
         _loading = false;
-        _devices = devices;
-        _selectedMic = devices.isNotEmpty ? devices.first.name : 'Built-in Microphone';
-        _selectedSpeaker = 'System Speaker Loopback';
+        _inputDevices = inputs;
+        _outputDevices = outputs;
+        _selectedMic = inputs.isNotEmpty
+            ? inputs.firstWhere((d) => d.isDefault, orElse: () => inputs.first).name
+            : null;
+        _selectedSpeaker = outputs
+            .firstWhere(
+              (d) => d.name.toLowerCase().contains('blackhole') ||
+                  d.name.toLowerCase().contains('loopback'),
+              orElse: () => outputs.isNotEmpty
+                  ? outputs.first
+                  : AudioDeviceInfo(
+                      name: 'Default',
+                      deviceId: '',
+                      isDefault: true,
+                      channels: 2,
+                      sampleRates: Uint32List(0),
+                    ),
+            )
+            .name;
       });
     }
   }
 
-  bool get _hasBlackHole => _devices.any(
+  bool get _hasBlackHole => _outputDevices.any(
     (d) => d.name.toLowerCase().contains('blackhole') || d.name.toLowerCase().contains('loopback'),
   );
 
@@ -411,14 +431,14 @@ class _AudioSetupStepState extends ConsumerState<_AudioSetupStep> {
                 _AudioDropdown(
                   label: 'Mikrofon (Input)',
                   value: _selectedMic,
-                  devices: _devices,
+                  devices: _inputDevices,
                   onChanged: (v) => setState(() => _selectedMic = v),
                 ),
                 const SizedBox(height: 12),
                 _AudioDropdown(
                   label: 'Speaker / Loopback (Output)',
                   value: _selectedSpeaker,
-                  devices: _devices,
+                  devices: _outputDevices,
                   onChanged: (v) => setState(() => _selectedSpeaker = v),
                 ),
                 const SizedBox(height: 16),

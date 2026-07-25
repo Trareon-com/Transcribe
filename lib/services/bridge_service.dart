@@ -28,6 +28,7 @@ abstract class RustBridge {
   Future<void> saveSettings(AppSettings settings);
   Future<void> downloadModel(String modelsDir, String modelId);
   Future<List<rust_device.AudioDeviceInfo>> listAudioDevices();
+  Future<List<rust_device.AudioDeviceInfo>> listOutputAudioDevices();
 
   /// On macOS, returns the title of the frontmost window (e.g. a browser tab
   /// or meeting app name) via AppleScript. Falls back to empty string on
@@ -139,10 +140,21 @@ class RustBridgeMock implements RustBridge {
           channels: 1,
           sampleRates: Uint32List.fromList([16000, 44100, 48000]),
         ),
+      ];
+
+  @override
+  Future<List<rust_device.AudioDeviceInfo>> listOutputAudioDevices() async => [
         rust_device.AudioDeviceInfo(
-          name: 'System Speaker Loopback',
+          name: 'Built-in Speakers',
           deviceId: 'spk-1',
           isDefault: true,
+          channels: 2,
+          sampleRates: Uint32List.fromList([16000, 44100, 48000]),
+        ),
+        rust_device.AudioDeviceInfo(
+          name: 'BlackHole 2ch',
+          deviceId: 'spk-2',
+          isDefault: false,
           channels: 2,
           sampleRates: Uint32List.fromList([16000, 44100, 48000]),
         ),
@@ -272,6 +284,10 @@ class RustEngineBridge implements RustBridge {
   @override
   Future<List<rust_device.AudioDeviceInfo>> listAudioDevices() => rust_api.listAudioDevices();
 
+  @override
+  Future<List<rust_device.AudioDeviceInfo>> listOutputAudioDevices() =>
+      rust_device.listOutputDevices();
+
   /// Detects the frontmost window title on macOS by calling osascript.
   /// Gracefully returns empty string on failure or non-macOS platforms.
   @override
@@ -298,6 +314,8 @@ class RustEngineBridge implements RustBridge {
       micEnabled: config.micEnabled,
       speakerEnabled: config.speakerEnabled,
       mode: _toRustSessionMode(config.mode),
+      micDeviceId: config.micDeviceId,
+      speakerDeviceId: config.speakerDeviceId,
       modelPath: config.modelPath,
       vadEnabled: config.vadEnabled,
       sampleRate: 16000,

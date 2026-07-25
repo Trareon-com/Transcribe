@@ -58,7 +58,19 @@ class SettingsScreen extends ConsumerWidget {
                   value: settings.defaultModel,
                   items: const ['tiny', 'base', 'small', 'medium', 'large-v3-turbo'],
                   labelBuilder: (s) => s,
-                  onChanged: notifier.setDefaultModel,
+                  onChanged: (modelId) {
+                    if (!isModelAvailable(modelId, libraryPath: settings.libraryPath)) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Model "$modelId" belum diunduh. Unduh lewat Setup Wizard terlebih dahulu.',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    notifier.setDefaultModel(modelId);
+                  },
                 ),
               ),
               _SettingsTile(

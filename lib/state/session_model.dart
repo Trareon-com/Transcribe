@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -16,6 +17,8 @@ class SessionUiState {
   final SessionConfig config;
   final List<TranscriptSegment> segments;
   final String sessionTitle;
+  final double micLevel;
+  final double speakerLevel;
 
   const SessionUiState({
     required this.lifecycle,
@@ -23,7 +26,17 @@ class SessionUiState {
     this.sessionId,
     this.segments = const [],
     this.sessionTitle = '',
+    this.micLevel = 0.0,
+    this.speakerLevel = 0.0,
   });
+
+  /// Average confidence across current segments, or null if there are none
+  /// yet — callers should show a placeholder rather than a fabricated value.
+  double? get averageConfidence {
+    if (segments.isEmpty) return null;
+    final sum = segments.fold<double>(0, (acc, s) => acc + s.confidence);
+    return sum / segments.length;
+  }
 
   SessionUiState copyWith({
     SessionLifecycle? lifecycle,
@@ -31,6 +44,8 @@ class SessionUiState {
     SessionConfig? config,
     List<TranscriptSegment>? segments,
     String? sessionTitle,
+    double? micLevel,
+    double? speakerLevel,
   }) {
     return SessionUiState(
       lifecycle: lifecycle ?? this.lifecycle,
@@ -38,6 +53,8 @@ class SessionUiState {
       config: config ?? this.config,
       segments: segments ?? this.segments,
       sessionTitle: sessionTitle ?? this.sessionTitle,
+      micLevel: micLevel ?? this.micLevel,
+      speakerLevel: speakerLevel ?? this.speakerLevel,
     );
   }
 }
@@ -45,6 +62,7 @@ class SessionUiState {
 class SessionNotifier extends StateNotifier<SessionUiState> {
   final RustBridge _bridge;
   StreamSubscription<TranscriptSegment>? _transcriptSub;
+  StreamSubscription<VuLevel>? _vuSub;
   Timer? _autoStopTimer;
   int? _autoStopMinutes;
 
@@ -78,6 +96,22 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     _resetAutoStopTimer();
   }
 
+  void _onVuLevel(VuLevel level) {
+    state = state.copyWith(micLevel: level.micLevel, speakerLevel: level.speakerLevel);
+  }
+
+  void _subscribeToLiveStreams(String sessionId) {
+    _transcriptSub = _bridge.transcriptStream(sessionId).listen(_onTranscriptSegment);
+    _vuSub = _bridge.vuMeterStream(sessionId).listen(_onVuLevel);
+  }
+
+  void _cancelLiveStreams() {
+    _transcriptSub?.cancel();
+    _transcriptSub = null;
+    _vuSub?.cancel();
+    _vuSub = null;
+  }
+
   void seedRecovery(rust_session.SessionRecoverySnapshot snapshot) {
     final recovered = SessionConfig(
       micEnabled: snapshot.config.micEnabled,
@@ -101,7 +135,7 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
       sessionId: id,
       segments: [],
     );
-    _transcriptSub = _bridge.transcriptStream(id).listen(_onTranscriptSegment);
+    _subscribeToLiveStreams(id);
     _resetAutoStopTimer();
   }
 
@@ -109,8 +143,25 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     // Guard against double-start: if already recording/paused, ignore.
     if (state.lifecycle == SessionLifecycle.recording ||
         state.lifecycle == SessionLifecycle.paused) { return; }
+    // Fail with a clear, catchable error rather than letting the FRB call
+    // throw a raw "model file not found" exception with no UI handling —
+    // this previously crashed session start unhandled whenever the
+    // configured default model (e.g. from stale persisted settings) wasn't
+    // actually downloaded.
+    if (!File(state.config.modelPath).existsSync()) {
+      throw StateError(
+        'Model tidak ditemukan di ${state.config.modelPath}. '
+        'Unduh model lewat Setup Wizard terlebih dahulu.',
+      );
+    }
     // Auto-detect frontmost window title as default session name.
     final detected = await _bridge.detectFrontmostWindowTitle();
+    // start_capture() on the Rust side treats a null device id as "setup not
+    // completed" and skips spawning the capture thread entirely — so a
+    // concrete device name must be resolved here, or mic/speaker audio is
+    // silently never captured regardless of the mic/speaker toggles.
+    final configWithDevices = await _resolveDevices(state.config);
+    state = state.copyWith(config: configWithDevices);
     final id = await _bridge.startSession(state.config);
     state = state.copyWith(
       lifecycle: SessionLifecycle.recording,
@@ -118,8 +169,36 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
       segments: [],
       sessionTitle: detected.isNotEmpty ? detected : state.sessionTitle,
     );
-    _transcriptSub = _bridge.transcriptStream(id).listen(_onTranscriptSegment);
+    _subscribeToLiveStreams(id);
     _resetAutoStopTimer();
+  }
+
+  /// Resolves concrete mic/speaker device names when the config doesn't
+  /// already carry one. Mirrors the setup wizard's own default-selection
+  /// heuristic: system default input device for mic, first loopback-looking
+  /// output device (BlackHole/WASAPI loopback) for speaker.
+  Future<SessionConfig> _resolveDevices(SessionConfig config) async {
+    var micDeviceId = config.micDeviceId;
+    var speakerDeviceId = config.speakerDeviceId;
+    if (micDeviceId == null && config.micEnabled) {
+      final inputs = await _bridge.listAudioDevices();
+      if (inputs.isNotEmpty) {
+        micDeviceId = inputs.firstWhere((d) => d.isDefault, orElse: () => inputs.first).name;
+      }
+    }
+    if (speakerDeviceId == null && config.speakerEnabled) {
+      final outputs = await _bridge.listOutputAudioDevices();
+      if (outputs.isNotEmpty) {
+        speakerDeviceId = outputs
+            .firstWhere(
+              (d) => d.name.toLowerCase().contains('blackhole') ||
+                  d.name.toLowerCase().contains('loopback'),
+              orElse: () => outputs.firstWhere((d) => d.isDefault, orElse: () => outputs.first),
+            )
+            .name;
+      }
+    }
+    return config.copyWith(micDeviceId: micDeviceId, speakerDeviceId: speakerDeviceId);
   }
 
   Future<void> stop() async {
@@ -127,10 +206,13 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     _autoStopTimer = null;
     final id = state.sessionId;
     if (id == null) return;
-    _transcriptSub?.cancel();
-    _transcriptSub = null;
+    _cancelLiveStreams();
     await _bridge.stopSession(id);
-    state = state.copyWith(lifecycle: SessionLifecycle.stopped);
+    state = state.copyWith(
+      lifecycle: SessionLifecycle.stopped,
+      micLevel: 0.0,
+      speakerLevel: 0.0,
+    );
   }
 
   /// Pauses live transcript updates without tearing down the session —
@@ -142,15 +224,14 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     if (state.lifecycle != SessionLifecycle.recording) return;
     _autoStopTimer?.cancel();
     _autoStopTimer = null;
-    _transcriptSub?.cancel();
-    _transcriptSub = null;
-    state = state.copyWith(lifecycle: SessionLifecycle.paused);
+    _cancelLiveStreams();
+    state = state.copyWith(lifecycle: SessionLifecycle.paused, micLevel: 0.0, speakerLevel: 0.0);
   }
 
   void resume() {
     final id = state.sessionId;
     if (id == null || state.lifecycle != SessionLifecycle.paused) return;
-    _transcriptSub = _bridge.transcriptStream(id).listen(_onTranscriptSegment);
+    _subscribeToLiveStreams(id);
     _resetAutoStopTimer();
     state = state.copyWith(lifecycle: SessionLifecycle.recording);
   }
@@ -196,7 +277,7 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     state = state.copyWith(
       config: SessionConfig.forMode(
         settings.defaultMode,
-        modelPathForId(settings.defaultModel),
+        modelPathForId(settings.defaultModel, libraryPath: settings.libraryPath),
       ),
     );
   }
@@ -212,7 +293,7 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
   void dispose() {
     _autoStopTimer?.cancel();
     _autoStopTimer = null;
-    _transcriptSub?.cancel();
+    _cancelLiveStreams();
     super.dispose();
   }
 }
@@ -225,7 +306,7 @@ final sessionProvider = StateNotifierProvider<SessionNotifier, SessionUiState>((
   final notifier = SessionNotifier(
     ref.read(rustBridgeProvider),
     settings.defaultMode,
-    modelPathForId(settings.defaultModel),
+    modelPathForId(settings.defaultModel, libraryPath: settings.libraryPath),
   );
   notifier.syncDefaultSettings(settings);
   ref.listen<AppSettings>(settingsProvider, (previous, next) {
