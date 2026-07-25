@@ -25,8 +25,18 @@ class AppColors {
   static const DarkColors dark = DarkColors();
 }
 
-abstract class AppColorSet {
+abstract class AppColorSet extends ThemeExtension<AppColorSet> {
   const AppColorSet();
+
+  @override
+  AppColorSet copyWith() => this;
+
+  @override
+  AppColorSet lerp(ThemeExtension<AppColorSet>? other, double t) {
+    if (other is! AppColorSet) return this;
+    return t < 0.5 ? this : other;
+  }
+
   Color get background;
   Color get surface;
   Color get surfaceElevated;
