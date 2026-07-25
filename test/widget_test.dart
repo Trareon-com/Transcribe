@@ -40,6 +40,9 @@ class _NoopBridge implements RustBridge {
   Future<List<rust_device.AudioDeviceInfo>> listOutputAudioDevices() async => const [];
   @override
   Future<String> detectFrontmostWindowTitle() async => '';
+
+  @override
+  Stream<double> downloadProgress() => const Stream.empty();
 }
 
 void main() {

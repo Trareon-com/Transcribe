@@ -34,6 +34,11 @@ abstract class RustBridge {
   /// or meeting app name) via AppleScript. Falls back to empty string on
   /// other platforms or if detection fails.
   Future<String> detectFrontmostWindowTitle();
+
+  /// Polls download progress for an active model download.
+  /// Returns a stream of 0.0–1.0 ratios. Completes when progress reaches 1.0.
+  /// The caller must start the download via [downloadModel] first.
+  Stream<double> downloadProgress();
 }
 
 class RustBridgeMock implements RustBridge {
@@ -162,6 +167,10 @@ class RustBridgeMock implements RustBridge {
 
   @override
   Future<String> detectFrontmostWindowTitle() async => ''; // Mock: no real window detection
+
+  @override
+  Stream<double> downloadProgress() =>
+      Stream.periodic(const Duration(milliseconds: 300), (i) => (i + 1) / 10.0).take(10);
 }
 
 /// Real bridge backed by the flutter_rust_bridge-generated bindings in
@@ -307,6 +316,25 @@ class RustEngineBridge implements RustBridge {
       // Graceful fallback — window detection is non-critical.
     }
     return '';
+  }
+
+  @override
+  Stream<double> downloadProgress() {
+    final controller = StreamController<double>();
+    Timer.periodic(const Duration(milliseconds: 200), (timer) async {
+      final progress = await rust_api.getDownloadProgress();
+      if (progress == null) return;
+      final downloaded = progress.$1; // BigInt
+      final total = progress.$2;
+      if (total == BigInt.zero) return;
+      final ratio = downloaded.toDouble() / total.toDouble();
+      controller.add(ratio);
+      if (ratio >= 1.0) {
+        timer.cancel();
+        controller.close();
+      }
+    });
+    return controller.stream;
   }
 
   rust_audio.SessionConfig _toRustSessionConfig(SessionConfig config) {

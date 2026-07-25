@@ -60,6 +60,9 @@ class _FakeBridge implements RustBridge {
 
   @override
   Future<String> detectFrontmostWindowTitle() async => '';
+
+  @override
+  Stream<double> downloadProgress() => const Stream.empty();
 }
 
 void main() {
