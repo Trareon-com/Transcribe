@@ -1,3 +1,4 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -117,6 +118,44 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     }
   }
 
+  Future<void> _onExport(BuildContext context) async {
+    final session = ref.read(sessionProvider);
+    if (session.segments.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Tidak ada transkrip untuk diekspor.')),
+      );
+      return;
+    }
+    final settings = ref.read(settingsProvider);
+    final defaultDir = resolveTilde(settings.libraryPath);
+    final selectedDir = await FilePicker.platform.getDirectoryPath(
+      dialogTitle: 'Pilih folder ekspor',
+      initialDirectory: defaultDir,
+    );
+    if (selectedDir == null) return;
+    if (!context.mounted) return;
+    try {
+      final bridge = ref.read(rustBridgeProvider);
+      final title = session.sessionTitle.isNotEmpty
+          ? session.sessionTitle
+          : 'Sesi ${DateTime.now().toIso8601String().substring(0, 16).replaceAll('T', ' ')}';
+      await bridge.exportSession(
+        segments: session.segments,
+        outputDir: selectedDir,
+        title: title,
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ekspor berhasil ke: $selectedDir')),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ekspor gagal: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(sessionProvider);
@@ -213,9 +252,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 vuSpeakerLevel: vuLevel?.speakerLevel ?? 0.0,
                 titleController: _titleController,
                 onStartStop: () => _toggleStartStop(context, ref),
-                onExport: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const LibraryScreen()),
-                ),
+                onExport: () => _onExport(context),
               ),
 
               // Transcript

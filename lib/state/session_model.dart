@@ -55,6 +55,7 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
   StreamSubscription<TranscriptSegment>? _transcriptSub;
   Timer? _autoStopTimer;
   int? _autoStopMinutes;
+  String _libraryPath = '~/Documents/Trascribe';
 
   SessionNotifier(this._bridge, SessionMode initialMode, String initialModelPath)
       : super(
@@ -200,9 +201,19 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     if (id == null) return;
     _cancelLiveStreams();
     await _bridge.stopSession(id);
-    state = state.copyWith(
-      lifecycle: SessionLifecycle.stopped,
-    );
+    state = state.copyWith(lifecycle: SessionLifecycle.stopped);
+    final segments = state.segments;
+    if (segments.isNotEmpty) {
+      final title = state.sessionTitle.isNotEmpty
+          ? state.sessionTitle
+          : 'Sesi ${DateTime.now().toIso8601String().substring(0, 16).replaceAll('T', ' ')}';
+      final outputDir = resolveTilde(_libraryPath);
+      await _bridge.exportSession(
+        segments: segments,
+        outputDir: outputDir,
+        title: title,
+      );
+    }
   }
 
   /// Pauses live transcript updates without tearing down the session —
@@ -259,6 +270,7 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
   }
 
   void syncDefaultSettings(AppSettings settings) {
+    _libraryPath = settings.libraryPath;
     if (state.lifecycle == SessionLifecycle.recording ||
         state.lifecycle == SessionLifecycle.paused) {
       return;
