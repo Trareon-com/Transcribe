@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/bridge_service.dart';
 import 'models.dart';
 
-final rustBridgeProvider = Provider<RustBridge>((ref) => RustBridgeMock());
+final rustBridgeProvider = Provider<RustBridge>((ref) => RustEngineBridge());
 
 class SettingsNotifier extends StateNotifier<AppSettings> {
   final RustBridge _bridge;

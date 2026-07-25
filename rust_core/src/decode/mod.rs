@@ -13,7 +13,7 @@ use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
 
-use crate::error::{TrascribeError, TrascribeResult};
+use crate::error::TrascribeError;
 
 pub const TARGET_SAMPLE_RATE: u32 = 16_000;
 
@@ -28,8 +28,11 @@ pub struct AudioBuffer {
 
 /// Decode any Symphonia-supported audio file (or the audio track of an
 /// MP4/MKV container) into mono PCM, then resample to 16kHz.
-pub fn decode_audio_file(path: &Path) -> TrascribeResult<AudioBuffer> {
-    let file = File::open(path).map_err(TrascribeError::Io)?;
+/// Not FRB-exposed directly (takes `&Path`); see `api::decode_audio_file`
+/// for the `String`-path wrapper Dart calls into.
+#[flutter_rust_bridge::frb(ignore)]
+pub fn decode_audio_file(path: &Path) -> Result<AudioBuffer, TrascribeError> {
+    let file = File::open(path).map_err(TrascribeError::from)?;
     let mss = MediaSourceStream::new(Box::new(file), Default::default());
 
     let mut hint = Hint::new();
@@ -142,7 +145,9 @@ fn append_as_mono(decoded: &AudioBufferRef, out: &mut Vec<f32>) {
 }
 
 /// Resample mono PCM to [`TARGET_SAMPLE_RATE`] using rubato (SIMD-accelerated).
-pub fn resample_to_target(samples: &[f32], from_rate: u32) -> TrascribeResult<Vec<f32>> {
+/// Internal helper, not FRB-exposed.
+#[flutter_rust_bridge::frb(ignore)]
+pub fn resample_to_target(samples: &[f32], from_rate: u32) -> Result<Vec<f32>, TrascribeError> {
     if from_rate == TARGET_SAMPLE_RATE {
         return Ok(samples.to_vec());
     }

@@ -11,7 +11,7 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use crate::audio::{SessionConfig, SessionMode};
-use crate::error::{TrascribeError, TrascribeResult};
+use crate::error::TrascribeError;
 use crate::memory;
 
 /// Long sessions (>4h) auto-split per hour to bound memory growth (PP-21).
@@ -57,7 +57,7 @@ fn registry() -> &'static Mutex<HashMap<String, SessionState>> {
     REGISTRY.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-pub fn start_session(config: SessionConfig) -> TrascribeResult<String> {
+pub fn start_session(config: SessionConfig) -> Result<String, TrascribeError> {
     let id = Uuid::new_v4().to_string();
     let now = std::time::Instant::now();
     let state = SessionState {
@@ -73,7 +73,7 @@ pub fn start_session(config: SessionConfig) -> TrascribeResult<String> {
     Ok(id)
 }
 
-pub fn stop_session(session_id: &str) -> TrascribeResult<()> {
+pub fn stop_session(session_id: &str) -> Result<(), TrascribeError> {
     let mut reg = registry()
         .lock()
         .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
@@ -82,15 +82,15 @@ pub fn stop_session(session_id: &str) -> TrascribeResult<()> {
         .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))
 }
 
-pub fn toggle_mic(session_id: &str, enabled: bool) -> TrascribeResult<()> {
+pub fn toggle_mic(session_id: &str, enabled: bool) -> Result<(), TrascribeError> {
     with_session_mut(session_id, |s| s.config.mic_enabled = enabled)
 }
 
-pub fn toggle_speaker(session_id: &str, enabled: bool) -> TrascribeResult<()> {
+pub fn toggle_speaker(session_id: &str, enabled: bool) -> Result<(), TrascribeError> {
     with_session_mut(session_id, |s| s.config.speaker_enabled = enabled)
 }
 
-pub fn set_session_mode(session_id: &str, mode: SessionMode) -> TrascribeResult<()> {
+pub fn set_session_mode(session_id: &str, mode: SessionMode) -> Result<(), TrascribeError> {
     with_session_mut(session_id, |s| {
         let (mic, spk) = mode.default_toggles();
         s.config.mode = mode;
@@ -99,14 +99,14 @@ pub fn set_session_mode(session_id: &str, mode: SessionMode) -> TrascribeResult<
     })
 }
 
-pub fn record_segment(session_id: &str) -> TrascribeResult<()> {
+pub fn record_segment(session_id: &str) -> Result<(), TrascribeError> {
     with_session_mut(session_id, |s| s.segments_count += 1)
 }
 
 /// Call periodically (e.g. every minute) from the live capture loop. If it
 /// returns `Some`, the caller should flush the current chunk to disk and
 /// start a new file segment, then call [`mark_split`].
-pub fn check_auto_split(session_id: &str) -> TrascribeResult<Option<AutoSplitReason>> {
+pub fn check_auto_split(session_id: &str) -> Result<Option<AutoSplitReason>, TrascribeError> {
     let reg = registry()
         .lock()
         .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
@@ -119,11 +119,11 @@ pub fn check_auto_split(session_id: &str) -> TrascribeResult<Option<AutoSplitRea
     Ok(should_split(elapsed, memory_ratio))
 }
 
-pub fn mark_split(session_id: &str) -> TrascribeResult<()> {
+pub fn mark_split(session_id: &str) -> Result<(), TrascribeError> {
     with_session_mut(session_id, |s| s.last_split_at = std::time::Instant::now())
 }
 
-pub fn get_status(session_id: &str) -> TrascribeResult<SessionStatus> {
+pub fn get_status(session_id: &str) -> Result<SessionStatus, TrascribeError> {
     let reg = registry()
         .lock()
         .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
@@ -141,7 +141,10 @@ pub fn get_status(session_id: &str) -> TrascribeResult<SessionStatus> {
     })
 }
 
-fn with_session_mut(session_id: &str, f: impl FnOnce(&mut SessionState)) -> TrascribeResult<()> {
+fn with_session_mut(
+    session_id: &str,
+    f: impl FnOnce(&mut SessionState),
+) -> Result<(), TrascribeError> {
     let mut reg = registry()
         .lock()
         .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;

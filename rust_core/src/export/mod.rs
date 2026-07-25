@@ -6,7 +6,7 @@ use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
 
-use crate::error::{TrascribeError, TrascribeResult};
+use crate::error::TrascribeError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Segment {
@@ -57,15 +57,17 @@ pub fn sanitize_filename(raw: &str) -> String {
     }
 }
 
+/// Not FRB-exposed directly (takes `&Path`); see `api::export_session`.
+#[flutter_rust_bridge::frb(ignore)]
 pub fn export_segments(
     segments: &[Segment],
     formats: &[ExportFormat],
     output_dir: &Path,
     title: &str,
-) -> TrascribeResult<Vec<ExportedFile>> {
+) -> Result<Vec<ExportedFile>, TrascribeError> {
     let safe_title = sanitize_filename(title);
     let session_dir = output_dir.join(&safe_title);
-    fs::create_dir_all(&session_dir).map_err(TrascribeError::Io)?;
+    fs::create_dir_all(&session_dir).map_err(TrascribeError::from)?;
 
     let mut results = Vec::new();
     for format in formats {
@@ -94,10 +96,10 @@ pub fn export_segments(
         };
 
         let path: PathBuf = session_dir.join(&filename);
-        let mut file = fs::File::create(&path).map_err(TrascribeError::Io)?;
-        file.write_all(&content).map_err(TrascribeError::Io)?;
+        let mut file = fs::File::create(&path).map_err(TrascribeError::from)?;
+        file.write_all(&content).map_err(TrascribeError::from)?;
 
-        let size_bytes = fs::metadata(&path).map_err(TrascribeError::Io)?.len();
+        let size_bytes = fs::metadata(&path).map_err(TrascribeError::from)?.len();
         results.push(ExportedFile {
             filename,
             path: path.to_string_lossy().to_string(),
@@ -109,7 +111,8 @@ pub fn export_segments(
 }
 
 /// Write mono f32 PCM (16kHz) as a 16-bit WAV file.
-pub fn write_wav(samples: &[f32], sample_rate: u32, path: &Path) -> TrascribeResult<()> {
+#[flutter_rust_bridge::frb(ignore)]
+pub fn write_wav(samples: &[f32], sample_rate: u32, path: &Path) -> Result<(), TrascribeError> {
     let spec = hound::WavSpec {
         channels: 1,
         sample_rate,
@@ -204,7 +207,7 @@ fn html_escape(raw: &str) -> String {
         .replace('"', "&quot;")
 }
 
-fn to_docx_bytes(segments: &[Segment], title: &str) -> TrascribeResult<Vec<u8>> {
+fn to_docx_bytes(segments: &[Segment], title: &str) -> Result<Vec<u8>, TrascribeError> {
     use docx_rs::{Docx, Paragraph, Run};
 
     let mut docx = Docx::new()

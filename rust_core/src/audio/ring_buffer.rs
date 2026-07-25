@@ -6,6 +6,8 @@ use crate::decode::TARGET_SAMPLE_RATE;
 pub const CHUNK_SECS: f64 = 30.0;
 pub const OVERLAP_SECS: f64 = 10.0;
 
+/// Internal implementation detail, not part of the FRB-facing API surface.
+#[flutter_rust_bridge::frb(ignore)]
 pub struct RingBuffer {
     samples: Vec<f32>,
     capacity: usize,

@@ -3,7 +3,7 @@
 use cpal::traits::{DeviceTrait, HostTrait};
 use serde::Serialize;
 
-use crate::error::{TrascribeError, TrascribeResult};
+use crate::error::TrascribeError;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct AudioDeviceInfo {
@@ -14,7 +14,7 @@ pub struct AudioDeviceInfo {
     pub sample_rates: Vec<u32>,
 }
 
-pub fn list_input_devices() -> TrascribeResult<Vec<AudioDeviceInfo>> {
+pub fn list_input_devices() -> Result<Vec<AudioDeviceInfo>, TrascribeError> {
     let host = cpal::default_host();
     let default_name = host.default_input_device().and_then(|d| d.name().ok());
 
@@ -57,7 +57,7 @@ pub fn list_input_devices() -> TrascribeResult<Vec<AudioDeviceInfo>> {
 /// (BlackHole on macOS, WASAPI loopback exposed as an input-capable output
 /// device on Windows). Returns an error the caller should surface as
 /// "install BlackHole" / wizard guidance rather than a crash.
-pub fn get_loopback_device(name_hint: &str) -> TrascribeResult<AudioDeviceInfo> {
+pub fn get_loopback_device(name_hint: &str) -> Result<AudioDeviceInfo, TrascribeError> {
     let devices = list_input_devices()?;
     devices
         .into_iter()
