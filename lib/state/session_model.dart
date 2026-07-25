@@ -106,6 +106,9 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
   }
 
   Future<void> start() async {
+    // Guard against double-start: if already recording/paused, ignore.
+    if (state.lifecycle == SessionLifecycle.recording ||
+        state.lifecycle == SessionLifecycle.paused) return;
     // Auto-detect frontmost window title as default session name.
     final detected = await _bridge.detectFrontmostWindowTitle();
     final id = await _bridge.startSession(state.config);
@@ -172,7 +175,16 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
   }
 
   void setMode(SessionMode mode) {
-    state = state.copyWith(config: state.config.copyWith(mode: mode));
+    // Update mode AND apply mode's default mic/speaker toggles
+    // (Blueprint: Webinar=Mic OFF/SPK ON, Online=Both ON, Offline=Mic ON/SPK OFF)
+    final (mic, speaker) = mode.defaultToggles;
+    state = state.copyWith(
+      config: state.config.copyWith(
+        mode: mode,
+        micEnabled: mic,
+        speakerEnabled: speaker,
+      ),
+    );
   }
 
   void syncDefaultSettings(AppSettings settings) {
@@ -206,9 +218,12 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
 }
 
 final sessionProvider = StateNotifierProvider<SessionNotifier, SessionUiState>((ref) {
-  final settings = ref.watch(settingsProvider);
+  // Use ref.read (not watch) — watching would recreate the SessionNotifier on
+  // every settings change, destroying the active session (transcript subs,
+  // timers, segments).  ref.listen below handles updates reactively.
+  final settings = ref.read(settingsProvider);
   final notifier = SessionNotifier(
-    ref.watch(rustBridgeProvider),
+    ref.read(rustBridgeProvider),
     settings.defaultMode,
     modelPathForId(settings.defaultModel),
   );

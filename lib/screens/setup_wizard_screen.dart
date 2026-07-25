@@ -479,7 +479,7 @@ class _AudioSetupStepState extends ConsumerState<_AudioSetupStep> {
           Column(
             children: [
               DropdownButtonFormField<String>(
-                initialValue: _selectedMic,
+                value: _selectedMic,
                 dropdownColor: const Color(0xFF1E293B),
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(
@@ -501,7 +501,7 @@ class _AudioSetupStepState extends ConsumerState<_AudioSetupStep> {
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
-                initialValue: _selectedSpeaker,
+                value: _selectedSpeaker,
                 dropdownColor: const Color(0xFF1E293B),
                 style: const TextStyle(color: Colors.white),
                 decoration: InputDecoration(

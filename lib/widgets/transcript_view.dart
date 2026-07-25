@@ -26,6 +26,24 @@ class _TranscriptViewState extends State<TranscriptView> {
   bool _autoScroll = true;
 
   @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  /// Detect when user scrolls away from the bottom → disable auto-scroll.
+  /// When user scrolls back to bottom → re-enable.
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final pos = _scrollController.position;
+    const threshold = 50.0; // px from bottom to consider "at bottom"
+    final atBottom = pos.maxScrollExtent - pos.pixels < threshold;
+    if (_autoScroll != atBottom) {
+      setState(() => _autoScroll = atBottom);
+    }
+  }
+
+  @override
   void didUpdateWidget(TranscriptView oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (_autoScroll && widget.segments.length > oldWidget.segments.length) {

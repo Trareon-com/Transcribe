@@ -112,5 +112,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 }
 
 final settingsProvider = StateNotifierProvider<SettingsNotifier, AppSettings>((ref) {
-  return SettingsNotifier(ref.watch(rustBridgeProvider));
+  // ref.read is correct here — RustBridge is a stable singleton, no need to
+  // watch it for rebuilds.  Using ref.watch would cause unnecessary rebuilds
+  // if the provider were ever invalidated.
+  return SettingsNotifier(ref.read(rustBridgeProvider));
 });
