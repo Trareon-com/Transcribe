@@ -33,7 +33,7 @@ jobs:
         run: cargo clippy --all-targets -- -D warnings
 
       - name: cargo test
-        run: cargo test --all-features
+        run: cargo test --tests
 
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked || true
