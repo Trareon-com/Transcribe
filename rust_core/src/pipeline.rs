@@ -21,6 +21,85 @@ pub struct LivePipeline<'a> {
     emitted: Vec<Segment>,
 }
 
+#[derive(Debug, Clone)]
+pub enum LiveEvent {
+    Vu { source: String, level: f32 },
+    Segment(Segment),
+}
+
+pub struct LiveWorker {
+    stop_tx: Option<std::sync::mpsc::Sender<()>>,
+    thread: Option<std::thread::JoinHandle<()>>,
+}
+
+impl LiveWorker {
+    pub fn spawn(
+        model_path: impl AsRef<std::path::Path>,
+        source: impl Into<String>,
+        language: Option<String>,
+        samples_rx: std::sync::mpsc::Receiver<Vec<f32>>,
+        events_tx: std::sync::mpsc::Sender<LiveEvent>,
+    ) -> Result<Self, TrascribeError> {
+        let engine = WhisperEngine::load(model_path.as_ref())?;
+        let source = source.into();
+        let (stop_tx, stop_rx) = std::sync::mpsc::channel();
+        let thread = std::thread::spawn(move || {
+            let mut pipeline = match LivePipeline::new(
+                &engine,
+                source.clone(),
+                language,
+                VadConfig::default(),
+            ) {
+                Ok(pipeline) => pipeline,
+                Err(error) => {
+                    tracing::error!(source = %source, %error, "live pipeline initialization failed");
+                    return;
+                }
+            };
+
+            while stop_rx.try_recv().is_err() {
+                let samples = match samples_rx.recv_timeout(std::time::Duration::from_millis(100)) {
+                    Ok(samples) => samples,
+                    Err(std::sync::mpsc::RecvTimeoutError::Timeout) => continue,
+                    Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+                };
+                let level = rms_level(&samples);
+                let _ = events_tx.send(LiveEvent::Vu {
+                    source: source.clone(),
+                    level,
+                });
+                match pipeline.ingest(&samples) {
+                    Ok(segments) => {
+                        for segment in segments {
+                            let _ = events_tx.send(LiveEvent::Segment(segment));
+                        }
+                    }
+                    Err(error) => tracing::error!(source = %source, %error, "live pipeline failed"),
+                }
+            }
+        });
+        Ok(Self {
+            stop_tx: Some(stop_tx),
+            thread: Some(thread),
+        })
+    }
+
+    pub fn stop(&mut self) {
+        if let Some(stop_tx) = self.stop_tx.take() {
+            let _ = stop_tx.send(());
+        }
+        if let Some(thread) = self.thread.take() {
+            let _ = thread.join();
+        }
+    }
+}
+
+impl Drop for LiveWorker {
+    fn drop(&mut self) {
+        self.stop();
+    }
+}
+
 impl<'a> LivePipeline<'a> {
     pub fn new(
         engine: &'a WhisperEngine,
@@ -96,9 +175,16 @@ fn to_i16(samples: &[f32]) -> Vec<i16> {
         .collect()
 }
 
+fn rms_level(samples: &[f32]) -> f32 {
+    if samples.is_empty() {
+        return 0.0;
+    }
+    (samples.iter().map(|sample| sample * sample).sum::<f32>() / samples.len() as f32).sqrt()
+}
+
 #[cfg(test)]
 mod tests {
-    use super::to_i16;
+    use super::{rms_level, to_i16};
 
     #[test]
     fn pcm_conversion_clamps_float_bounds() {
@@ -106,5 +192,11 @@ mod tests {
             to_i16(&[-2.0, -1.0, 0.0, 1.0, 2.0]),
             vec![-32767, -32767, 0, 32767, 32767]
         );
+    }
+
+    #[test]
+    fn rms_level_is_bounded_for_normalized_pcm() {
+        assert_eq!(rms_level(&[]), 0.0);
+        assert!((rms_level(&[0.5, -0.5]) - 0.5).abs() < f32::EPSILON);
     }
 }
