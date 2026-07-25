@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'screens/main_screen.dart';
 import 'screens/setup_wizard_screen.dart';
 import 'services/rust_library_loader.dart';
+import 'services/tray_service.dart';
 import 'src/rust/api.dart' as rust_api;
 import 'src/rust/frb_generated.dart';
 import 'state/settings_model.dart';
@@ -24,6 +25,10 @@ void main() async {
     runApp(const _AlreadyRunningApp());
     return;
   }
+
+  // Minimize-to-tray: closing the window hides it instead of quitting,
+  // so a live session keeps transcribing in the background.
+  await TrayService.instance.init();
 
   runApp(const ProviderScope(child: TrascribeApp()));
 }
