@@ -449,59 +449,73 @@ class _ControlBar extends StatelessWidget {
           ),
           const SizedBox(width: 12),
 
-          // Mode selector
-          _ModeSelectorCompact(
-            selected: session.config.mode,
-            onChanged: notifier.setMode,
-          ),
-          const SizedBox(width: 12),
+          // Mode selector, audio indicators, and action buttons scale down
+          // together instead of overflowing when the window is narrower than
+          // their combined natural width.
+          Expanded(
+            flex: 5,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _ModeSelectorCompact(
+                    selected: session.config.mode,
+                    onChanged: notifier.setMode,
+                  ),
+                  const SizedBox(width: 12),
 
-          // MIC indicator
-          _AudioIndicator(
-            icon: Icons.mic,
-            label: 'MIC',
-            enabled: session.config.micEnabled,
-            level: vuMicLevel,
-          ),
-          const SizedBox(width: 8),
+                  // MIC indicator
+                  _AudioIndicator(
+                    icon: Icons.mic,
+                    label: 'MIC',
+                    enabled: session.config.micEnabled,
+                    level: vuMicLevel,
+                  ),
+                  const SizedBox(width: 8),
 
-          // SPK indicator
-          _AudioIndicator(
-            icon: Icons.speaker,
-            label: 'SPK',
-            enabled: session.config.speakerEnabled,
-            level: vuSpeakerLevel,
-          ),
-          const SizedBox(width: 12),
+                  // SPK indicator
+                  _AudioIndicator(
+                    icon: Icons.speaker,
+                    label: 'SPK',
+                    enabled: session.config.speakerEnabled,
+                    level: vuSpeakerLevel,
+                  ),
+                  const SizedBox(width: 12),
 
-          // Start/Stop button
-          SizedBox(
-            height: 36,
-            child: ElevatedButton.icon(
-              onPressed: onStartStop,
-              icon: Icon(isActive ? Icons.stop : Icons.play_arrow, size: 18),
-              label: Text(isActive ? 'Stop' : 'Mulai'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isActive ? AppColors.warning : colors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
+                  // Start/Stop button
+                  SizedBox(
+                    height: 36,
+                    child: ElevatedButton.icon(
+                      onPressed: onStartStop,
+                      icon: Icon(isActive ? Icons.stop : Icons.play_arrow, size: 18),
+                      label: Text(isActive ? 'Stop' : 'Mulai'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isActive ? AppColors.warning : colors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
 
-          // Export button
-          SizedBox(
-            height: 36,
-            child: OutlinedButton.icon(
-              onPressed: onExport,
-              icon: Icon(Icons.download_outlined, size: 16, color: colors.text),
-              label: Text('Export', style: TextStyle(color: colors.text)),
-              style: OutlinedButton.styleFrom(
-                side: BorderSide(color: colors.border),
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  // Export button
+                  SizedBox(
+                    height: 36,
+                    child: OutlinedButton.icon(
+                      onPressed: onExport,
+                      icon: Icon(Icons.download_outlined, size: 16, color: colors.text),
+                      label: Text('Export', style: TextStyle(color: colors.text)),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: colors.border),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
