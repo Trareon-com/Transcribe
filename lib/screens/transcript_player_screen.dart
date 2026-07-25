@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../state/models.dart';
+import '../theme/app_colors.dart';
 import '../widgets/transcript_view.dart';
 
-/// Playback UI for a saved session: seek slider synced to segment
-/// timestamps + speed control. Actual audio decode/playback wiring lands
-/// once FRB codegen is in place; this screen owns transport state so that
-/// hookup is a drop-in later.
 class TranscriptPlayerScreen extends StatefulWidget {
   final String title;
   final double durationSeconds;
@@ -46,49 +43,100 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
     widget.onSegmentsChanged?.call(List.unmodifiable(_segments));
   }
 
+  String _formatTime(double secs) {
+    final m = (secs / 60).floor();
+    final s = (secs % 60).floor();
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+
     return Scaffold(
-      appBar: AppBar(title: Text(widget.title)),
+      backgroundColor: colors.background,
+      appBar: AppBar(
+        backgroundColor: colors.headerBackground,
+        foregroundColor: colors.text,
+        title: Text(widget.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: Column(
         children: [
-          Expanded(child: TranscriptView(segments: _segments, onEdit: _editSegment)),
-          const Divider(height: 1),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Text(_formatTime(_positionSeconds)),
-                Expanded(
-                  child: Slider(
-                    value: _positionSeconds.clamp(0, widget.durationSeconds),
-                    max: widget.durationSeconds <= 0 ? 1 : widget.durationSeconds,
-                    onChanged: (value) => setState(() => _positionSeconds = value),
-                  ),
-                ),
-                Text(_formatTime(widget.durationSeconds)),
-              ],
+          // Transcript
+          Expanded(
+            child: TranscriptView(
+              segments: _segments,
+              onEdit: _editSegment,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.only(bottom: 16),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+
+          // Player controls
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: colors.surface,
+              border: Border(top: BorderSide(color: colors.divider)),
+            ),
+            child: Column(
               children: [
-                IconButton(
-                  iconSize: 40,
-                  icon: Icon(_playing ? Icons.pause_circle_filled : Icons.play_circle_filled),
-                  onPressed: () => setState(() => _playing = !_playing),
+                // Seek slider
+                Row(
+                  children: [
+                    Text(_formatTime(_positionSeconds),
+                      style: TextStyle(color: colors.textSecondary, fontSize: 12)),
+                    Expanded(
+                      child: Slider(
+                        value: _positionSeconds.clamp(0, widget.durationSeconds),
+                        max: widget.durationSeconds <= 0 ? 1 : widget.durationSeconds,
+                        activeColor: colors.primary,
+                        onChanged: (v) => setState(() => _positionSeconds = v),
+                      ),
+                    ),
+                    Text(_formatTime(widget.durationSeconds),
+                      style: TextStyle(color: colors.textSecondary, fontSize: 12)),
+                  ],
                 ),
-                const SizedBox(width: 16),
-                DropdownButton<double>(
-                  value: _speed,
-                  items: _speedOptions
-                      .map((s) => DropdownMenuItem(value: s, child: Text('${s}x')))
-                      .toList(),
-                  onChanged: (value) {
-                    if (value != null) setState(() => _speed = value);
-                  },
+
+                // Play controls + speed
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      iconSize: 40,
+                      icon: Icon(
+                        _playing ? Icons.pause_circle_filled : Icons.play_circle_filled,
+                        color: colors.primary,
+                      ),
+                      onPressed: () => setState(() => _playing = !_playing),
+                    ),
+                    const SizedBox(width: 16),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: colors.chipBackground,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: colors.border),
+                      ),
+                      child: DropdownButton<double>(
+                        value: _speed,
+                        isDense: true,
+                        underline: const SizedBox(),
+                        dropdownColor: colors.surface,
+                        style: TextStyle(color: colors.text, fontSize: 13),
+                        items: _speedOptions
+                            .map((s) => DropdownMenuItem(value: s, child: Text('${s}x')))
+                            .toList(),
+                        onChanged: (v) {
+                          if (v != null) setState(() => _speed = v);
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -96,11 +144,5 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
         ],
       ),
     );
-  }
-
-  String _formatTime(double secs) {
-    final m = (secs / 60).floor();
-    final s = (secs % 60).floor();
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 }
