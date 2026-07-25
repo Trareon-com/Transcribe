@@ -267,7 +267,7 @@ impl DualVad {
                 (Ok(true), Ok(true)) => Ok(true),    // both agree speech
                 (Ok(false), Ok(false)) => Ok(false), // both agree silence
                 (Ok(speech), _) => Ok(speech),       // disagree → WebRTC wins
-                (Err(e), _) => Err(e),                // WebRTC error propagates
+                (Err(e), _) => Err(e),               // WebRTC error propagates
             }
         })
     }
