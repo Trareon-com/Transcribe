@@ -5,6 +5,7 @@ mod frb_generated; /* AUTO INJECTED BY flutter_rust_bridge. This line may not be
 pub mod audio;
 pub mod decode;
 pub mod dedupe;
+pub mod diarization;
 pub mod export;
 pub mod memory;
 pub mod model;

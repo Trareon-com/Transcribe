@@ -6,6 +6,7 @@
 
 use crate::audio::RingBuffer;
 use crate::dedupe::is_echo;
+use crate::diarization::Diarizer;
 use crate::error::{TrascribeError, TrascribeResult};
 use crate::export::Segment;
 use crate::stt::WhisperEngine;
@@ -15,6 +16,7 @@ pub struct LivePipeline<'a> {
     engine: &'a WhisperEngine,
     ring: RingBuffer,
     vad: DualVad,
+    diarizer: Diarizer,
     source: String,
     language: Option<String>,
     samples_seen: u64,
@@ -111,6 +113,7 @@ impl<'a> LivePipeline<'a> {
             engine,
             ring: RingBuffer::default(),
             vad: DualVad::new(vad_config)?,
+            diarizer: Diarizer::new(),
             source: source.into(),
             language,
             samples_seen: 0,
@@ -157,7 +160,8 @@ impl<'a> LivePipeline<'a> {
                 chunk_start,
                 self.language.as_deref(),
             )?;
-            for segment in segments {
+            for mut segment in segments {
+                segment.speaker = self.diarizer.identify_speaker(&self.source, &chunk);
                 if !is_echo(&segment, &self.emitted) {
                     self.emitted.push(segment.clone());
                     fresh.push(segment);
