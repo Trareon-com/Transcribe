@@ -3,9 +3,15 @@
 //! The pipeline deliberately owns only deterministic processing state. Audio
 //! device threads remain responsible for capture and send resampled PCM here;
 //! this keeps cpal platform details out of VAD/STT orchestration.
+//!
+//! Each [`LivePipeline`] instance handles exactly one source (mic OR
+//! speaker) — one runs per [`LiveWorker`] thread. Echo-dedupe requires
+//! comparing MIC segments against SPK segments, which this type can't do
+//! on its own since it only ever sees one source; that cross-source pass
+//! happens one level up, in `session::SessionState::collect_worker_events`,
+//! once both channels' segments have actually converged.
 
 use crate::audio::RingBuffer;
-use crate::dedupe::is_echo;
 use crate::diarization::Diarizer;
 use crate::error::{TrascribeError, TrascribeResult};
 use crate::export::Segment;
@@ -20,7 +26,6 @@ pub struct LivePipeline<'a> {
     source: String,
     language: Option<String>,
     samples_seen: u64,
-    emitted: Vec<Segment>,
 }
 
 #[derive(Debug, Clone)]
@@ -117,15 +122,16 @@ impl<'a> LivePipeline<'a> {
             source: source.into(),
             language,
             samples_seen: 0,
-            emitted: Vec::new(),
         })
     }
 
     /// Ingest one or more 16 kHz mono f32 samples.
     ///
     /// Chunks are only sent to Whisper after at least one 10 ms frame in the
-    /// input is confirmed as speech. Returned segments have already passed
-    /// cross-source echo filtering against previously emitted segments.
+    /// input is confirmed as speech. Returned segments are *not* yet
+    /// echo-filtered — this pipeline only ever sees its own source, so
+    /// cross-source dedupe happens where mic and speaker segments actually
+    /// meet (see the module doc comment).
     pub fn ingest(&mut self, samples: &[f32]) -> TrascribeResult<Vec<Segment>> {
         if samples.is_empty() {
             return Ok(Vec::new());
@@ -162,17 +168,10 @@ impl<'a> LivePipeline<'a> {
             )?;
             for mut segment in segments {
                 segment.speaker = self.diarizer.identify_speaker(&self.source, &chunk);
-                if !is_echo(&segment, &self.emitted) {
-                    self.emitted.push(segment.clone());
-                    fresh.push(segment);
-                }
+                fresh.push(segment);
             }
         }
         Ok(fresh)
-    }
-
-    pub fn emitted_segments(&self) -> &[Segment] {
-        &self.emitted
     }
 }
 

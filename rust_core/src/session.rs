@@ -13,6 +13,7 @@ use serde::Serialize;
 use uuid::Uuid;
 
 use crate::audio::{AudioCapture, SessionConfig, SessionMode};
+use crate::dedupe::is_echo;
 use crate::error::TrascribeError;
 use crate::export::Segment;
 use crate::memory;
@@ -54,7 +55,17 @@ struct SessionState {
     mic_capture: Option<CaptureChannel>,
     speaker_capture: Option<CaptureChannel>,
     pending_events: Vec<SessionEvent>,
+    /// Segments emitted so far, across BOTH mic and speaker sources —
+    /// this is where cross-source echo-dedupe actually happens, since
+    /// each `LivePipeline` only ever sees its own source (see
+    /// `pipeline` module doc comment). Trimmed to a rolling window.
+    recent_emitted: Vec<Segment>,
 }
+
+/// Segments older than this relative to the newest one are dropped from
+/// `recent_emitted` — keeps the dedupe window bounded for long sessions
+/// without needing exact wall-clock bookkeeping.
+const RECENT_EMITTED_WINDOW_SECS: f64 = 30.0;
 
 struct CaptureChannel {
     _capture: AudioCapture,
@@ -274,6 +285,7 @@ fn start_session_with_id(id: String, config: SessionConfig) -> Result<String, Tr
         mic_capture,
         speaker_capture,
         pending_events: Vec::new(),
+        recent_emitted: Vec::new(),
     };
     registry()
         .lock()
@@ -347,22 +359,64 @@ fn unix_ms_now() -> Result<u64, TrascribeError> {
 
 impl SessionState {
     fn collect_worker_events(&mut self) {
+        let dedupe_enabled = self.config.mode.echo_dedupe_enabled();
+
         for capture in [&self.mic_capture, &self.speaker_capture]
             .into_iter()
             .flatten()
         {
             while let Ok(event) = capture.events_rx.try_recv() {
-                let event = match event {
+                match event {
                     LiveEvent::Segment(segment) => {
-                        self.segments_count = self.segments_count.saturating_add(1);
-                        SessionEvent::Transcript(segment)
+                        // Cross-source echo-dedupe: each LivePipeline only
+                        // ever sees its own source, so this is the first
+                        // point where mic and speaker segments actually
+                        // converge and can be compared (see pipeline.rs
+                        // module doc comment).
+                        if let Some(segment) =
+                            accept_or_drop_echo(segment, &mut self.recent_emitted, dedupe_enabled)
+                        {
+                            self.segments_count = self.segments_count.saturating_add(1);
+                            self.pending_events.push(SessionEvent::Transcript(segment));
+                        }
                     }
-                    LiveEvent::Vu { source, level } => SessionEvent::Vu { source, level },
-                };
-                self.pending_events.push(event);
+                    LiveEvent::Vu { source, level } => {
+                        self.pending_events.push(SessionEvent::Vu { source, level });
+                    }
+                }
             }
         }
     }
+}
+
+/// Cross-source echo check + recent-emitted bookkeeping, split out as a
+/// pure function so it's unit-testable without a live capture thread.
+/// Returns `None` if the segment should be dropped as an echo, otherwise
+/// `Some(segment)` after recording it in `recent_emitted`.
+fn accept_or_drop_echo(
+    segment: Segment,
+    recent_emitted: &mut Vec<Segment>,
+    dedupe_enabled: bool,
+) -> Option<Segment> {
+    if dedupe_enabled && is_echo(&segment, recent_emitted) {
+        return None;
+    }
+    recent_emitted.push(segment.clone());
+    trim_recent_emitted(recent_emitted);
+    Some(segment)
+}
+
+/// Keep only segments within [`RECENT_EMITTED_WINDOW_SECS`] of the newest
+/// one, so the dedupe buffer doesn't grow unbounded over a long session.
+fn trim_recent_emitted(segments: &mut Vec<Segment>) {
+    let Some(newest) = segments
+        .iter()
+        .map(|s| s.timestamp)
+        .fold(None, |acc, t| Some(acc.map_or(t, |m: f64| m.max(t))))
+    else {
+        return;
+    };
+    segments.retain(|s| newest - s.timestamp <= RECENT_EMITTED_WINDOW_SECS);
 }
 
 fn with_session_mut(
@@ -506,5 +560,91 @@ mod tests {
     #[test]
     fn check_auto_split_unknown_session_errors() {
         assert!(check_auto_split("nonexistent").is_err());
+    }
+
+    fn seg(source: &str, text: &str, ts: f64) -> Segment {
+        Segment {
+            source: source.into(),
+            speaker: source.to_uppercase(),
+            text: text.into(),
+            timestamp: ts,
+            duration: 1.0,
+            language: "id".into(),
+            confidence: 0.9,
+            is_partial: false,
+        }
+    }
+
+    #[test]
+    fn cross_source_echo_is_dropped_when_dedupe_enabled() {
+        let mut recent = vec![seg("mic", "halo semua selamat pagi", 10.0)];
+        let spk_echo = seg("spk", "halo semua selamat pagi", 10.5);
+
+        let result = accept_or_drop_echo(spk_echo, &mut recent, true);
+
+        assert!(
+            result.is_none(),
+            "speaker echo of mic segment should be dropped"
+        );
+        // The buffer should still only contain the original mic segment —
+        // the dropped echo must not be recorded.
+        assert_eq!(recent.len(), 1);
+    }
+
+    #[test]
+    fn cross_source_echo_kept_when_dedupe_disabled() {
+        let mut recent = vec![seg("mic", "halo semua selamat pagi", 10.0)];
+        let spk_echo = seg("spk", "halo semua selamat pagi", 10.5);
+
+        let result = accept_or_drop_echo(spk_echo, &mut recent, false);
+
+        assert!(
+            result.is_some(),
+            "dedupe disabled: echo should pass through"
+        );
+        assert_eq!(recent.len(), 2);
+    }
+
+    #[test]
+    fn distinct_text_from_other_source_is_kept() {
+        let mut recent = vec![seg("mic", "halo semua", 10.0)];
+        let spk_unique = seg("spk", "topik rapat hari ini adalah budget", 10.5);
+
+        let result = accept_or_drop_echo(spk_unique, &mut recent, true);
+
+        assert!(result.is_some());
+        assert_eq!(recent.len(), 2);
+    }
+
+    #[test]
+    fn same_source_never_deduped_against_itself() {
+        let mut recent = vec![seg("mic", "halo semua selamat pagi", 10.0)];
+        let mic_repeat = seg("mic", "halo semua selamat pagi", 10.5);
+
+        let result = accept_or_drop_echo(mic_repeat, &mut recent, true);
+
+        assert!(
+            result.is_some(),
+            "same-source repeats are not echo-filtered"
+        );
+        assert_eq!(recent.len(), 2);
+    }
+
+    #[test]
+    fn trim_recent_emitted_drops_entries_outside_window() {
+        let mut recent = vec![
+            seg("mic", "lama sekali", 0.0),
+            seg("spk", "baru saja", 100.0),
+        ];
+        trim_recent_emitted(&mut recent);
+        assert_eq!(recent.len(), 1);
+        assert_eq!(recent[0].text, "baru saja");
+    }
+
+    #[test]
+    fn trim_recent_emitted_keeps_all_within_window() {
+        let mut recent = vec![seg("mic", "a", 0.0), seg("spk", "b", 5.0)];
+        trim_recent_emitted(&mut recent);
+        assert_eq!(recent.len(), 2);
     }
 }
