@@ -25,6 +25,15 @@ pub struct AudioCapture {
 }
 
 impl AudioCapture {
+    /// Wrap an externally-created capture thread (used by loopback capture
+    /// on platforms where the capture path differs from cpal).
+    pub fn new(stop_tx: mpsc::Sender<()>, thread: JoinHandle<()>) -> Self {
+        Self {
+            stop_tx: Some(stop_tx),
+            thread: Some(thread),
+        }
+    }
+
     /// Start capturing from the named device (or the system default input
     /// if `device_name` is `None`). Resampled mono f32 PCM chunks are sent
     /// on `samples_tx` as they arrive; the receiver end typically feeds a
