@@ -22,6 +22,7 @@ import 'model.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'session.dart';
 import 'settings.dart';
+import 'stt/file.dart';
 
 /// Main entrypoint of the Rust API
 class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
@@ -76,7 +77,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 575080894;
+  int get rustContentHash => -501354522;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -242,6 +243,12 @@ abstract class RustLibApi extends BaseApi {
   Future<void> crateSessionToggleSpeaker({
     required String sessionId,
     required bool enabled,
+  });
+
+  Future<List<TranscribeFileResult>> crateApiTranscribeFilesBatch({
+    required String modelPath,
+    required List<String> files,
+    String? language,
   });
 
   RustArcIncrementStrongCountFnType
@@ -1793,6 +1800,43 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     argNames: ["sessionId", "enabled"],
   );
 
+  @override
+  Future<List<TranscribeFileResult>> crateApiTranscribeFilesBatch({
+    required String modelPath,
+    required List<String> files,
+    String? language,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(modelPath, serializer);
+          sse_encode_list_String(files, serializer);
+          sse_encode_opt_String(language, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 51,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_transcribe_file_result,
+          decodeErrorData: sse_decode_trascribe_error,
+        ),
+        constMeta: kCrateApiTranscribeFilesBatchConstMeta,
+        argValues: [modelPath, files, language],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiTranscribeFilesBatchConstMeta =>
+      const TaskConstMeta(
+        debugName: "transcribe_files_batch",
+        argNames: ["modelPath", "files", "language"],
+      );
+
   RustArcIncrementStrongCountFnType
   get rust_arc_increment_strong_count_JoinHandle => wire
       .rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerJoinHandle;
@@ -2053,6 +2097,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<String> dco_decode_list_String(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_String).toList();
+  }
+
+  @protected
   List<AudioDeviceInfo> dco_decode_list_audio_device_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_audio_device_info).toList();
@@ -2113,6 +2163,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>)
         .map(dco_decode_session_recovery_snapshot)
+        .toList();
+  }
+
+  @protected
+  List<TranscribeFileResult> dco_decode_list_transcribe_file_result(
+    dynamic raw,
+  ) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>)
+        .map(dco_decode_transcribe_file_result)
         .toList();
   }
 
@@ -2291,6 +2351,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   Theme dco_decode_theme(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return Theme.values[raw as int];
+  }
+
+  @protected
+  TranscribeFileResult dco_decode_transcribe_file_result(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return TranscribeFileResult(
+      filename: dco_decode_String(arr[0]),
+      durationSecs: dco_decode_f_64(arr[1]),
+      segments: dco_decode_list_segment(arr[2]),
+      language: dco_decode_String(arr[3]),
+    );
   }
 
   @protected
@@ -2624,6 +2698,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  List<String> sse_decode_list_String(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <String>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_String(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
   List<AudioDeviceInfo> sse_decode_list_audio_device_info(
     SseDeserializer deserializer,
   ) {
@@ -2734,6 +2820,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var ans_ = <SessionRecoverySnapshot>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
       ans_.add(sse_decode_session_recovery_snapshot(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<TranscribeFileResult> sse_decode_list_transcribe_file_result(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <TranscribeFileResult>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_transcribe_file_result(deserializer));
     }
     return ans_;
   }
@@ -2960,6 +3060,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var inner = sse_decode_i_32(deserializer);
     return Theme.values[inner];
+  }
+
+  @protected
+  TranscribeFileResult sse_decode_transcribe_file_result(
+    SseDeserializer deserializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_filename = sse_decode_String(deserializer);
+    var var_durationSecs = sse_decode_f_64(deserializer);
+    var var_segments = sse_decode_list_segment(deserializer);
+    var var_language = sse_decode_String(deserializer);
+    return TranscribeFileResult(
+      filename: var_filename,
+      durationSecs: var_durationSecs,
+      segments: var_segments,
+      language: var_language,
+    );
   }
 
   @protected
@@ -3290,6 +3407,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_list_String(List<String> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_String(item, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_list_audio_device_info(
     List<AudioDeviceInfo> self,
     SseSerializer serializer,
@@ -3397,6 +3523,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
       sse_encode_session_recovery_snapshot(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_transcribe_file_result(
+    List<TranscribeFileResult> self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_transcribe_file_result(item, serializer);
     }
   }
 
@@ -3577,6 +3715,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   void sse_encode_theme(Theme self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_i_32(self.index, serializer);
+  }
+
+  @protected
+  void sse_encode_transcribe_file_result(
+    TranscribeFileResult self,
+    SseSerializer serializer,
+  ) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.filename, serializer);
+    sse_encode_f_64(self.durationSecs, serializer);
+    sse_encode_list_segment(self.segments, serializer);
+    sse_encode_String(self.language, serializer);
   }
 
   @protected

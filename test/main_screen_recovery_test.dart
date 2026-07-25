@@ -9,6 +9,7 @@ import 'package:trascribe/state/models.dart';
 import 'package:trascribe/state/settings_model.dart';
 import 'package:trascribe/src/rust/audio/device.dart' as rust_device;
 import 'package:trascribe/src/rust/session.dart' as rust_session;
+import 'package:trascribe/src/rust/stt/file.dart' as rust_stt_file;
 
 class _RecoveryBridge implements RustBridge {
   List<rust_session.SessionRecoverySnapshot> recoveries = const [];
@@ -45,6 +46,13 @@ class _RecoveryBridge implements RustBridge {
 
   @override
   Stream<double> downloadProgress() => const Stream.empty();
+
+  @override
+  Future<List<rust_stt_file.TranscribeFileResult>> batchTranscribeFiles({
+    required String modelPath,
+    required List<String> files,
+    String? language,
+  }) async => [];
 }
 
 void main() {

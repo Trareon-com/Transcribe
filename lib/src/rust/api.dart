@@ -13,6 +13,7 @@ import 'model.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'session.dart';
 import 'settings.dart';
+import 'stt/file.dart';
 
 /// Installs a `tracing` subscriber writing to stderr. Without this,
 /// every `tracing::error!`/`warn!` call in the engine (session/pipeline
@@ -110,6 +111,16 @@ Future<List<ExportedFile>> exportSession({
 
 Future<AudioBuffer> decodeAudioFile({required String path}) =>
     RustLib.instance.api.crateApiDecodeAudioFile(path: path);
+
+Future<List<TranscribeFileResult>> transcribeFilesBatch({
+  required String modelPath,
+  required List<String> files,
+  String? language,
+}) => RustLib.instance.api.crateApiTranscribeFilesBatch(
+  modelPath: modelPath,
+  files: files,
+  language: language,
+);
 
 Future<AppSettings> loadSettings() =>
     RustLib.instance.api.crateApiLoadSettings();

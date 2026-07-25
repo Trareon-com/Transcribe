@@ -21,6 +21,7 @@ import 'model.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated_io.dart';
 import 'session.dart';
 import 'settings.dart';
+import 'stt/file.dart';
 
 abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   RustLibApiImplPlatform({
@@ -147,6 +148,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int dco_decode_i_32(dynamic raw);
 
   @protected
+  List<String> dco_decode_list_String(dynamic raw);
+
+  @protected
   List<AudioDeviceInfo> dco_decode_list_audio_device_info(dynamic raw);
 
   @protected
@@ -175,6 +179,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<SessionRecoverySnapshot> dco_decode_list_session_recovery_snapshot(
+    dynamic raw,
+  );
+
+  @protected
+  List<TranscribeFileResult> dco_decode_list_transcribe_file_result(
     dynamic raw,
   );
 
@@ -228,6 +237,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Theme dco_decode_theme(dynamic raw);
+
+  @protected
+  TranscribeFileResult dco_decode_transcribe_file_result(dynamic raw);
 
   @protected
   TrascribeError dco_decode_trascribe_error(dynamic raw);
@@ -361,6 +373,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   int sse_decode_i_32(SseDeserializer deserializer);
 
   @protected
+  List<String> sse_decode_list_String(SseDeserializer deserializer);
+
+  @protected
   List<AudioDeviceInfo> sse_decode_list_audio_device_info(
     SseDeserializer deserializer,
   );
@@ -397,6 +412,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<SessionRecoverySnapshot> sse_decode_list_session_recovery_snapshot(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  List<TranscribeFileResult> sse_decode_list_transcribe_file_result(
     SseDeserializer deserializer,
   );
 
@@ -456,6 +476,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   Theme sse_decode_theme(SseDeserializer deserializer);
+
+  @protected
+  TranscribeFileResult sse_decode_transcribe_file_result(
+    SseDeserializer deserializer,
+  );
 
   @protected
   TrascribeError sse_decode_trascribe_error(SseDeserializer deserializer);
@@ -610,6 +635,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_i_32(int self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_String(List<String> self, SseSerializer serializer);
+
+  @protected
   void sse_encode_list_audio_device_info(
     List<AudioDeviceInfo> self,
     SseSerializer serializer,
@@ -663,6 +691,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_list_session_recovery_snapshot(
     List<SessionRecoverySnapshot> self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_list_transcribe_file_result(
+    List<TranscribeFileResult> self,
     SseSerializer serializer,
   );
 
@@ -730,6 +764,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_theme(Theme self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_transcribe_file_result(
+    TranscribeFileResult self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_trascribe_error(

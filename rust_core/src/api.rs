@@ -132,6 +132,31 @@ pub fn decode_audio_file(path: String) -> Result<crate::decode::AudioBuffer, Tra
     crate::decode::decode_audio_file(&PathBuf::from(path))
 }
 
+// --- File transcription (batch) -----------------------------------------------------
+
+pub fn transcribe_files_batch(
+    model_path: String,
+    files: Vec<String>,
+    language: Option<String>,
+) -> Result<Vec<crate::stt::file::TranscribeFileResult>, TrascribeError> {
+    let engine = crate::stt::WhisperEngine::load(&PathBuf::from(&model_path))?;
+    let file_paths: Vec<PathBuf> = files.iter().map(PathBuf::from).collect();
+    let mut results = Vec::new();
+
+    crate::stt::file::transcribe_files_batch(
+        &engine,
+        &file_paths,
+        language.as_deref(),
+        |progress| {
+            if let Some(result) = progress.result {
+                results.push(result);
+            }
+        },
+    );
+
+    Ok(results)
+}
+
 // --- Settings -----------------------------------------------------
 
 pub fn load_settings() -> AppSettings {

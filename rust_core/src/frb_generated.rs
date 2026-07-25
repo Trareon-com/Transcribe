@@ -42,7 +42,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 575080894;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -501354522;
 
 // Section: executor
 
@@ -1726,6 +1726,45 @@ fn wire__crate__session__toggle_speaker_impl(
         },
     )
 }
+fn wire__crate__api__transcribe_files_batch_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "transcribe_files_batch",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_model_path = <String>::sse_decode(&mut deserializer);
+            let api_files = <Vec<String>>::sse_decode(&mut deserializer);
+            let api_language = <Option<String>>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                    let output_ok = crate::api::transcribe_files_batch(
+                        api_model_path,
+                        api_files,
+                        api_language,
+                    )?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 
 // Section: related_funcs
 
@@ -1952,6 +1991,18 @@ impl SseDecode for i32 {
     }
 }
 
+impl SseDecode for Vec<String> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<String>::sse_decode(deserializer));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for Vec<crate::audio::device::AudioDeviceInfo> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -2069,6 +2120,20 @@ impl SseDecode for Vec<crate::session::SessionRecoverySnapshot> {
         let mut ans_ = Vec::with_capacity(len_ as usize);
         for idx_ in 0..len_ {
             ans_.push(<crate::session::SessionRecoverySnapshot>::sse_decode(
+                deserializer,
+            ));
+        }
+        return ans_;
+    }
+}
+
+impl SseDecode for Vec<crate::stt::file::TranscribeFileResult> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::stt::file::TranscribeFileResult>::sse_decode(
                 deserializer,
             ));
         }
@@ -2308,6 +2373,22 @@ impl SseDecode for crate::settings::Theme {
     }
 }
 
+impl SseDecode for crate::stt::file::TranscribeFileResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_filename = <String>::sse_decode(deserializer);
+        let mut var_durationSecs = <f64>::sse_decode(deserializer);
+        let mut var_segments = <Vec<crate::export::Segment>>::sse_decode(deserializer);
+        let mut var_language = <String>::sse_decode(deserializer);
+        return crate::stt::file::TranscribeFileResult {
+            filename: var_filename,
+            duration_secs: var_durationSecs,
+            segments: var_segments,
+            language: var_language,
+        };
+    }
+}
+
 impl SseDecode for crate::error::TrascribeError {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -2471,6 +2552,7 @@ fn pde_ffi_dispatcher_primary_impl(
         48 => wire__crate__session__toggle_mic_impl(port, ptr, rust_vec_len, data_len),
         49 => wire__crate__api__toggle_speaker_impl(port, ptr, rust_vec_len, data_len),
         50 => wire__crate__session__toggle_speaker_impl(port, ptr, rust_vec_len, data_len),
+        51 => wire__crate__api__transcribe_files_batch_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -2580,8 +2662,6 @@ impl flutter_rust_bridge::IntoIntoDart<crate::decode::AudioBuffer> for crate::de
 // Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::audio::capture::AudioCapture {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
-        // Safety: AudioCapture implements Drop, so we use take() to avoid
-        // field-by-field moves. Both fields are Option<T> so take() is safe.
         let this = &mut std::mem::ManuallyDrop::new(self);
         [
             this.stop_tx.take().into_into_dart().into_dart(),
@@ -2863,6 +2943,29 @@ impl flutter_rust_bridge::IntoIntoDart<crate::settings::Theme> for crate::settin
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::stt::file::TranscribeFileResult {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.filename.into_into_dart().into_dart(),
+            self.duration_secs.into_into_dart().into_dart(),
+            self.segments.into_into_dart().into_dart(),
+            self.language.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::stt::file::TranscribeFileResult
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::stt::file::TranscribeFileResult>
+    for crate::stt::file::TranscribeFileResult
+{
+    fn into_into_dart(self) -> crate::stt::file::TranscribeFileResult {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
 impl flutter_rust_bridge::IntoDart for crate::error::TrascribeError {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self {
@@ -3085,6 +3188,16 @@ impl SseEncode for i32 {
     }
 }
 
+impl SseEncode for Vec<String> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <String>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for Vec<crate::audio::device::AudioDeviceInfo> {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -3181,6 +3294,16 @@ impl SseEncode for Vec<crate::session::SessionRecoverySnapshot> {
         <i32>::sse_encode(self.len() as _, serializer);
         for item in self {
             <crate::session::SessionRecoverySnapshot>::sse_encode(item, serializer);
+        }
+    }
+}
+
+impl SseEncode for Vec<crate::stt::file::TranscribeFileResult> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::stt::file::TranscribeFileResult>::sse_encode(item, serializer);
         }
     }
 }
@@ -3366,6 +3489,16 @@ impl SseEncode for crate::settings::Theme {
             },
             serializer,
         );
+    }
+}
+
+impl SseEncode for crate::stt::file::TranscribeFileResult {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.filename, serializer);
+        <f64>::sse_encode(self.duration_secs, serializer);
+        <Vec<crate::export::Segment>>::sse_encode(self.segments, serializer);
+        <String>::sse_encode(self.language, serializer);
     }
 }
 

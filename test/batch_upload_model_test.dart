@@ -1,6 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:trascribe/services/bridge_service.dart';
+import 'package:trascribe/src/rust/audio/device.dart' as rust_device;
+import 'package:trascribe/src/rust/session.dart' as rust_session;
+import 'package:trascribe/src/rust/stt/file.dart' as rust_stt_file;
 import 'package:trascribe/state/batch_upload_model.dart';
+import 'package:trascribe/state/models.dart';
 
 void main() {
   group('BatchUploadNotifier', () {
@@ -78,5 +83,89 @@ void main() {
       expect(notifier.state, hasLength(1));
       expect(notifier.state.single.path, '/a/rapat.mp3');
     });
+
+    test('processBatch marks files as done after bridge call', () async {
+      final notifier = BatchUploadNotifier();
+      notifier.addFiles(['/a/test.mp3']);
+      final bridge = _TestBridge();
+      await notifier.processBatch(bridge, '/model/path');
+      expect(notifier.state.single.status, BatchFileStatus.done);
+    });
+
+    test('processBatch marks files as error on exception', () async {
+      final notifier = BatchUploadNotifier();
+      notifier.addFiles(['/a/crash.mp3']);
+      final bridge = _ErrorBridge();
+      await notifier.processBatch(bridge, '/model/path');
+      expect(notifier.state.single.status, BatchFileStatus.error);
+    });
   });
+}
+
+class _NoopBridge implements RustBridge {
+  @override
+  Future<String> startSession(SessionConfig config) async => '';
+  @override
+  Future<void> stopSession(String sessionId) async {}
+  @override
+  Future<void> toggleMic(String sessionId, bool enabled) async {}
+  @override
+  Future<void> toggleSpeaker(String sessionId, bool enabled) async {}
+  @override
+  Stream<TranscriptSegment> transcriptStream(String sessionId) => const Stream.empty();
+  @override
+  Stream<VuLevel> vuMeterStream(String sessionId) => const Stream.empty();
+  @override
+  Future<List<rust_session.SessionRecoverySnapshot>> listRecoverableSessions() async => [];
+  @override
+  Future<String> recoverSession(rust_session.SessionRecoverySnapshot snapshot) async => '';
+  @override
+  Future<AppSettings> loadSettings() async => AppSettings.defaults();
+  @override
+  Future<void> saveSettings(AppSettings settings) async {}
+  @override
+  Future<void> downloadModel(String modelsDir, String modelId) async {}
+  @override
+  Future<List<rust_device.AudioDeviceInfo>> listAudioDevices() async => [];
+  @override
+  Future<List<rust_device.AudioDeviceInfo>> listOutputAudioDevices() async => [];
+  @override
+  Future<String> detectFrontmostWindowTitle() async => '';
+  @override
+  Stream<double> downloadProgress() => const Stream.empty();
+  @override
+  Future<List<rust_stt_file.TranscribeFileResult>> batchTranscribeFiles({
+    required String modelPath,
+    required List<String> files,
+    String? language,
+  }) async => [];
+}
+
+class _TestBridge extends _NoopBridge {
+  @override
+  Future<List<rust_stt_file.TranscribeFileResult>> batchTranscribeFiles({
+    required String modelPath,
+    required List<String> files,
+    String? language,
+  }) async {
+    return [
+      rust_stt_file.TranscribeFileResult(
+        filename: 'test.mp3',
+        durationSecs: 1.0,
+        segments: [],
+        language: 'id',
+      ),
+    ];
+  }
+}
+
+class _ErrorBridge extends _NoopBridge {
+  @override
+  Future<List<rust_stt_file.TranscribeFileResult>> batchTranscribeFiles({
+    required String modelPath,
+    required List<String> files,
+    String? language,
+  }) async {
+    throw Exception('engine failure');
+  }
 }

@@ -8,6 +8,7 @@ import 'package:trascribe/state/settings_model.dart';
 import 'package:trascribe/screens/settings_screen.dart';
 import 'package:trascribe/src/rust/audio/device.dart' as rust_device;
 import 'package:trascribe/src/rust/session.dart' as rust_session;
+import 'package:trascribe/src/rust/stt/file.dart' as rust_stt_file;
 
 class _TestBridge implements RustBridge {
   AppSettings savedSettings = AppSettings.defaults();
@@ -44,6 +45,13 @@ class _TestBridge implements RustBridge {
 
   @override
   Stream<double> downloadProgress() => const Stream.empty();
+
+  @override
+  Future<List<rust_stt_file.TranscribeFileResult>> batchTranscribeFiles({
+    required String modelPath,
+    required List<String> files,
+    String? language,
+  }) async => [];
 }
 
 void main() {

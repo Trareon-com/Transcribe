@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../services/bridge_service.dart';
+
 enum BatchFileStatus { queued, decoding, transcribing, done, error }
 
 class BatchFileEntry {
@@ -69,6 +71,35 @@ class BatchUploadNotifier extends StateNotifier<List<BatchFileEntry>> {
 
   void removeDone() {
     state = state.where((e) => e.status != BatchFileStatus.done).toList();
+  }
+
+  /// Process all queued files through the Rust engine sequentially.
+  Future<void> processBatch(RustBridge bridge, String modelPath, {String? language}) async {
+    final paths = state
+        .where((e) => e.status == BatchFileStatus.queued)
+        .map((e) => e.path)
+        .toList();
+    if (paths.isEmpty) return;
+
+    for (final path in paths) {
+      updateStatus(path, BatchFileStatus.transcribing);
+      // Small delay so the UI can update before blocking on transcription
+      await Future.delayed(const Duration(milliseconds: 50));
+      try {
+        final results = await bridge.batchTranscribeFiles(
+          modelPath: modelPath,
+          files: [path],
+          language: language,
+        );
+        if (results.isNotEmpty && results.first.segments.isNotEmpty) {
+          updateStatus(path, BatchFileStatus.done);
+        } else {
+          updateStatus(path, BatchFileStatus.error, error: 'No speech detected');
+        }
+      } catch (e) {
+        updateStatus(path, BatchFileStatus.error, error: e.toString());
+      }
+    }
   }
 }
 

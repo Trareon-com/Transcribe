@@ -9,6 +9,7 @@ import '../src/rust/audio/device.dart' as rust_device;
 import '../src/rust/export.dart' as rust_export;
 import '../src/rust/session.dart' as rust_session;
 import '../src/rust/settings.dart' as rust_settings;
+import '../src/rust/stt/file.dart' as rust_stt_file;
 import '../state/models.dart';
 
 /// Abstraction over the Rust engine, callable from Dart. [RustEngineBridge]
@@ -39,6 +40,14 @@ abstract class RustBridge {
   /// Returns a stream of 0.0–1.0 ratios. Completes when progress reaches 1.0.
   /// The caller must start the download via [downloadModel] first.
   Stream<double> downloadProgress();
+
+  /// Transcribe a batch of audio/video files using the given model.
+  /// Returns a list of transcription results, one per file.
+  Future<List<rust_stt_file.TranscribeFileResult>> batchTranscribeFiles({
+    required String modelPath,
+    required List<String> files,
+    String? language,
+  });
 }
 
 class RustBridgeMock implements RustBridge {
@@ -171,6 +180,13 @@ class RustBridgeMock implements RustBridge {
   @override
   Stream<double> downloadProgress() =>
       Stream.periodic(const Duration(milliseconds: 300), (i) => (i + 1) / 10.0).take(10);
+
+  @override
+  Future<List<rust_stt_file.TranscribeFileResult>> batchTranscribeFiles({
+    required String modelPath,
+    required List<String> files,
+    String? language,
+  }) async => []; // Mock: returns empty results
 }
 
 /// Real bridge backed by the flutter_rust_bridge-generated bindings in
@@ -324,7 +340,7 @@ class RustEngineBridge implements RustBridge {
     Timer.periodic(const Duration(milliseconds: 200), (timer) async {
       final progress = await rust_api.getDownloadProgress();
       if (progress == null) return;
-      final downloaded = progress.$1; // BigInt
+      final downloaded = progress.$1;
       final total = progress.$2;
       if (total == BigInt.zero) return;
       final ratio = downloaded.toDouble() / total.toDouble();
@@ -336,6 +352,18 @@ class RustEngineBridge implements RustBridge {
     });
     return controller.stream;
   }
+
+  @override
+  Future<List<rust_stt_file.TranscribeFileResult>> batchTranscribeFiles({
+    required String modelPath,
+    required List<String> files,
+    String? language,
+  }) =>
+      rust_api.transcribeFilesBatch(
+        modelPath: modelPath,
+        files: files,
+        language: language,
+      );
 
   rust_audio.SessionConfig _toRustSessionConfig(SessionConfig config) {
     return rust_audio.SessionConfig(
