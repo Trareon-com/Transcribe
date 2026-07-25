@@ -44,6 +44,7 @@ pub(crate) mod macos {
     use std::process::{Command, Stdio};
     use std::sync::mpsc;
 
+    #[flutter_rust_bridge::frb(ignore)]
     pub fn capture_loopback(
         device_hint: Option<String>,
         samples_tx: mpsc::Sender<Vec<f32>>,
@@ -161,6 +162,7 @@ pub(crate) mod windows {
         CoCreateInstance, CoInitializeEx, CoTaskMemFree, CLSCTX_ALL, COINIT_APARTMENTTHREADED,
     };
 
+    #[flutter_rust_bridge::frb(ignore)]
     pub fn capture_loopback(
         _device_hint: Option<String>,
         samples_tx: mpsc::Sender<Vec<f32>>,
@@ -282,6 +284,7 @@ pub(crate) mod linux {
     use std::process::{Command, Stdio};
     use std::sync::mpsc;
 
+    #[flutter_rust_bridge::frb(ignore)]
     pub fn capture_loopback(
         _device_hint: Option<String>,
         samples_tx: mpsc::Sender<Vec<f32>>,

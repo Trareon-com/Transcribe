@@ -91,7 +91,7 @@ class BatchUploadNotifier extends StateNotifier<List<BatchFileEntry>> {
           files: [path],
           language: language,
         );
-        if (results.isNotEmpty && results.first.segments.isNotEmpty) {
+        if (results.isNotEmpty) {
           updateStatus(path, BatchFileStatus.done);
         } else {
           updateStatus(path, BatchFileStatus.error, error: 'No speech detected');

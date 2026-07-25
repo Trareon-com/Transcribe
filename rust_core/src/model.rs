@@ -182,7 +182,7 @@ pub fn read_download_progress() -> Option<DownloadProgress> {
     DOWNLOAD_PROGRESS.lock().ok()?.clone()
 }
 
-fn set_download_progress(bytes_downloaded: u64, total_bytes: u64) {
+pub(crate) fn set_download_progress(bytes_downloaded: u64, total_bytes: u64) {
     if let Ok(mut guard) = DOWNLOAD_PROGRESS.lock() {
         *guard = Some(DownloadProgress {
             bytes_downloaded,

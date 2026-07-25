@@ -153,6 +153,10 @@ jobs:
           channel: stable
       - name: flutter pub get
         run: flutter pub get
+      - name: Download tiny model
+        run: |
+          mkdir -p models
+          curl -fL -o models/ggml-tiny.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
       - name: Package macOS (build + ad-hoc sign + dmg)
         run: ./scripts/package_macos.sh
       - name: Upload dmg as CI artifact
@@ -177,6 +181,11 @@ jobs:
           channel: stable
       - name: flutter pub get
         run: flutter pub get
+      - name: Download tiny model
+        run: |
+          New-Item -ItemType Directory -Force -Path models | Out-Null
+          Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin" -OutFile "models\ggml-tiny.bin"
+        shell: pwsh
       - name: Package Windows (build + zip)
         run: ./scripts/package_windows.ps1
         shell: pwsh

@@ -114,6 +114,7 @@ fn wire__crate__settings__app_settings_default_impl(
         },
     )
 }
+#[cfg(target_os = "macos")]
 fn wire__crate__audio__loopback__macos__capture_loopback_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -2484,12 +2485,15 @@ fn pde_ffi_dispatcher_primary_impl(
     match func_id {
         1 => wire__crate__api__acquire_instance_lock_impl(port, ptr, rust_vec_len, data_len),
         2 => wire__crate__settings__app_settings_default_impl(port, ptr, rust_vec_len, data_len),
+        #[cfg(target_os = "macos")]
         3 => wire__crate__audio__loopback__macos__capture_loopback_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
+        #[cfg(not(target_os = "macos"))]
+        3 => unreachable!("capture_loopback is only available on macOS"),
         4 => wire__crate__session__check_auto_split_impl(port, ptr, rust_vec_len, data_len),
         5 => wire__crate__api__decode_audio_file_impl(port, ptr, rust_vec_len, data_len),
         6 => wire__crate__settings__default_library_path_impl(port, ptr, rust_vec_len, data_len),
