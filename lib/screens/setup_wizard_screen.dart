@@ -5,6 +5,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../services/bridge_service.dart';
 import '../src/rust/audio/device.dart';
 import '../state/privacy_report_model.dart';
 import '../state/settings_model.dart';
@@ -167,31 +168,11 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
           modelId: _selectedModel,
           modelSizeMb: _modelSizesMb[_selectedModel] ?? 75,
           downloaded: _downloadRecorded,
-          onDownload: () async {
-            if (_downloadRecorded) return;
-
-            // Skip download for tiny (bundled with app)
-            if (_selectedModel == 'tiny') {
-              ref.read(privacyReportProvider.notifier).recordModelDownload(_selectedModel);
-              if (mounted) {
-                setState(() => _downloadRecorded = true);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Model tiny sudah tersedia di aplikasi.')),
-                );
-              }
-              return;
-            }
-
-            final settings = ref.read(settingsProvider);
-            final bridge = ref.read(rustBridgeProvider);
-            await bridge.downloadModel(settings.libraryPath, _selectedModel);
+          bridge: ref.read(rustBridgeProvider),
+          libraryPath: ref.read(settingsProvider).libraryPath,
+          onRecordDownload: () {
             ref.read(privacyReportProvider.notifier).recordModelDownload(_selectedModel);
-            if (mounted) {
-              setState(() => _downloadRecorded = true);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Model "$_selectedModel" berhasil diunduh.')),
-              );
-            }
+            if (mounted) _next();
           },
         );
       case _WizardStep.toneTest:
@@ -752,13 +733,17 @@ class _DownloadStep extends ConsumerStatefulWidget {
   final String modelId;
   final int modelSizeMb;
   final bool downloaded;
-  final Future<void> Function() onDownload;
+  final RustBridge bridge;
+  final String libraryPath;
+  final VoidCallback onRecordDownload;
 
   const _DownloadStep({
     required this.modelId,
     required this.modelSizeMb,
     required this.downloaded,
-    required this.onDownload,
+    required this.bridge,
+    required this.libraryPath,
+    required this.onRecordDownload,
   });
 
   @override
@@ -769,32 +754,40 @@ class _DownloadStepState extends ConsumerState<_DownloadStep> {
   bool _isDownloading = false;
   String? _error;
   double _progress = 0.0;
-  Timer? _progressTimer;
-  int _elapsedSeconds = 0;
+  StreamSubscription<double>? _progressSub;
 
   @override
   void dispose() {
-    _progressTimer?.cancel();
+    _progressSub?.cancel();
     super.dispose();
   }
 
-  void _simulateProgress() {
-    _progress = 0.0;
-    _elapsedSeconds = 0;
-    // Estimate download speed at ~5 MB/s for progress animation
-    // Real progress would come from Rust via FRB stream/callback
-    final estimatedSeconds = (widget.modelSizeMb / 5).round().clamp(3, 300);
-    _progressTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      _elapsedSeconds++;
-      // Non-linear progress: fast start, slow middle, fast end
-      final rawProgress = _elapsedSeconds / estimatedSeconds;
-      // Easing curve for realistic feel
-      _progress = 1.0 - (1.0 - rawProgress) * (1.0 - rawProgress);
-      if (_progress >= 1.0 || !mounted) {
-        timer.cancel();
-      }
-      if (mounted) setState(() {});
+  Future<void> _startDownload() async {
+    if (widget.downloaded) return;
+    setState(() {
+      _isDownloading = true;
+      _progress = 0.0;
+      _error = null;
     });
+
+    try {
+      await widget.bridge.downloadModel(widget.libraryPath, widget.modelId);
+
+      // Subscribe to real progress stream
+      _progressSub?.cancel();
+      _progressSub = widget.bridge.downloadProgress().listen((ratio) {
+        if (!mounted) return;
+        setState(() => _progress = ratio);
+        if (ratio >= 1.0) {
+          _progressSub?.cancel();
+          _progressSub = null;
+          widget.onRecordDownload();
+          setState(() => _isDownloading = false);
+        }
+      });
+    } catch (e) {
+      if (mounted) setState(() => _error = e.toString());
+    }
   }
 
   @override
@@ -842,7 +835,7 @@ class _DownloadStepState extends ConsumerState<_DownloadStep> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      '${(_progress * 100).round()}% — ${_elapsedSeconds}s',
+                      '${(_progress * 100).round()}%',
                       style: TextStyle(color: colors.textSecondary, fontSize: 13),
                     ),
                     const SizedBox(height: 8),
@@ -872,23 +865,7 @@ class _DownloadStepState extends ConsumerState<_DownloadStep> {
                         ),
                         const SizedBox(height: 16),
                         FilledButton.icon(
-                          onPressed: () async {
-                            setState(() {
-                              _isDownloading = true;
-                              _error = null;
-                              _progress = 0.0;
-                            });
-                            _simulateProgress();
-                            try {
-                              await widget.onDownload();
-                            } catch (e) {
-                              if (mounted) setState(() => _error = e.toString());
-                            }
-                            if (mounted) {
-                              _progressTimer?.cancel();
-                              setState(() => _isDownloading = false);
-                            }
-                          },
+                          onPressed: () => _startDownload(),
                           icon: const Icon(Icons.refresh),
                           label: const Text('Coba Lagi'),
                         ),
@@ -897,19 +874,7 @@ class _DownloadStepState extends ConsumerState<_DownloadStep> {
                   : FilledButton.icon(
                       onPressed: widget.downloaded
                           ? null
-                          : () async {
-                              setState(() => _isDownloading = true);
-                              _simulateProgress();
-                              try {
-                                await widget.onDownload();
-                              } catch (e) {
-                                if (mounted) setState(() => _error = e.toString());
-                              }
-                              if (mounted) {
-                                _progressTimer?.cancel();
-                                setState(() => _isDownloading = false);
-                              }
-                            },
+                          : () => _startDownload(),
                       icon: Icon(widget.downloaded
                           ? Icons.check_circle
                           : Icons.cloud_download_outlined),

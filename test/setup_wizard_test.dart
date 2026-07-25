@@ -48,8 +48,9 @@ class _FakeBridge implements RustBridge {
   }
 
   @override
-  Future<void> downloadModel(String modelsDir, String modelId) async {
+  Future<void> downloadModel(String modelsDir, String modelId) {
     downloadModelCalls.add((modelsDir, modelId));
+    return Future.value();
   }
 
   @override
@@ -62,7 +63,8 @@ class _FakeBridge implements RustBridge {
   Future<String> detectFrontmostWindowTitle() async => '';
 
   @override
-  Stream<double> downloadProgress() => const Stream.empty();
+  Stream<double> downloadProgress() =>
+      Stream.fromIterable([0.0, 0.5, 1.0]);
 }
 
 void main() {
@@ -172,6 +174,7 @@ void main() {
 
     await tester.tap(find.text('Unduh model'));
     await tester.pumpAndSettle();
+    await tester.pumpAndSettle();
 
     expect(bridge.downloadModelCalls.length, 1);
     expect(bridge.downloadModelCalls.single.$2, 'base');
@@ -184,6 +187,9 @@ void main() {
 
     expect(report.networkCallCount, 1);
     expect(report.events.single, contains('Download model "base"'));
+
+    // After download completes, onRecordDownload advances to step 5
+    await tester.pumpAndSettle();
     expect(find.text('Selesai'), findsOneWidget);
   });
 
