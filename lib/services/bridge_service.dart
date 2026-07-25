@@ -48,6 +48,16 @@ abstract class RustBridge {
     required List<String> files,
     String? language,
   });
+
+  /// Writes [segments] to `outputDir/<sanitized title>/` as Markdown, TXT,
+  /// and JSON. The JSON file doubles as the Library's persisted record —
+  /// see `loadLibrarySessions` in `state/library_loader.dart`, which reads
+  /// it back by scanning `outputDir`.
+  Future<void> exportSession({
+    required List<TranscriptSegment> segments,
+    required String outputDir,
+    required String title,
+  });
 }
 
 class RustBridgeMock implements RustBridge {
@@ -187,6 +197,13 @@ class RustBridgeMock implements RustBridge {
     required List<String> files,
     String? language,
   }) async => []; // Mock: returns empty results
+
+  @override
+  Future<void> exportSession({
+    required List<TranscriptSegment> segments,
+    required String outputDir,
+    required String title,
+  }) async {}
 }
 
 /// Real bridge backed by the flutter_rust_bridge-generated bindings in
@@ -364,6 +381,37 @@ class RustEngineBridge implements RustBridge {
         files: files,
         language: language,
       );
+
+  @override
+  Future<void> exportSession({
+    required List<TranscriptSegment> segments,
+    required String outputDir,
+    required String title,
+  }) async {
+    await rust_api.exportSession(
+      segments: segments
+          .map(
+            (s) => rust_export.Segment(
+              source: s.source,
+              speaker: s.speaker,
+              text: s.text,
+              timestamp: s.timestamp,
+              duration: s.duration,
+              language: s.language,
+              confidence: s.confidence,
+              isPartial: s.isPartial,
+            ),
+          )
+          .toList(),
+      formats: const [
+        rust_export.ExportFormat.markdown,
+        rust_export.ExportFormat.txt,
+        rust_export.ExportFormat.json,
+      ],
+      outputDir: outputDir,
+      title: title,
+    );
+  }
 
   rust_audio.SessionConfig _toRustSessionConfig(SessionConfig config) {
     return rust_audio.SessionConfig(

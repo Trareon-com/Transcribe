@@ -52,6 +52,13 @@ class _TestBridge implements RustBridge {
     required List<String> files,
     String? language,
   }) async => [];
+
+  @override
+  Future<void> exportSession({
+    required List<TranscriptSegment> segments,
+    required String outputDir,
+    required String title,
+  }) async {}
 }
 
 void main() {

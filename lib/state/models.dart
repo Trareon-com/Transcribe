@@ -7,6 +7,15 @@ import 'dart:io';
 
 enum SessionMode { webinar, online, offline }
 
+/// Resolves a leading `~` in [path] to the user's home directory.
+String resolveTilde(String path) {
+  if (path.startsWith('~/')) {
+    final home = Platform.environment['HOME'] ?? '/tmp';
+    return '$home${path.substring(1)}';
+  }
+  return path;
+}
+
 String _modelFileName(String modelId) => switch (modelId) {
   'tiny' => 'ggml-tiny.bin',
   'base' => 'ggml-base.bin',
@@ -28,15 +37,6 @@ String _modelFileName(String modelId) => switch (modelId) {
 /// only on (2) works in dev but never in a sandboxed release build.
 String modelPathForId(String modelId, {String? libraryPath}) {
   final fileName = _modelFileName(modelId);
-
-  // Resolve ~ in libraryPath to full home path
-  String resolveTilde(String path) {
-    if (path.startsWith('~/')) {
-      final home = Platform.environment['HOME'] ?? '/tmp';
-      return '$home${path.substring(1)}';
-    }
-    return path;
-  }
 
   // Known macOS model cache location
   String? homeCachePath;
