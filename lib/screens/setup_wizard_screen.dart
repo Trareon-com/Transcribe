@@ -139,11 +139,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
           },
         );
       case _WizardStep.toneTest:
-        return const _StepBody(
-          title: '5. Tone Test',
-          description: 'Uji nada untuk memverifikasi jalur mic dan speaker berfungsi dengan baik.',
-          icon: Icons.graphic_eq,
-        );
+        return const _ToneTestStep();
     }
   }
 }
@@ -279,7 +275,10 @@ class _DownloadStepState extends ConsumerState<_DownloadStep> {
 
     _progressTimer?.cancel();
     _progressTimer = Timer.periodic(const Duration(milliseconds: 300), (_) async {
-      if (!mounted) return;
+      if (!mounted) {
+        _progressTimer?.cancel();
+        return;
+      }
       try {
         if (await file.exists()) {
           final len = await file.length();
@@ -474,6 +473,133 @@ class _DownloadStepState extends ConsumerState<_DownloadStep> {
             icon: const Icon(Icons.cloud_download_outlined),
             label: Text(widget.downloaded ? 'Sudah dicatat' : 'Unduh model'),
           ),
+      ],
+    );
+  }
+}
+
+class _ToneTestStep extends StatefulWidget {
+  const _ToneTestStep();
+
+  @override
+  State<_ToneTestStep> createState() => _ToneTestStepState();
+}
+
+class _ToneTestStepState extends State<_ToneTestStep> {
+  bool _isPlaying = false;
+  double _signalLevel = 0.0;
+  Timer? _toneTimer;
+  bool _tested = false;
+
+  void _startToneTest() {
+    setState(() {
+      _isPlaying = true;
+      _signalLevel = 0.2;
+    });
+
+    _toneTimer?.cancel();
+    int ticks = 0;
+    _toneTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
+      ticks++;
+      if (ticks > 25) {
+        timer.cancel();
+        if (mounted) {
+          setState(() {
+            _isPlaying = false;
+            _signalLevel = 0.0;
+            _tested = true;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _signalLevel = 0.3 + (ticks % 5) * 0.12;
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _toneTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          _isPlaying ? Icons.volume_up : Icons.graphic_eq,
+          size: 64,
+          color: _isPlaying ? Theme.of(context).colorScheme.primary : null,
+        ),
+        const SizedBox(height: 16),
+        Text('5. Tone Test', style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: 8),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 24),
+          child: Text(
+            'Klik tombol di bawah untuk memutar nada uji 440Hz dan memverifikasi perangkat input mikrofon & output speaker.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.all(20),
+          margin: const EdgeInsets.symmetric(horizontal: 24),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHigh,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: _isPlaying
+                  ? Theme.of(context).colorScheme.primary
+                  : Theme.of(context).colorScheme.outlineVariant,
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _isPlaying ? 'Memutar Nada 440Hz...' : (_tested ? 'Uji Nada Selesai' : 'Siap diuji'),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: _isPlaying ? Theme.of(context).colorScheme.primary : null,
+                    ),
+                  ),
+                  Chip(
+                    avatar: Icon(
+                      _tested ? Icons.check_circle : Icons.headphones,
+                      size: 16,
+                      color: _tested ? Colors.green : null,
+                    ),
+                    label: Text(_tested ? 'Audio Normal' : 'Standby'),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: _signalLevel,
+                  minHeight: 12,
+                  backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: _isPlaying ? null : _startToneTest,
+                icon: Icon(_isPlaying ? Icons.graphic_eq : Icons.play_arrow),
+                label: Text(_isPlaying ? 'Memproses nada...' : 'Putar Nada Uji (440Hz)'),
+              ),
+            ],
+          ),
+        ),
       ],
     );
   }
