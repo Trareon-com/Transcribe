@@ -149,10 +149,6 @@ pub fn release_instance_lock() -> Result<(), TrascribeError> {
     crate::singleton::release_lock()
 }
 
-pub fn detect_frontmost_window_title() -> String {
-    crate::platform::detect_title::detect_frontmost_window_title()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

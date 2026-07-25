@@ -72,17 +72,17 @@
 
 | Main Screen | Recording Active | Settings |
 |:---:|:---:|:---:|
-| ![Main Screen](~/Desktop/trascribe_main_screen.png) | ![Recording Active](~/Desktop/trascribe_recording_active.png) | ![Settings](~/Desktop/trascribe_settings_screen.png) |
+| ![Main Screen](assets/screenshots/trascribe_main_screen.png) | ![Recording Active](assets/screenshots/trascribe_recording_active.png) | ![Settings](assets/screenshots/trascribe_settings_screen.png) |
 
 | Setup Wizard | Privacy Report | Usage Dashboard |
 |:---:|:---:|:---:|
-| ![Setup Wizard Step 3](~/Desktop/trascribe_step3_audio.png) | ![Privacy Report](~/Desktop/trascribe_privacy_report.png) | ![Usage Dashboard](~/Desktop/trascribe_usage_dashboard.png) |
+| ![Setup Wizard Step 3](assets/screenshots/trascribe_step3_audio.png) | ![Privacy Report](assets/screenshots/trascribe_privacy_report.png) | ![Usage Dashboard](assets/screenshots/trascribe_usage_dashboard.png) |
 
 | Model Selection | Transcript Player | Tone Test |
 |:---:|:---:|:---:|
-| ![Model Download](~/Desktop/trascribe_step4_download.png) | ![Transcript Playing](~/Desktop/trascribe_tone_test_playing.png) | ![Tone Test](~/Desktop/trascribe_step5_tone.png) |
+| ![Model Download](assets/screenshots/trascribe_step4_download.png) | ![Transcript Playing](assets/screenshots/trascribe_tone_test_playing.png) | ![Tone Test](assets/screenshots/trascribe_step5_tone.png) |
 
-*Screenshots located at `~/Desktop/trascribe_*.png`. These reflect the pre-1.0 development UI.*
+*Screenshots will be added to `assets/screenshots/` before release. These reflect the pre-1.0 development UI.*
 
 ---
 

@@ -54,8 +54,8 @@ String modelPathForId(String modelId, {String? libraryPath}) {
   final candidates = [
     if (libraryPath != null && libraryPath.isNotEmpty)
       '${resolveTilde(libraryPath)}/$fileName',
-    if (homeCachePath != null) homeCachePath,
-    if (localAppDataPath != null) localAppDataPath,
+    ?homeCachePath,
+    ?localAppDataPath,
     _bundledResourcesPath(fileName),
     ..._devTreePaths(fileName),
   ];

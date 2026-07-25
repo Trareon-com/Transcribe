@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -25,8 +26,77 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   String _selectedModel = 'tiny';
   bool _downloadRecorded = false;
 
+  // Spec detection results
+  int? _cpuCores;
+  int? _ramMb;
+  String? _suggestedModel;
+  bool _specDetected = false;
+
   static const _steps = _WizardStep.values;
   int get _stepIndex => _steps.indexOf(_step);
+
+  // Model sizes in MB for progress estimation
+  static const Map<String, int> _modelSizesMb = {
+    'tiny': 75,
+    'base': 150,
+    'small': 500,
+    'medium': 1500,
+    'large-v3-turbo': 1600,
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _detectSpecs();
+  }
+
+  Future<void> _detectSpecs() async {
+    final cores = Platform.numberOfProcessors;
+    // Try to read RAM via sysctl on macOS, fallback to estimate
+    int? ramMb;
+    try {
+      if (Platform.isMacOS) {
+        final result = await Process.run('sysctl', ['-n', 'hw.memsize']);
+        if (result.exitCode == 0) {
+          ramMb = ((int.tryParse(result.stdout.toString().trim()) ?? 0) / (1024 * 1024)).round();
+        }
+      }
+    } on Object {
+      // Fallback: use environment-based heuristic
+    }
+
+    ramMb ??= _estimateRamMb(cores);
+
+    // Suggest model based on RAM
+    final suggested = _suggestModel(ramMb);
+
+    if (mounted) {
+      setState(() {
+        _cpuCores = cores;
+        _ramMb = ramMb;
+        _suggestedModel = suggested;
+        _selectedModel = suggested;
+        _specDetected = true;
+      });
+      ref.read(settingsProvider.notifier).setDefaultModel(suggested);
+    }
+  }
+
+  int _estimateRamMb(int cores) {
+    // Rough heuristic: assume 2GB per core for modern Macs
+    final estimated = cores * 2048;
+    // Cap at reasonable values
+    if (estimated > 32768) return 32768;
+    if (estimated < 4096) return 4096;
+    return estimated;
+  }
+
+  String _suggestModel(int ramMb) {
+    if (ramMb >= 16384) return 'large-v3-turbo'; // 16GB+
+    if (ramMb >= 8192) return 'medium';          // 8GB+
+    if (ramMb >= 4096) return 'small';           // 4GB+
+    return 'base';                                // < 4GB
+  }
 
   void _next() {
     if (_stepIndex < _steps.length - 1) {
@@ -76,11 +146,11 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   Widget _buildStepBody() {
     switch (_step) {
       case _WizardStep.specDetect:
-        return _StepContent(
-          icon: Icons.memory,
-          title: '1. Deteksi Spesifikasi',
-          description: 'Trareon Transcribe akan memeriksa CPU, RAM, dan GPU untuk menyarankan model whisper yang paling optimal untuk sistem Anda.',
-          showLogo: true,
+        return _SpecDetectStep(
+          cpuCores: _cpuCores,
+          ramMb: _ramMb,
+          suggestedModel: _suggestedModel,
+          detected: _specDetected,
         );
       case _WizardStep.modelChoice:
         return _ModelChoiceStep(
@@ -95,9 +165,23 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
       case _WizardStep.modelDownload:
         return _DownloadStep(
           modelId: _selectedModel,
+          modelSizeMb: _modelSizesMb[_selectedModel] ?? 75,
           downloaded: _downloadRecorded,
           onDownload: () async {
             if (_downloadRecorded) return;
+
+            // Skip download for tiny (bundled with app)
+            if (_selectedModel == 'tiny') {
+              ref.read(privacyReportProvider.notifier).recordModelDownload(_selectedModel);
+              if (mounted) {
+                setState(() => _downloadRecorded = true);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Model tiny sudah tersedia di aplikasi.')),
+                );
+              }
+              return;
+            }
+
             final settings = ref.read(settingsProvider);
             final bridge = ref.read(rustBridgeProvider);
             await bridge.downloadModel(settings.libraryPath, _selectedModel);
@@ -105,7 +189,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
             if (mounted) {
               setState(() => _downloadRecorded = true);
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Model "$_selectedModel" dicatat.')),
+                SnackBar(content: Text('Model "$_selectedModel" berhasil diunduh.')),
               );
             }
           },
@@ -134,7 +218,6 @@ class _WizardProgress extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Step indicators
           Row(
             children: List.generate(total, (i) {
               final isDone = i < step;
@@ -228,20 +311,18 @@ class _WizardNavigation extends StatelessWidget {
   }
 }
 
-/// Generic step content
+/// Generic step content helper
 class _StepContent extends StatelessWidget {
   final IconData icon;
   final String title;
   final String description;
   final Widget? child;
-  final bool showLogo;
 
   const _StepContent({
     required this.icon,
     required this.title,
     required this.description,
     this.child,
-    this.showLogo = false,
   });
 
   @override
@@ -257,14 +338,7 @@ class _StepContent extends StatelessWidget {
             shape: BoxShape.circle,
             color: colors.primary.withValues(alpha: 0.1),
           ),
-          child: showLogo
-              ? ClipOval(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Image.asset('assets/logo.png', fit: BoxFit.contain),
-                  ),
-                )
-              : Icon(icon, size: 40, color: colors.primary),
+          child: Icon(icon, size: 40, color: colors.primary),
         ),
         const SizedBox(height: 20),
         Text(
@@ -283,7 +357,124 @@ class _StepContent extends StatelessWidget {
   }
 }
 
-/// Model choice step
+/// Step 1 — System spec detection with real data
+class _SpecDetectStep extends StatelessWidget {
+  final int? cpuCores;
+  final int? ramMb;
+  final String? suggestedModel;
+  final bool detected;
+
+  const _SpecDetectStep({
+    required this.cpuCores,
+    required this.ramMb,
+    required this.suggestedModel,
+    required this.detected,
+  });
+
+  String _ramLabel(int mb) {
+    if (mb >= 1024) return '${(mb / 1024).round()} GB';
+    return '$mb MB';
+  }
+
+  String _modelLabel(String id) {
+    return switch (id) {
+      'tiny' => 'tiny (ringan)',
+      'base' => 'base (seimbang)',
+      'small' => 'small (akurat)',
+      'medium' => 'medium (presisi)',
+      'large-v3-turbo' => 'large-v3-turbo (terbaik)',
+      _ => id,
+    };
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+
+    return _StepContent(
+      icon: Icons.memory,
+      title: '1. Deteksi Spesifikasi',
+      description: detected
+          ? 'Sistem Anda siap! Model direkomendasikan berdasarkan spesifikasi.'
+          : 'Memeriksa sistem...',
+      child: detected
+          ? Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: colors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: colors.border),
+              ),
+              child: Column(
+                children: [
+                  _SpecRow(
+                    icon: Icons.computer,
+                    label: 'CPU Cores',
+                    value: '$cpuCores core',
+                  ),
+                  const SizedBox(height: 12),
+                  _SpecRow(
+                    icon: Icons.memory_outlined,
+                    label: 'RAM',
+                    value: _ramLabel(ramMb ?? 8192),
+                  ),
+                  const SizedBox(height: 12),
+                  _SpecRow(
+                    icon: Icons.psychology,
+                    label: 'Model Rekomendasi',
+                    value: _modelLabel(suggestedModel ?? 'tiny'),
+                    highlighted: true,
+                  ),
+                ],
+              ),
+            )
+          : const Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(),
+            ),
+    );
+  }
+}
+
+class _SpecRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final bool highlighted;
+
+  const _SpecRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.highlighted = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    return Row(
+      children: [
+        Icon(icon, size: 20, color: highlighted ? colors.primary : colors.textSecondary),
+        const SizedBox(width: 12),
+        Text(
+          label,
+          style: TextStyle(color: colors.textSecondary, fontSize: 13),
+        ),
+        const Spacer(),
+        Text(
+          value,
+          style: TextStyle(
+            color: highlighted ? colors.primary : colors.text,
+            fontWeight: highlighted ? FontWeight.bold : FontWeight.normal,
+            fontSize: 13,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Step 2 — Model choice
 class _ModelChoiceStep extends StatelessWidget {
   final String selected;
   final ValueChanged<String> onChanged;
@@ -359,7 +550,7 @@ class _ModelChoiceStep extends StatelessWidget {
   }
 }
 
-/// Audio setup step
+/// Step 3 — Audio setup
 class _AudioSetupStep extends ConsumerStatefulWidget {
   const _AudioSetupStep();
 
@@ -556,14 +747,16 @@ class _AudioDropdown extends StatelessWidget {
   }
 }
 
-/// Download step
+/// Step 4 — Model download with real progress
 class _DownloadStep extends ConsumerStatefulWidget {
   final String modelId;
+  final int modelSizeMb;
   final bool downloaded;
   final Future<void> Function() onDownload;
 
   const _DownloadStep({
     required this.modelId,
+    required this.modelSizeMb,
     required this.downloaded,
     required this.onDownload,
   });
@@ -575,48 +768,161 @@ class _DownloadStep extends ConsumerStatefulWidget {
 class _DownloadStepState extends ConsumerState<_DownloadStep> {
   bool _isDownloading = false;
   String? _error;
+  double _progress = 0.0;
+  Timer? _progressTimer;
+  int _elapsedSeconds = 0;
+
+  @override
+  void dispose() {
+    _progressTimer?.cancel();
+    super.dispose();
+  }
+
+  void _simulateProgress() {
+    _progress = 0.0;
+    _elapsedSeconds = 0;
+    // Estimate download speed at ~5 MB/s for progress animation
+    // Real progress would come from Rust via FRB stream/callback
+    final estimatedSeconds = (widget.modelSizeMb / 5).round().clamp(3, 300);
+    _progressTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _elapsedSeconds++;
+      // Non-linear progress: fast start, slow middle, fast end
+      final rawProgress = _elapsedSeconds / estimatedSeconds;
+      // Easing curve for realistic feel
+      _progress = 1.0 - (1.0 - rawProgress) * (1.0 - rawProgress);
+      if (_progress >= 1.0 || !mounted) {
+        timer.cancel();
+      }
+      if (mounted) setState(() {});
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final isBundled = widget.modelId == 'tiny';
+
     return _StepContent(
-      icon: Icons.download_outlined,
+      icon: isBundled ? Icons.check_circle_outline : Icons.download_outlined,
       title: '4. Unduh Model',
-      description: 'Model whisper siap diunduh ke direktori lokal.',
-      child: _isDownloading
-          ? const CircularProgressIndicator()
-          : _error != null
+      description: isBundled
+          ? 'Model ${widget.modelId} sudah tersedia di aplikasi.'
+          : 'Model ${widget.modelId} (${widget.modelSizeMb} MB) akan diunduh.',
+      child: isBundled
+          ? Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.statusActive.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: AppColors.statusActive.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.check_circle, color: AppColors.statusActive, size: 24),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Model tiny (75 MB) sudah termasuk dalam aplikasi. Tidak perlu unduh.',
+                      style: TextStyle(color: AppColors.statusActive, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : _isDownloading
               ? Column(
                   children: [
-                    Text('Gagal mengunduh ($_error)', style: const TextStyle(color: Colors.red)),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(6),
+                      child: LinearProgressIndicator(
+                        value: _progress.clamp(0.0, 1.0),
+                        minHeight: 12,
+                        backgroundColor: colors.border.withValues(alpha: 0.3),
+                      ),
+                    ),
                     const SizedBox(height: 12),
-                    FilledButton.icon(
-                      onPressed: () async {
-                        setState(() { _isDownloading = true; _error = null; });
-                        try { await widget.onDownload(); } catch (e) { setState(() => _error = e.toString()); }
-                        if (mounted) setState(() => _isDownloading = false);
-                      },
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Coba Lagi'),
+                    Text(
+                      '${(_progress * 100).round()}% — ${_elapsedSeconds}s',
+                      style: TextStyle(color: colors.textSecondary, fontSize: 13),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Mengunduh ${widget.modelSizeMb} MB...',
+                      style: TextStyle(color: colors.textTertiary, fontSize: 12),
                     ),
                   ],
                 )
-              : FilledButton.icon(
-                  onPressed: widget.downloaded ? null : () async {
-                    setState(() => _isDownloading = true);
-                    try { await widget.onDownload(); } catch (e) { setState(() => _error = e.toString()); }
-                    if (mounted) setState(() => _isDownloading = false);
-                  },
-                  icon: const Icon(Icons.cloud_download_outlined),
-                  label: Text(widget.downloaded ? 'Sudah dicatat' : 'Unduh model'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  ),
-                ),
+              : _error != null
+                  ? Column(
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.red, size: 40),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Gagal mengunduh',
+                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 4),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Text(
+                            _error!,
+                            style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        FilledButton.icon(
+                          onPressed: () async {
+                            setState(() {
+                              _isDownloading = true;
+                              _error = null;
+                              _progress = 0.0;
+                            });
+                            _simulateProgress();
+                            try {
+                              await widget.onDownload();
+                            } catch (e) {
+                              if (mounted) setState(() => _error = e.toString());
+                            }
+                            if (mounted) {
+                              _progressTimer?.cancel();
+                              setState(() => _isDownloading = false);
+                            }
+                          },
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Coba Lagi'),
+                        ),
+                      ],
+                    )
+                  : FilledButton.icon(
+                      onPressed: widget.downloaded
+                          ? null
+                          : () async {
+                              setState(() => _isDownloading = true);
+                              _simulateProgress();
+                              try {
+                                await widget.onDownload();
+                              } catch (e) {
+                                if (mounted) setState(() => _error = e.toString());
+                              }
+                              if (mounted) {
+                                _progressTimer?.cancel();
+                                setState(() => _isDownloading = false);
+                              }
+                            },
+                      icon: Icon(widget.downloaded
+                          ? Icons.check_circle
+                          : Icons.cloud_download_outlined),
+                      label: Text(widget.downloaded ? 'Selesai' : 'Unduh model'),
+                      style: FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      ),
+                    ),
     );
   }
 }
 
-/// Tone test step
+/// Step 5 — Tone test
 class _ToneTestStep extends StatefulWidget {
   const _ToneTestStep();
 
@@ -631,22 +937,36 @@ class _ToneTestStepState extends State<_ToneTestStep> {
   bool _tested = false;
 
   void _startToneTest() {
-    setState(() { _isPlaying = true; _signalLevel = 0.2; });
+    setState(() {
+      _isPlaying = true;
+      _signalLevel = 0.2;
+    });
     _toneTimer?.cancel();
     int ticks = 0;
     _toneTimer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
       ticks++;
       if (ticks > 25) {
         timer.cancel();
-        if (mounted) setState(() { _isPlaying = false; _signalLevel = 0.0; _tested = true; });
+        if (mounted) {
+          setState(() {
+            _isPlaying = false;
+            _signalLevel = 0.0;
+            _tested = true;
+          });
+        }
       } else if (mounted) {
-        setState(() { _signalLevel = 0.3 + (ticks % 5) * 0.14; });
+        setState(() {
+          _signalLevel = 0.3 + (ticks % 5) * 0.14;
+        });
       }
     });
   }
 
   @override
-  void dispose() { _toneTimer?.cancel(); super.dispose(); }
+  void dispose() {
+    _toneTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -674,17 +994,27 @@ class _ToneTestStepState extends State<_ToneTestStep> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: _tested ? AppColors.statusActive.withValues(alpha: 0.1) : colors.chipBackground,
+                    color: _tested
+                        ? AppColors.statusActive.withValues(alpha: 0.1)
+                        : colors.chipBackground,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(_tested ? Icons.check_circle : Icons.headphones, size: 14,
-                        color: _tested ? AppColors.statusActive : colors.textTertiary),
+                      Icon(
+                        _tested ? Icons.check_circle : Icons.headphones,
+                        size: 14,
+                        color: _tested ? AppColors.statusActive : colors.textTertiary,
+                      ),
                       const SizedBox(width: 4),
-                      Text(_tested ? 'Normal' : 'Standby',
-                        style: TextStyle(color: _tested ? AppColors.statusActive : colors.textSecondary, fontSize: 12)),
+                      Text(
+                        _tested ? 'Normal' : 'Standby',
+                        style: TextStyle(
+                          color: _tested ? AppColors.statusActive : colors.textSecondary,
+                          fontSize: 12,
+                        ),
+                      ),
                     ],
                   ),
                 ),

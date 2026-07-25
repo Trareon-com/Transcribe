@@ -149,10 +149,19 @@ void main() {
       ),
     );
 
+    // Step 1 → Step 2
     await tester.tap(find.text('Lanjut'));
     await tester.pumpAndSettle();
+
+    // Step 2: select 'base' model (not bundled) so download button appears
+    await tester.tap(find.text('base (~150 MB)'));
+    await tester.pumpAndSettle();
+
+    // Step 2 → Step 3
     await tester.tap(find.text('Lanjut'));
     await tester.pumpAndSettle();
+
+    // Step 3 → Step 4
     await tester.tap(find.text('Lanjut'));
     await tester.pumpAndSettle();
 
@@ -162,7 +171,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(bridge.downloadModelCalls.length, 1);
-    expect(bridge.downloadModelCalls.single.$2, 'tiny');
+    expect(bridge.downloadModelCalls.single.$2, 'base');
 
     final container = ProviderScope.containerOf(
       tester.element(find.byType(SetupWizardScreen)),
@@ -171,8 +180,8 @@ void main() {
     final report = container.read(privacyReportProvider);
 
     expect(report.networkCallCount, 1);
-    expect(report.events.single, contains('Download model "tiny"'));
-    expect(find.text('Sudah dicatat'), findsOneWidget);
+    expect(report.events.single, contains('Download model "base"'));
+    expect(find.text('Selesai'), findsOneWidget);
   });
 
   testWidgets('navigating past download step without clicking does not trigger bridge or privacy report', (

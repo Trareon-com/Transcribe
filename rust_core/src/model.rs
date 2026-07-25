@@ -4,6 +4,7 @@
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::Mutex;
 
 use futures_util::StreamExt;
 use serde::Serialize;
@@ -157,9 +158,37 @@ pub fn verify_checksum(path: &Path, expected_sha256: &str) -> Result<(), Trascri
 /// Append-resumable download via HTTP Range requests. Caller is
 /// responsible for calling [`verify_checksum`] once `total_bytes` is
 /// reached — this function only moves bytes and reports progress.
+#[derive(Debug, Clone)]
 pub struct DownloadProgress {
     pub bytes_downloaded: u64,
     pub total_bytes: u64,
+}
+
+/// Global download progress shared between Rust engine and Dart UI.
+/// Set by `download_with_resume`, read by `get_download_progress()`.
+static DOWNLOAD_PROGRESS: Mutex<Option<DownloadProgress>> = Mutex::new(None);
+
+/// Reset progress tracking (call before starting a new download).
+#[flutter_rust_bridge::frb(ignore)]
+pub fn reset_download_progress() {
+    if let Ok(mut guard) = DOWNLOAD_PROGRESS.lock() {
+        *guard = None;
+    }
+}
+
+/// Read the latest download progress. FRB-exposed via `api.rs`.
+#[flutter_rust_bridge::frb(ignore)]
+pub fn read_download_progress() -> Option<DownloadProgress> {
+    DOWNLOAD_PROGRESS.lock().ok()?.clone()
+}
+
+fn set_download_progress(bytes_downloaded: u64, total_bytes: u64) {
+    if let Ok(mut guard) = DOWNLOAD_PROGRESS.lock() {
+        *guard = Some(DownloadProgress {
+            bytes_downloaded,
+            total_bytes,
+        });
+    }
 }
 
 pub async fn download_with_resume(

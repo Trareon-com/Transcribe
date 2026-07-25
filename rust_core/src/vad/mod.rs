@@ -257,7 +257,7 @@ impl DualVad {
                 .is_voice_segment(frame)
                 .map_err(|_| TrascribeError::InvalidInput("webrtc-vad rejected frame".into()));
 
-            let confirmation_result = confirmation_handle.join().unwrap();
+            let confirmation_result = confirmation_handle.join().unwrap_or(Ok(false));
 
             // Voting logic:
             //   both agree speech  → true
