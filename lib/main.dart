@@ -29,7 +29,11 @@ class TrascribeApp extends ConsumerWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: settings.theme == AppThemeMode.dark ? ThemeMode.dark : ThemeMode.light,
+      themeMode: switch (settings.theme) {
+        AppThemeMode.dark => ThemeMode.dark,
+        AppThemeMode.light => ThemeMode.light,
+        AppThemeMode.system => ThemeMode.system,
+      },
       home: firstRunComplete
           ? const MainScreen()
           : SetupWizardScreen(

@@ -86,7 +86,7 @@ class VuLevel {
   const VuLevel({required this.micLevel, required this.speakerLevel});
 }
 
-enum AppThemeMode { light, dark }
+enum AppThemeMode { light, dark, system }
 
 class AppSettings {
   final AppThemeMode theme;

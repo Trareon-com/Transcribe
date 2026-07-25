@@ -19,11 +19,15 @@ class SettingsScreen extends ConsumerWidget {
         children: [
           ListTile(
             title: const Text('Tema'),
-            subtitle: Text(settings.theme == AppThemeMode.dark ? 'Gelap' : 'Terang'),
-            trailing: Switch(
-              value: settings.theme == AppThemeMode.dark,
-              onChanged: (isDark) =>
-                  notifier.setTheme(isDark ? AppThemeMode.dark : AppThemeMode.light),
+            subtitle: Text(_themeLabel(settings.theme)),
+            trailing: DropdownButton<AppThemeMode>(
+              value: settings.theme,
+              items: AppThemeMode.values
+                  .map((m) => DropdownMenuItem(value: m, child: Text(_themeLabel(m))))
+                  .toList(),
+              onChanged: (theme) {
+                if (theme != null) notifier.setTheme(theme);
+              },
             ),
           ),
           const Divider(),
@@ -63,4 +67,10 @@ class SettingsScreen extends ConsumerWidget {
       ),
     );
   }
+
+  String _themeLabel(AppThemeMode theme) => switch (theme) {
+        AppThemeMode.light => 'Terang',
+        AppThemeMode.dark => 'Gelap',
+        AppThemeMode.system => 'Ikuti Sistem',
+      };
 }
