@@ -108,7 +108,7 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
   Future<void> start() async {
     // Guard against double-start: if already recording/paused, ignore.
     if (state.lifecycle == SessionLifecycle.recording ||
-        state.lifecycle == SessionLifecycle.paused) return;
+        state.lifecycle == SessionLifecycle.paused) { return; }
     // Auto-detect frontmost window title as default session name.
     final detected = await _bridge.detectFrontmostWindowTitle();
     final id = await _bridge.startSession(state.config);

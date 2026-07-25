@@ -1,8 +1,6 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../src/rust/audio/device.dart';
@@ -560,7 +558,6 @@ class _DownloadStepState extends ConsumerState<_DownloadStep> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
     return _StepContent(
       icon: Icons.download_outlined,
       title: '4. Unduh Model',

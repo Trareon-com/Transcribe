@@ -225,7 +225,6 @@ class _SegmentTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-    final isMic = segment.source == 'mic';
 
     return Semantics(
       label: '${segment.speaker} pada ${_formatTime(segment.timestamp)}: ${segment.text}',
