@@ -13,6 +13,7 @@ use uuid::Uuid;
 use crate::audio::{AudioCapture, SessionConfig, SessionMode};
 use crate::error::TrascribeError;
 use crate::memory;
+use crate::pipeline::{LiveEvent, LiveWorker};
 
 /// Long sessions (>4h) auto-split per hour to bound memory growth (PP-21).
 pub const AUTO_SPLIT_INTERVAL_SECS: u64 = 3600;
@@ -44,7 +45,8 @@ struct SessionState {
 
 struct CaptureChannel {
     _capture: AudioCapture,
-    _samples_rx: mpsc::Receiver<Vec<f32>>,
+    _worker: LiveWorker,
+    events_rx: mpsc::Receiver<LiveEvent>,
 }
 
 /// Pure decision logic — trivially unit-testable without real timers or a
@@ -67,8 +69,18 @@ fn registry() -> &'static Mutex<HashMap<String, SessionState>> {
 pub fn start_session(config: SessionConfig) -> Result<String, TrascribeError> {
     let id = Uuid::new_v4().to_string();
     let now = std::time::Instant::now();
-    let mic_capture = start_capture(config.mic_enabled, config.mic_device_id.clone())?;
-    let speaker_capture = start_capture(config.speaker_enabled, config.speaker_device_id.clone())?;
+    let mic_capture = start_capture(
+        config.mic_enabled,
+        config.mic_device_id.clone(),
+        &config.model_path,
+        "mic",
+    )?;
+    let speaker_capture = start_capture(
+        config.speaker_enabled,
+        config.speaker_device_id.clone(),
+        &config.model_path,
+        "spk",
+    )?;
     let state = SessionState {
         config,
         started_at: now,
@@ -87,6 +99,8 @@ pub fn start_session(config: SessionConfig) -> Result<String, TrascribeError> {
 fn start_capture(
     enabled: bool,
     device_name: Option<String>,
+    model_path: &str,
+    source: &str,
 ) -> Result<Option<CaptureChannel>, TrascribeError> {
     // A missing device id means the session has not completed audio setup yet.
     // Keep the state machine usable in CI and let the setup wizard provide the
@@ -97,9 +111,12 @@ fn start_capture(
 
     let (samples_tx, samples_rx) = mpsc::channel();
     let capture = AudioCapture::start(device_name, samples_tx)?;
+    let (events_tx, events_rx) = mpsc::channel();
+    let worker = LiveWorker::spawn(model_path, source, None, samples_rx, events_tx)?;
     Ok(Some(CaptureChannel {
         _capture: capture,
-        _samples_rx: samples_rx,
+        _worker: worker,
+        events_rx,
     }))
 }
 
@@ -154,16 +171,13 @@ pub fn mark_split(session_id: &str) -> Result<(), TrascribeError> {
 }
 
 pub fn get_status(session_id: &str) -> Result<SessionStatus, TrascribeError> {
-    let reg = registry()
+    let mut reg = registry()
         .lock()
         .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
     let state = reg
-        .get(session_id)
+        .get_mut(session_id)
         .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))?;
-    // Reading the handles here keeps the lifecycle-owned captures observable
-    // to the session state machine; the stream pipeline will consume these
-    // receivers when VAD/STT wiring lands.
-    let _capture_active = state.mic_capture.is_some() || state.speaker_capture.is_some();
+    state.collect_worker_events();
 
     Ok(SessionStatus {
         session_id: session_id.to_string(),
@@ -173,6 +187,21 @@ pub fn get_status(session_id: &str) -> Result<SessionStatus, TrascribeError> {
         segments_count: state.segments_count,
         model_loaded: true,
     })
+}
+
+impl SessionState {
+    fn collect_worker_events(&mut self) {
+        for capture in [&self.mic_capture, &self.speaker_capture]
+            .into_iter()
+            .flatten()
+        {
+            while let Ok(event) = capture.events_rx.try_recv() {
+                if matches!(event, LiveEvent::Segment(_)) {
+                    self.segments_count = self.segments_count.saturating_add(1);
+                }
+            }
+        }
+    }
 }
 
 fn with_session_mut(
