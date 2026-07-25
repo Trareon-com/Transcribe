@@ -11,7 +11,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'session.freezed.dart';
 
-// These functions are ignored because they are not marked as `pub`: `collect_worker_events`, `load_snapshot_file`, `persist_session_snapshot`, `recovery_dir`, `recovery_path`, `registry`, `remove_snapshot_file`, `should_split`, `start_capture`, `start_session_with_id`, `unix_ms_now`, `with_session_mut`, `write_snapshot_file`
+// These functions are ignored because they are not marked as `pub`: `accept_or_drop_echo`, `collect_worker_events`, `load_snapshot_file`, `persist_session_snapshot`, `recovery_dir`, `recovery_path`, `registry`, `remove_snapshot_file`, `should_split`, `start_capture`, `start_session_with_id`, `trim_recent_emitted`, `unix_ms_now`, `with_session_mut`, `write_snapshot_file`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `CaptureChannel`, `SessionState`
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`
 

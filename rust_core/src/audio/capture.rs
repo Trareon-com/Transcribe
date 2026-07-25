@@ -265,12 +265,29 @@ where
     f32: cpal::FromSample<T>,
 {
     let tx = samples_tx;
+    // ~100ms of raw source-rate audio per resample call — big enough that
+    // the fresh-resampler-per-call overhead (see comment below) is a small
+    // fraction of the batch, small enough to keep VAD/live latency low.
+    let batch_threshold = (source_rate as usize) / 10;
+    let mut accum: Vec<f32> = Vec::with_capacity(batch_threshold * 2);
     device.build_input_stream(
         config,
         move |data: &[T], _| {
             let mono = downmix_generic(data, channels);
-            if let Ok(resampled) = resample_to_target(&mono, source_rate) {
-                let _ = tx.send(resampled);
+            accum.extend_from_slice(&mono);
+            // A fresh resampler is built per call (`resample_to_target`
+            // has no persistent state across calls), and its filter
+            // startup/padding overhead is roughly constant regardless of
+            // input size. Calling it on tiny per-callback buffers (e.g.
+            // ~512 raw samples) means that fixed overhead can exceed the
+            // entire output, so it never reaches even one 10ms VAD frame
+            // — accumulate a larger batch first so the fixed overhead is
+            // a small fraction of a much bigger resample call.
+            if accum.len() >= batch_threshold {
+                if let Ok(resampled) = resample_to_target(&accum, source_rate) {
+                    let _ = tx.send(resampled);
+                }
+                accum.clear();
             }
         },
         err_fn,

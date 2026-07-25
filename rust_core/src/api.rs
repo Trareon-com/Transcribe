@@ -14,6 +14,16 @@ use crate::model::ModelInfo;
 use crate::session::{SessionEvent, SessionRecoverySnapshot, SessionStatus};
 use crate::settings::AppSettings;
 
+/// Installs a `tracing` subscriber writing to stderr. Without this,
+/// every `tracing::error!`/`warn!` call in the engine (session/pipeline
+/// failures, capture errors, etc.) is silently dropped — there is no
+/// default subscriber. Call once, right after `RustLib.init()`, before
+/// anything else. Safe to call more than once (subsequent calls are a
+/// harmless no-op via `try_init`).
+pub fn init_logging() {
+    let _ = tracing_subscriber::fmt::try_init();
+}
+
 pub fn engine_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }

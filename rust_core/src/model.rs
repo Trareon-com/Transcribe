@@ -21,23 +21,35 @@ pub struct ModelInfo {
     pub is_bundled: bool,
 }
 
-/// Pinned catalog. URLs point at the ggerganov/whisper.cpp HF mirror;
-/// sha256 values must be filled in from the upstream release manifest
-/// before shipping — placeholders here are intentionally obvious so a
-/// build with unverified checksums cannot silently pass review.
-pub const KNOWN_MODELS: &[(&str, &str, u32, bool)] = &[
-    ("tiny", "ggml-tiny.bin", 1, true),
-    ("base", "ggml-base.bin", 1, false),
-    ("small", "ggml-small.bin", 2, false),
-    ("medium", "ggml-medium.bin", 4, false),
-    ("large-v3-turbo", "ggml-large-v3-turbo.bin", 6, false),
+/// Pinned catalog. URLs point at the ggerganov/whisper.cpp HF mirror.
+/// `sha256` empty means "not yet pinned" — `verify_checksum` hard-fails
+/// on an empty expected hash rather than silently trusting the download
+/// (STRIDE §86.1), so an empty entry here blocks that model's download
+/// until someone fills in the real hash, by design.
+///
+/// `tiny`'s hash below was captured directly from a manual download of
+/// https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
+/// (`shasum -a 256`) during a live end-to-end smoke test; the rest are
+/// still unpinned pending the same verification.
+pub const KNOWN_MODELS: &[(&str, &str, u32, bool, &str)] = &[
+    (
+        "tiny",
+        "ggml-tiny.bin",
+        1,
+        true,
+        "be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21",
+    ),
+    ("base", "ggml-base.bin", 1, false, ""),
+    ("small", "ggml-small.bin", 2, false, ""),
+    ("medium", "ggml-medium.bin", 4, false, ""),
+    ("large-v3-turbo", "ggml-large-v3-turbo.bin", 6, false, ""),
 ];
 
 #[flutter_rust_bridge::frb(ignore)]
 pub fn list_available_models(models_dir: &Path) -> Vec<ModelInfo> {
     KNOWN_MODELS
         .iter()
-        .map(|(id, filename, min_ram_gb, is_bundled)| {
+        .map(|(id, filename, min_ram_gb, is_bundled, sha256)| {
             let path = models_dir.join(filename);
             let size_bytes = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
             ModelInfo {
@@ -46,7 +58,7 @@ pub fn list_available_models(models_dir: &Path) -> Vec<ModelInfo> {
                 url: format!(
                     "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/{filename}"
                 ),
-                sha256: String::new(),
+                sha256: sha256.to_string(),
                 size_bytes,
                 min_ram_gb: *min_ram_gb,
                 is_bundled: *is_bundled,
@@ -73,7 +85,7 @@ pub fn resolve_model_path(models_dir: &Path, model_id: &str) -> Result<PathBuf, 
 
 #[flutter_rust_bridge::frb(ignore)]
 pub fn resolve_model_info(models_dir: &Path, model_id: &str) -> Result<ModelInfo, TrascribeError> {
-    let (id, filename, min_ram_gb, is_bundled) = KNOWN_MODELS
+    let (id, filename, min_ram_gb, is_bundled, sha256) = KNOWN_MODELS
         .iter()
         .find(|(id, ..)| *id == model_id)
         .copied()
@@ -85,7 +97,7 @@ pub fn resolve_model_info(models_dir: &Path, model_id: &str) -> Result<ModelInfo
         id: id.to_string(),
         name: format!("{id} ({filename})"),
         url: format!("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/{filename}"),
-        sha256: String::new(),
+        sha256: sha256.to_string(),
         size_bytes,
         min_ram_gb,
         is_bundled,

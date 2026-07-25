@@ -14,6 +14,7 @@ import 'theme/app_theme.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await RustLib.init(externalLibrary: tryLoadRustCoreLibrary());
+  await rust_api.initLogging();
 
   // Singleton instance lock (PRD: app must not be launchable twice). A
   // stale lock from a crashed prior process is reclaimed automatically

@@ -14,6 +14,14 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'session.dart';
 import 'settings.dart';
 
+/// Installs a `tracing` subscriber writing to stderr. Without this,
+/// every `tracing::error!`/`warn!` call in the engine (session/pipeline
+/// failures, capture errors, etc.) is silently dropped — there is no
+/// default subscriber. Call once, right after `RustLib.init()`, before
+/// anything else. Safe to call more than once (subsequent calls are a
+/// harmless no-op via `try_init`).
+Future<void> initLogging() => RustLib.instance.api.crateApiInitLogging();
+
 Future<String> engineVersion() => RustLib.instance.api.crateApiEngineVersion();
 
 Future<bool> healthCheck() => RustLib.instance.api.crateApiHealthCheck();

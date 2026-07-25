@@ -35,7 +35,8 @@ impl Diarizer {
 
     /// Identifies or clusters the human speaker for a given audio PCM slice and channel.
     pub fn identify_speaker(&mut self, channel: &str, pcm_samples: &[f32]) -> String {
-        let channel_tag = if channel.contains("SPK") || channel.contains("Speaker") {
+        let channel_lower = channel.to_lowercase();
+        let channel_tag = if channel_lower.contains("spk") || channel_lower.contains("speaker") {
             "SPK"
         } else {
             "MIC"
@@ -160,5 +161,26 @@ mod tests {
 
         assert_eq!(spk1, "Pembicara 1 (SPK)");
         assert_eq!(spk2, "Pembicara 1 (SPK)");
+    }
+
+    #[test]
+    fn lowercase_channel_names_are_tagged_correctly() {
+        // session.rs actually spawns workers with lowercase "mic"/"spk"
+        // source tags (see LiveWorker::spawn callers) — this is a
+        // regression test for a real bug where the channel-tag match was
+        // case-sensitive and only matched uppercase "SPK", so every live
+        // speaker segment was mislabeled "(MIC)".
+        let mut diarizer = Diarizer::new();
+        let mic_pcm = vec![0.5, -0.5, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5];
+        let spk_pcm = vec![0.4, -0.4, 0.4, -0.4, 0.4, -0.4, 0.4, -0.4];
+
+        assert_eq!(
+            diarizer.identify_speaker("mic", &mic_pcm),
+            "Pembicara 1 (MIC)"
+        );
+        assert_eq!(
+            diarizer.identify_speaker("spk", &spk_pcm),
+            "Pembicara 1 (SPK)"
+        );
     }
 }
