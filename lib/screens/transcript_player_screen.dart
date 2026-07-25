@@ -27,8 +27,21 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
   double _positionSeconds = 0;
   double _speed = 1.0;
   bool _playing = false;
+  late List<TranscriptSegment> _segments;
 
   static const _speedOptions = [0.5, 1.0, 1.25, 1.5, 2.0];
+
+  @override
+  void initState() {
+    super.initState();
+    _segments = List.of(widget.segments);
+  }
+
+  void _editSegment(int index, String newText) {
+    setState(() {
+      _segments[index] = _segments[index].copyWith(text: newText);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +49,7 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
       appBar: AppBar(title: Text(widget.title)),
       body: Column(
         children: [
-          Expanded(child: TranscriptView(segments: widget.segments)),
+          Expanded(child: TranscriptView(segments: _segments, onEdit: _editSegment)),
           const Divider(height: 1),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),

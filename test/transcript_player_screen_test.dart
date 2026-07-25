@@ -52,4 +52,51 @@ void main() {
 
     expect(find.byIcon(Icons.pause_circle_filled), findsOneWidget);
   });
+
+  testWidgets('tapping a segment opens edit dialog and saves new text', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: TranscriptPlayerScreen(
+          title: 'Rapat Q3',
+          durationSeconds: 120,
+          segments: segments,
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Halo semua'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit Transkrip'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), 'Halo semua, selamat pagi');
+    await tester.tap(find.text('Simpan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Halo semua, selamat pagi'), findsOneWidget);
+    expect(find.text('Halo semua'), findsNothing);
+  });
+
+  testWidgets('canceling edit dialog keeps original text', (WidgetTester tester) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: TranscriptPlayerScreen(
+          title: 'Rapat Q3',
+          durationSeconds: 120,
+          segments: segments,
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Halo semua'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'diubah tapi dibatalkan');
+    await tester.tap(find.text('Batal'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Halo semua'), findsOneWidget);
+  });
 }

@@ -77,6 +77,19 @@ class TranscriptSegment {
     required this.confidence,
     required this.isPartial,
   });
+
+  TranscriptSegment copyWith({String? text}) {
+    return TranscriptSegment(
+      source: source,
+      speaker: speaker,
+      text: text ?? this.text,
+      timestamp: timestamp,
+      duration: duration,
+      language: language,
+      confidence: confidence,
+      isPartial: isPartial,
+    );
+  }
 }
 
 class VuLevel {
