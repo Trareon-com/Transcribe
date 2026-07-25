@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../widgets/file_upload_zone.dart';
+import 'transcript_player_screen.dart';
 
 class SessionSummary {
   final String id;
@@ -70,6 +71,15 @@ class _SessionCard extends StatelessWidget {
       child: ListTile(
         title: Text(session.title),
         subtitle: Text('${session.date} · $minutes menit · ${session.segmentsCount} segmen'),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute(
+            builder: (_) => TranscriptPlayerScreen(
+              title: session.title,
+              durationSeconds: session.durationSeconds,
+              segments: const [],
+            ),
+          ),
+        ),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
