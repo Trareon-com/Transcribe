@@ -52,15 +52,12 @@ Dart UI  <-- Riverpod state --  RustEngineBridge (FRB-generated bindings, lib/sr
                  audio/vad            stt (whisper-rs)     export
 ```
 
-Live capture (cpal streams → ring buffer → VAD → STT queue → dedupe →
-UI stream) is hardware-dependent and is exercised via manual smoke tests,
-not CI — everything else (device listing, VAD decision logic, STT error
-paths, export formats, model catalog/checksums, session state machine,
-settings persistence, singleton lock, auto-split logic) is pure/testable
-and covered by `cargo test`. `transcriptStream`/`vuMeterStream` on
-`RustEngineBridge` are currently stubs (`Stream.empty()`) since `api.rs`
-doesn't expose a streaming surface yet — that lands with the live capture
-thread wiring.
+Live capture (cpal streams → ring buffer → VAD → STT worker → dedupe →
+session event queue → Dart streams) is hardware-dependent and is exercised
+via manual smoke tests, not CI. The Rust event queue is exposed through
+`poll_session_events`; the Dart bridge polls it every 100 ms and fans out
+transcript and VU events to the UI. Device-specific capture and real model
+inference still require a manual smoke test with configured hardware/model.
 
 ## Bridge status: connected
 

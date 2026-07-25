@@ -10,9 +10,9 @@ product/architecture blueprint this project is built from.
 ## Status
 
 Pre-1.0, active development. Core Rust engine (audio capture, VAD, STT,
-export, model management) and the Flutter UI shell are in place; live
-audio-device wiring and the flutter_rust_bridge connection between them
-are in progress.
+export, model management), the Flutter UI shell, and the scoped
+flutter_rust_bridge event bridge are in place. Device-specific capture and
+end-to-end live transcription still require manual hardware/model validation.
 
 ## Requirements
 
