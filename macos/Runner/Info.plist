@@ -28,5 +28,7 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Trascribe memerlukan akses ke mikrofon untuk merekam dan mentranskripsikan percakapan secara langsung.</string>
 </dict>
 </plist>
