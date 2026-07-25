@@ -243,6 +243,7 @@
 				33CC10EA2044A3C60003C045 /* Frameworks */,
 				33CC10EB2044A3C60003C045 /* Resources */,
 				33CC110E2044A8840003C045 /* Bundle Framework */,
+				7A6F3B9B2E1A4E4F9D4C6D01 /* Build rust_core dylib */,
 				3399D490228B24CF009A79C7 /* ShellScript */,
 				955920A0BCC72FB3060D7F34 /* [CP] Embed Pods Frameworks */,
 			);
@@ -372,6 +373,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "echo \"$PRODUCT_NAME.app\" > \"$PROJECT_DIR\"/Flutter/ephemeral/.app_filename && \"$FLUTTER_ROOT\"/packages/flutter_tools/bin/macos_assemble.sh embed\n";
+		};
+		7A6F3B9B2E1A4E4F9D4C6D01 /* Build rust_core dylib */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Build rust_core dylib";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -e\ncd \"$SRCROOT/../rust_core\"\ncargo build --release --lib\ncp \"target/release/librust_core.dylib\" \"$TARGET_BUILD_DIR/$FRAMEWORKS_FOLDER_PATH/\"\n";
+			showEnvVarsInLog = 0;
 		};
 		33CC111E2044C6BF0003C045 /* ShellScript */ = {
 			isa = PBXShellScriptBuildPhase;

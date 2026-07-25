@@ -34,7 +34,9 @@ rust_core/                 Rust engine (compiled as staticlib/cdylib/lib)
     singleton.rs             Single-instance PID lock
     memory.rs                Memory-pressure detection
     bin/gen_fixtures.rs      Synthetic WAV fixtures for hardware-free tests
-    bin/trascribe_cli.rs     Power-user CLI (batch transcribe without the UI)
+    bin/trascribe.rs         Main power-user CLI (batch transcribe without the UI)
+    bin/cli_shared.rs        Shared batch CLI implementation
+    bin/trascribe_cli.rs     Compatibility alias for the power-user CLI
 
 test/                       Flutter widget/unit tests
 ```
@@ -100,14 +102,19 @@ tree. Always use the scoped `generate` command above.
 `librust_core.dylib`/`rust_core.dll`/`librust_core.so` at runtime by
 searching a few candidate paths (the app bundle's `Frameworks/` folder,
 then `rust_core/target/{release,debug}/` relative to the executable for
-dev runs). This is a stand-in for a proper build-system step — normally
-`flutter_rust_bridge_codegen integrate`'s cargokit machinery adds an Xcode
-"Run Script" build phase (macOS) / CMake step (Windows) that builds the
-Rust library and copies it into the app bundle automatically. That
-automation hasn't been added because `integrate` is destructive against
-this project's structure (see above), and hand-editing the generated
-`.xcodeproj`/`.pbxproj` blindly (no Xcode GUI available in this
-environment) is riskier than shipping the explicit-path loader.
+dev runs). Linux, Windows, and macOS now build the Rust library as part
+of the desktop build flow and install the shared library into the bundle
+automatically. The loader remains as a fallback for dev runs and for
+packaged layouts that differ from the standard bundle.
+
+## CI and release
+
+CI now runs the Rust quality gate on Linux and adds desktop build
+matrices for Rust and Flutter across macOS, Windows, and Linux. Tagged
+pushes (`v*`) trigger `.github/workflows/release.yml`, which publishes a
+source-only archive plus SHA256 checksum to GitHub Releases. Binary
+installers remain outside GitHub Releases to match the distribution
+policy documented in the blueprint.
 
 **To run the app locally right now:**
 
@@ -119,14 +126,12 @@ cp target/release/librust_core.dylib \
    ../build/macos/Build/Products/Debug/trascribe.app/Contents/Frameworks/
 ```
 
-**Follow-up work** (tracked, not yet done): add a real Xcode "Run Script"
-build phase to `macos/Runner.xcodeproj` (via Xcode GUI, not blind text
-edits) that runs `cargo build --release --manifest-path=../../rust_core/Cargo.toml`
-and copies `librust_core.dylib` into `$BUILT_PRODUCTS_DIR/$FRAMEWORKS_FOLDER_PATH/`
-as part of every build; equivalent CMake step for `windows/CMakeLists.txt`
-producing `rust_core.dll` next to the built `.exe`. This is the same
-scope of work cargokit automates, done safely by hand instead of via the
-destructive `integrate` command.
+The macOS target now has an Xcode shell-script build phase that runs
+`cargo build --release --manifest-path=../../rust_core/Cargo.toml` and
+copies `librust_core.dylib` into `$TARGET_BUILD_DIR/$FRAMEWORKS_FOLDER_PATH/`
+as part of every build. Linux and Windows have equivalent CMake steps in
+`linux/CMakeLists.txt` and `windows/CMakeLists.txt` that build `rust_core`
+and install the shared library into the bundle.
 
 ## Security posture
 

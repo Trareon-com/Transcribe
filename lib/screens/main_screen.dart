@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/session_model.dart';
+import '../state/settings_model.dart';
+import '../src/rust/session.dart' as rust_session;
 import '../theme/app_colors.dart';
 import '../widgets/mode_selector.dart';
 import '../widgets/resource_hud.dart';
@@ -13,8 +15,49 @@ import '../widgets/vu_meter.dart';
 import 'library_screen.dart';
 import 'settings_screen.dart';
 
-class MainScreen extends ConsumerWidget {
+class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
+
+  @override
+  ConsumerState<MainScreen> createState() => _MainScreenState();
+}
+
+class _MainScreenState extends ConsumerState<MainScreen> {
+  List<rust_session.SessionRecoverySnapshot> _recoverableSessions = const [];
+  bool _loadingRecoveries = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecoveries();
+  }
+
+  Future<void> _loadRecoveries() async {
+    final bridge = ref.read(rustBridgeProvider);
+    final recoveries = await bridge.listRecoverableSessions();
+    if (!mounted) return;
+    setState(() {
+      _recoverableSessions = recoveries;
+      _loadingRecoveries = false;
+    });
+  }
+
+  Future<void> _recoverSession(
+    BuildContext context,
+    WidgetRef ref,
+    rust_session.SessionRecoverySnapshot snapshot,
+  ) async {
+    await ref.read(sessionProvider.notifier).recoverFromSnapshot(snapshot);
+    if (!context.mounted) return;
+    setState(() {
+      _recoverableSessions = _recoverableSessions
+          .where((item) => item.sessionId != snapshot.sessionId)
+          .toList(growable: false);
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Sesi ${snapshot.sessionId} dipulihkan.')),
+    );
+  }
 
   Future<void> _handleStopPressed(BuildContext context, WidgetRef ref) async {
     final segments = ref.read(sessionProvider).segments;
@@ -68,7 +111,7 @@ class MainScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final session = ref.watch(sessionProvider);
     final notifier = ref.read(sessionProvider.notifier);
     final lifecycle = session.lifecycle;
@@ -102,9 +145,53 @@ class MainScreen extends ConsumerWidget {
       child: Focus(
         autofocus: true,
         child: Scaffold(
+          appBar: AppBar(
+            title: const Text('Trascribe'),
+            actions: [
+              IconButton(
+                tooltip: 'Muat ulang recovery',
+                icon: const Icon(Icons.refresh),
+                onPressed: _loadingRecoveries ? null : _loadRecoveries,
+              ),
+            ],
+          ),
           body: SafeArea(
             child: Column(
               children: [
+                if (_loadingRecoveries)
+                  const LinearProgressIndicator(minHeight: 2)
+                else if (_recoverableSessions.isNotEmpty)
+                  Material(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.restore_outlined),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Ada ${_recoverableSessions.length} sesi yang bisa dipulihkan dari crash sebelumnya.',
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () => setState(() {
+                              _recoverableSessions = const [];
+                            }),
+                            child: const Text('Abaikan'),
+                          ),
+                          FilledButton(
+                            onPressed: () => _recoverSession(
+                              context,
+                              ref,
+                              _recoverableSessions.first,
+                            ),
+                            child: const Text('Pulihkan'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 Padding(
                   padding: const EdgeInsets.all(12),
                   child: Row(

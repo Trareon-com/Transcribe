@@ -10,7 +10,7 @@ use std::sync::mpsc;
 use std::thread::JoinHandle;
 
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
-use cpal::{SampleFormat, StreamConfig};
+use cpal::{Sample, SampleFormat, StreamConfig};
 
 use crate::decode::resample_to_target;
 use crate::error::TrascribeError;
@@ -105,16 +105,28 @@ fn resolve_device(
         None => host
             .default_input_device()
             .ok_or_else(|| TrascribeError::AudioDevice("no default input device available".into())),
-        Some(name) => {
-            let devices = host
-                .input_devices()
-                .map_err(|e| TrascribeError::AudioDevice(e.to_string()))?;
-            devices
-                .into_iter()
-                .find(|d| d.name().map(|n| n == name).unwrap_or(false))
-                .ok_or_else(|| TrascribeError::AudioDevice(format!("device '{name}' not found")))
-        }
+        Some(name) => resolve_named_device(host, name),
     }
+}
+
+fn resolve_named_device(host: &cpal::Host, name: &str) -> Result<cpal::Device, TrascribeError> {
+    if let Some(device) = host
+        .input_devices()
+        .map_err(|e| TrascribeError::AudioDevice(e.to_string()))?
+        .find(|d| d.name().map(|n| n == name).unwrap_or(false))
+    {
+        return Ok(device);
+    }
+    if let Some(device) = host
+        .output_devices()
+        .map_err(|e| TrascribeError::AudioDevice(e.to_string()))?
+        .find(|d| d.name().map(|n| n == name).unwrap_or(false))
+    {
+        return Ok(device);
+    }
+    Err(TrascribeError::AudioDevice(format!(
+        "device '{name}' not found"
+    )))
 }
 
 fn resolve_input_config(
@@ -139,39 +151,152 @@ fn build_input_stream(
         tracing::error!("audio input stream error: {e}");
     };
 
-    let make_stream = |mono_from: fn(&[f32], usize) -> Vec<f32>| {
-        let tx = samples_tx.clone();
-        device.build_input_stream(
-            &config,
-            move |data: &[f32], _| {
-                let mono = mono_from(data, channels);
-                if let Ok(resampled) = resample_to_target(&mono, source_rate) {
-                    let _ = tx.send(resampled);
-                }
-            },
-            err_fn,
-            None,
-        )
-    };
-
     let stream = match sample_format {
-        SampleFormat::F32 => make_stream(downmix_f32),
+        SampleFormat::F32 => build_generic_input_stream::<f32>(
+            device,
+            &config,
+            channels,
+            source_rate,
+            samples_tx,
+            err_fn,
+        )
+        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        SampleFormat::I16 => build_generic_input_stream::<i16>(
+            device,
+            &config,
+            channels,
+            source_rate,
+            samples_tx,
+            err_fn,
+        )
+        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        SampleFormat::U16 => build_generic_input_stream::<u16>(
+            device,
+            &config,
+            channels,
+            source_rate,
+            samples_tx,
+            err_fn,
+        )
+        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        SampleFormat::I8 => build_generic_input_stream::<i8>(
+            device,
+            &config,
+            channels,
+            source_rate,
+            samples_tx,
+            err_fn,
+        )
+        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        SampleFormat::U8 => build_generic_input_stream::<u8>(
+            device,
+            &config,
+            channels,
+            source_rate,
+            samples_tx,
+            err_fn,
+        )
+        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        SampleFormat::I32 => build_generic_input_stream::<i32>(
+            device,
+            &config,
+            channels,
+            source_rate,
+            samples_tx,
+            err_fn,
+        )
+        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        SampleFormat::U32 => build_generic_input_stream::<u32>(
+            device,
+            &config,
+            channels,
+            source_rate,
+            samples_tx,
+            err_fn,
+        )
+        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        SampleFormat::I64 => build_generic_input_stream::<i64>(
+            device,
+            &config,
+            channels,
+            source_rate,
+            samples_tx,
+            err_fn,
+        )
+        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        SampleFormat::U64 => build_generic_input_stream::<u64>(
+            device,
+            &config,
+            channels,
+            source_rate,
+            samples_tx,
+            err_fn,
+        )
+        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        SampleFormat::F64 => build_generic_input_stream::<f64>(
+            device,
+            &config,
+            channels,
+            source_rate,
+            samples_tx,
+            err_fn,
+        )
+        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
         other => {
             return Err(TrascribeError::AudioDevice(format!(
-                "unsupported sample format: {other:?} (only f32 input streams are handled)"
+                "unsupported sample format: {other:?}"
             )));
         }
     };
 
-    stream.map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))
+    Ok(stream)
 }
 
-fn downmix_f32(data: &[f32], channels: usize) -> Vec<f32> {
+fn build_generic_input_stream<T>(
+    device: &cpal::Device,
+    config: &StreamConfig,
+    channels: usize,
+    source_rate: u32,
+    samples_tx: mpsc::Sender<Vec<f32>>,
+    err_fn: impl FnMut(cpal::StreamError) + Send + 'static,
+) -> Result<cpal::Stream, cpal::BuildStreamError>
+where
+    T: Sample + cpal::SizedSample + Send + 'static,
+    f32: cpal::FromSample<T>,
+{
+    let tx = samples_tx;
+    device.build_input_stream(
+        config,
+        move |data: &[T], _| {
+            let mono = downmix_generic(data, channels);
+            if let Ok(resampled) = resample_to_target(&mono, source_rate) {
+                let _ = tx.send(resampled);
+            }
+        },
+        err_fn,
+        None,
+    )
+}
+
+fn downmix_generic<T>(data: &[T], channels: usize) -> Vec<f32>
+where
+    T: Sample,
+    f32: cpal::FromSample<T>,
+{
     if channels <= 1 {
-        return data.to_vec();
+        return data
+            .iter()
+            .map(|sample| sample.to_sample::<f32>())
+            .collect();
     }
     data.chunks(channels)
-        .map(|frame| frame.iter().sum::<f32>() / channels as f32)
+        .map(|frame| {
+            frame
+                .iter()
+                .map(|sample| sample.to_sample::<f32>())
+                .sum::<f32>()
+                / channels as f32
+        })
         .collect()
 }
 
@@ -182,19 +307,29 @@ mod tests {
     #[test]
     fn downmix_mono_passthrough() {
         let data = vec![0.1, 0.2, 0.3];
-        assert_eq!(downmix_f32(&data, 1), data);
+        assert_eq!(downmix_generic(&data, 1), data);
     }
 
     #[test]
     fn downmix_stereo_averages_channels() {
         let data = vec![1.0, -1.0, 0.5, 0.5];
-        let mono = downmix_f32(&data, 2);
+        let mono = downmix_generic(&data, 2);
         assert_eq!(mono, vec![0.0, 0.5]);
     }
 
     #[test]
+    fn downmix_generic_u16_converts_to_float() {
+        let data = vec![u16::MIN, u16::MAX];
+        let mono = downmix_generic(&data, 1);
+        assert_eq!(mono.len(), 2);
+        assert!((mono[0] + 1.0).abs() < 0.01);
+        assert!((mono[1] - 1.0).abs() < 0.01);
+    }
+
+    #[test]
     fn downmix_empty_is_empty() {
-        assert!(downmix_f32(&[], 2).is_empty());
+        let empty: Vec<f32> = Vec::new();
+        assert!(downmix_generic(&empty, 2).is_empty());
     }
 
     #[test]

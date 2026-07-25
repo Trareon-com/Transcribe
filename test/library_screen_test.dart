@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:trascribe/screens/library_screen.dart';
+import 'package:trascribe/state/models.dart';
 
 void main() {
   testWidgets('empty library shows placeholder message', (WidgetTester tester) async {
@@ -18,6 +19,18 @@ void main() {
         date: '2026-07-25',
         durationSeconds: 1800,
         segmentsCount: 42,
+        segments: [
+          TranscriptSegment(
+            source: 'mic',
+            speaker: 'MIC',
+            text: 'Halo semua',
+            timestamp: 0,
+            duration: 2,
+            language: 'id',
+            confidence: 0.9,
+            isPartial: false,
+          ),
+        ],
       ),
     ];
     await tester.pumpWidget(const MaterialApp(home: LibraryScreen(sessions: sessions)));
@@ -29,6 +42,82 @@ void main() {
 
     expect(find.text('Export "Rapat Q3"'), findsOneWidget);
     expect(find.text('Markdown'), findsOneWidget);
+  });
+
+  testWidgets('opening a session passes transcript segments to the player', (
+    WidgetTester tester,
+  ) async {
+    const sessions = [
+      SessionSummary(
+        id: '1',
+        title: 'Rapat Q3',
+        date: '2026-07-25',
+        durationSeconds: 1800,
+        segmentsCount: 42,
+        segments: [
+          TranscriptSegment(
+            source: 'mic',
+            speaker: 'MIC',
+            text: 'Halo semua',
+            timestamp: 0,
+            duration: 2,
+            language: 'id',
+            confidence: 0.9,
+            isPartial: false,
+          ),
+        ],
+      ),
+    ];
+    await tester.pumpWidget(const MaterialApp(home: LibraryScreen(sessions: sessions)));
+
+    await tester.tap(find.text('Rapat Q3'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Halo semua'), findsOneWidget);
+    expect(find.text('Rapat Q3'), findsWidgets);
+  });
+
+  testWidgets('editing a session from the player persists back into the library', (
+    WidgetTester tester,
+  ) async {
+    const sessions = [
+      SessionSummary(
+        id: '1',
+        title: 'Rapat Q3',
+        date: '2026-07-25',
+        durationSeconds: 1800,
+        segmentsCount: 1,
+        segments: [
+          TranscriptSegment(
+            source: 'mic',
+            speaker: 'MIC',
+            text: 'Halo semua',
+            timestamp: 0,
+            duration: 2,
+            language: 'id',
+            confidence: 0.9,
+            isPartial: false,
+          ),
+        ],
+      ),
+    ];
+    await tester.pumpWidget(const MaterialApp(home: LibraryScreen(sessions: sessions)));
+
+    await tester.tap(find.text('Rapat Q3'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Halo semua'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'Halo semua, selamat pagi');
+    await tester.tap(find.text('Simpan'));
+    await tester.pumpAndSettle();
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Rapat Q3'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Halo semua, selamat pagi'), findsOneWidget);
   });
 
   testWidgets('search filters sessions by title', (WidgetTester tester) async {
@@ -76,6 +165,36 @@ void main() {
     expect(find.text('Rapat Q3'), findsOneWidget);
   });
 
+  testWidgets('refreshes displayed sessions when parent updates the list', (
+    WidgetTester tester,
+  ) async {
+    const initialSessions = [
+      SessionSummary(id: '1', title: 'Rapat Q3', date: '2026-07-25', segmentsCount: 10),
+    ];
+    const updatedSessions = [
+      SessionSummary(id: '2', title: 'Wawancara Kandidat', date: '2026-07-26', segmentsCount: 7),
+    ];
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: LibraryScreen(sessions: initialSessions),
+      ),
+    );
+
+    expect(find.text('Rapat Q3'), findsOneWidget);
+    expect(find.text('Wawancara Kandidat'), findsNothing);
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: LibraryScreen(sessions: updatedSessions),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Rapat Q3'), findsNothing);
+    expect(find.text('Wawancara Kandidat'), findsOneWidget);
+  });
+
   testWidgets('delete removes session and shows undo snackbar', (WidgetTester tester) async {
     const sessions = [
       SessionSummary(id: '1', title: 'Rapat Q3', date: '2026-07-25', segmentsCount: 10),
@@ -105,5 +224,32 @@ void main() {
     await tester.pump();
 
     expect(find.text('Rapat Q3'), findsOneWidget);
+  });
+
+  test('share summary includes transcript text when available', () {
+    const session = SessionSummary(
+      id: '1',
+      title: 'Rapat Q3',
+      date: '2026-07-25',
+      durationSeconds: 1800,
+      segmentsCount: 1,
+      segments: [
+        TranscriptSegment(
+          source: 'mic',
+          speaker: 'MIC',
+          text: 'Halo semua',
+          timestamp: 0,
+          duration: 2,
+          language: 'id',
+          confidence: 0.9,
+          isPartial: false,
+        ),
+      ],
+    );
+
+    final summaryText = buildSessionShareText(session);
+    expect(summaryText, contains('MIC: Halo semua'));
+    expect(summaryText, contains('Rapat Q3'));
+    expect(summaryText, contains('2026-07-25'));
   });
 }

@@ -1,0 +1,35 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  source-release:
+    name: Build and publish source release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create source archive
+        run: |
+          tar -czf "trascribe-${GITHUB_REF_NAME}.tar.gz" \
+            --exclude=.git \
+            --exclude=build \
+            --exclude=target \
+            --exclude=.dart_tool \
+            --exclude=rust_core/target \
+            --exclude=lib/src/rust/frb_generated.* \
+            --exclude=lib/src/rust/session.freezed.dart \
+            .
+
+      - name: Generate checksum
+        run: sha256sum "trascribe-${GITHUB_REF_NAME}.tar.gz" > "trascribe-${GITHUB_REF_NAME}.tar.gz.sha256"
+
+      - name: Upload release archive
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            trascribe-${{ github.ref_name }}.tar.gz
+            trascribe-${{ github.ref_name }}.tar.gz.sha256

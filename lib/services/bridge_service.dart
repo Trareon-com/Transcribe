@@ -19,6 +19,8 @@ abstract class RustBridge {
   Future<void> toggleSpeaker(String sessionId, bool enabled);
   Stream<TranscriptSegment> transcriptStream(String sessionId);
   Stream<VuLevel> vuMeterStream(String sessionId);
+  Future<List<rust_session.SessionRecoverySnapshot>> listRecoverableSessions();
+  Future<String> recoverSession(rust_session.SessionRecoverySnapshot snapshot);
   Future<AppSettings> loadSettings();
   Future<void> saveSettings(AppSettings settings);
 }
@@ -28,6 +30,7 @@ class RustBridgeMock implements RustBridge {
   final Map<String, StreamController<TranscriptSegment>> _transcriptControllers = {};
   final Map<String, StreamController<VuLevel>> _vuControllers = {};
   final Map<String, Timer> _timers = {};
+  AppSettings _settings = AppSettings.defaults();
 
   @override
   Future<String> startSession(SessionConfig config) async {
@@ -86,10 +89,33 @@ class RustBridgeMock implements RustBridge {
   }
 
   @override
-  Future<AppSettings> loadSettings() async => AppSettings.defaults();
+  Future<List<rust_session.SessionRecoverySnapshot>> listRecoverableSessions() async =>
+      const [];
 
   @override
-  Future<void> saveSettings(AppSettings settings) async {}
+  Future<String> recoverSession(rust_session.SessionRecoverySnapshot snapshot) async {
+    return startSession(
+      SessionConfig(
+        micEnabled: snapshot.config.micEnabled,
+        speakerEnabled: snapshot.config.speakerEnabled,
+        mode: switch (snapshot.config.mode) {
+          rust_audio.SessionMode.webinar => SessionMode.webinar,
+          rust_audio.SessionMode.online => SessionMode.online,
+          rust_audio.SessionMode.offline => SessionMode.offline,
+        },
+        modelPath: snapshot.config.modelPath,
+        vadEnabled: snapshot.config.vadEnabled,
+      ),
+    );
+  }
+
+  @override
+  Future<AppSettings> loadSettings() async => _settings;
+
+  @override
+  Future<void> saveSettings(AppSettings settings) async {
+    _settings = settings;
+  }
 }
 
 /// Real bridge backed by the flutter_rust_bridge-generated bindings in
@@ -138,6 +164,14 @@ class RustEngineBridge implements RustBridge {
   Stream<VuLevel> vuMeterStream(String sessionId) {
     return _vuControllers[sessionId]?.stream ?? const Stream.empty();
   }
+
+  @override
+  Future<List<rust_session.SessionRecoverySnapshot>> listRecoverableSessions() =>
+      rust_api.listRecoverableSessions();
+
+  @override
+  Future<String> recoverSession(rust_session.SessionRecoverySnapshot snapshot) =>
+      rust_api.recoverSession(snapshot: snapshot);
 
   Future<void> _poll(String sessionId) async {
     if (!_polling.add(sessionId)) return;

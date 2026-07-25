@@ -25,6 +25,71 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     state = state.copyWith(defaultMode: mode);
     await _bridge.saveSettings(state);
   }
+
+  Future<void> setLibraryPath(String path) async {
+    state = AppSettings(
+      theme: state.theme,
+      defaultModel: state.defaultModel,
+      defaultMode: state.defaultMode,
+      libraryPath: path,
+      vadEnabled: state.vadEnabled,
+      echoDedupeEnabled: state.echoDedupeEnabled,
+      language: state.language,
+    );
+    await _bridge.saveSettings(state);
+  }
+
+  Future<void> setVadEnabled(bool enabled) async {
+    state = AppSettings(
+      theme: state.theme,
+      defaultModel: state.defaultModel,
+      defaultMode: state.defaultMode,
+      libraryPath: state.libraryPath,
+      vadEnabled: enabled,
+      echoDedupeEnabled: state.echoDedupeEnabled,
+      language: state.language,
+    );
+    await _bridge.saveSettings(state);
+  }
+
+  Future<void> setEchoDedupeEnabled(bool enabled) async {
+    state = AppSettings(
+      theme: state.theme,
+      defaultModel: state.defaultModel,
+      defaultMode: state.defaultMode,
+      libraryPath: state.libraryPath,
+      vadEnabled: state.vadEnabled,
+      echoDedupeEnabled: enabled,
+      language: state.language,
+    );
+    await _bridge.saveSettings(state);
+  }
+
+  Future<void> setLanguage(String? language) async {
+    state = AppSettings(
+      theme: state.theme,
+      defaultModel: state.defaultModel,
+      defaultMode: state.defaultMode,
+      libraryPath: state.libraryPath,
+      vadEnabled: state.vadEnabled,
+      echoDedupeEnabled: state.echoDedupeEnabled,
+      language: language,
+    );
+    await _bridge.saveSettings(state);
+  }
+
+  Future<void> setDefaultModel(String modelId) async {
+    state = AppSettings(
+      theme: state.theme,
+      defaultModel: modelId,
+      defaultMode: state.defaultMode,
+      libraryPath: state.libraryPath,
+      vadEnabled: state.vadEnabled,
+      echoDedupeEnabled: state.echoDedupeEnabled,
+      language: state.language,
+    );
+    await _bridge.saveSettings(state);
+  }
 }
 
 final settingsProvider = StateNotifierProvider<SettingsNotifier, AppSettings>((ref) {

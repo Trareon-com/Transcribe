@@ -27,6 +27,7 @@ hound = "3"
 strsim = "0.11"
 reqwest = { version = "0.12", default-features = false, features = ["rustls-tls", "stream"] }
 futures-util = "0.3"
+bytes = "1"
 dirs = "5"
 whisper-rs = "0.14"
 docx-rs = { version = "0.4.22", default-features = false }
@@ -42,6 +43,7 @@ libc = "0.2"
 windows-sys = { version = "0.52", features = ["Win32_System_Threading", "Win32_Foundation"] }
 
 [dev-dependencies]
+
 
 [lints.rust]
 unexpected_cfgs = { level = "allow", check-cfg = ["cfg(frb_expand)"] }

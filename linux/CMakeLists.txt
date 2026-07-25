@@ -50,6 +50,16 @@ endfunction()
 set(FLUTTER_MANAGED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/flutter")
 add_subdirectory(${FLUTTER_MANAGED_DIR})
 
+# Build the Rust engine alongside the Flutter runner so the Linux bundle
+# always has a fresh native library without requiring a manual copy step.
+set(TRASCRIBE_RUST_MANIFEST "${CMAKE_CURRENT_LIST_DIR}/../rust_core/Cargo.toml")
+set(TRASCRIBE_RUST_LIB_SOURCE "${CMAKE_CURRENT_LIST_DIR}/../rust_core/target/release/librust_core.so")
+add_custom_target(rust_core_native ALL
+  COMMAND cargo build --manifest-path "${TRASCRIBE_RUST_MANIFEST}" --release --lib
+  WORKING_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/.."
+  COMMENT "Building rust_core native library"
+  VERBATIM)
+
 # System-level dependencies.
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(GTK REQUIRED IMPORTED_TARGET gtk+-3.0)
@@ -98,6 +108,9 @@ install(FILES "${FLUTTER_ICU_DATA_FILE}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}
   COMPONENT Runtime)
 
 install(FILES "${FLUTTER_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
+  COMPONENT Runtime)
+
+install(FILES "${TRASCRIBE_RUST_LIB_SOURCE}" DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)
 
 foreach(bundled_library ${PLUGIN_BUNDLED_LIBRARIES})

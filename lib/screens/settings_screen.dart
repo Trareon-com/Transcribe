@@ -34,6 +34,24 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const Divider(),
           ListTile(
+            title: const Text('Model default'),
+            subtitle: Text(settings.defaultModel),
+            trailing: DropdownButton<String>(
+              value: settings.defaultModel,
+              items: const [
+                DropdownMenuItem(value: 'tiny', child: Text('tiny')),
+                DropdownMenuItem(value: 'base', child: Text('base')),
+                DropdownMenuItem(value: 'small', child: Text('small')),
+                DropdownMenuItem(value: 'medium', child: Text('medium')),
+                DropdownMenuItem(value: 'large-v3-turbo', child: Text('large-v3-turbo')),
+              ],
+              onChanged: (model) {
+                if (model != null) notifier.setDefaultModel(model);
+              },
+            ),
+          ),
+          const Divider(),
+          ListTile(
             title: const Text('Mode default'),
             subtitle: Text(settings.defaultMode.label),
             trailing: DropdownButton<SessionMode>(
@@ -48,22 +66,44 @@ class SettingsScreen extends ConsumerWidget {
           ),
           const Divider(),
           ListTile(
-            title: const Text('Model default'),
-            subtitle: Text(settings.defaultModel),
-          ),
-          ListTile(
             title: const Text('Lokasi library'),
             subtitle: Text(settings.libraryPath),
+            trailing: SizedBox(
+              width: 240,
+              child: TextFormField(
+                initialValue: settings.libraryPath,
+                decoration: const InputDecoration(
+                  hintText: '/Users/user/Documents/Trascribe',
+                  isDense: true,
+                ),
+                onFieldSubmitted: notifier.setLibraryPath,
+              ),
+            ),
           ),
           SwitchListTile(
             title: const Text('VAD (deteksi suara)'),
             value: settings.vadEnabled,
-            onChanged: null,
+            onChanged: (value) => notifier.setVadEnabled(value),
           ),
           SwitchListTile(
             title: const Text('Echo-dedupe'),
             value: settings.echoDedupeEnabled,
-            onChanged: null,
+            onChanged: (value) => notifier.setEchoDedupeEnabled(value),
+          ),
+          ListTile(
+            title: const Text('Bahasa'),
+            subtitle: Text(settings.language ?? 'Auto-detect'),
+            trailing: DropdownButton<String?>(
+              value: settings.language,
+              items: const [
+                DropdownMenuItem<String?>(value: null, child: Text('Auto-detect')),
+                DropdownMenuItem<String?>(value: 'id', child: Text('Bahasa Indonesia')),
+                DropdownMenuItem<String?>(value: 'en', child: Text('English')),
+              ],
+              onChanged: (language) {
+                notifier.setLanguage(language);
+              },
+            ),
           ),
           const Divider(),
           ListTile(

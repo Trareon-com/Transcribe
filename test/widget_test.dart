@@ -7,6 +7,7 @@ import 'package:trascribe/main.dart';
 import 'package:trascribe/services/bridge_service.dart';
 import 'package:trascribe/state/models.dart';
 import 'package:trascribe/state/settings_model.dart';
+import 'package:trascribe/src/rust/session.dart' as rust_session;
 
 /// Timer-free test double — the real [RustBridgeMock] runs a periodic
 /// Timer that leaks across widget-test teardown; widget tests only need
@@ -29,6 +30,12 @@ class _NoopBridge implements RustBridge {
 
   @override
   Stream<VuLevel> vuMeterStream(String sessionId) => const Stream.empty();
+
+  @override
+  Future<List<rust_session.SessionRecoverySnapshot>> listRecoverableSessions() async => const [];
+
+  @override
+  Future<String> recoverSession(rust_session.SessionRecoverySnapshot snapshot) async => 'test-session';
 
   @override
   Future<AppSettings> loadSettings() async => AppSettings.defaults();
@@ -117,6 +124,8 @@ void main() {
 
     await tester.tap(find.byTooltip('Pengaturan'));
     await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView), const Offset(0, -400));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Privacy Report'));
     await tester.pumpAndSettle();
 
@@ -144,5 +153,30 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Mulai / Stop merekam'), findsOneWidget);
+  });
+
+  test('RustBridgeMock persists settings roundtrip in memory', () async {
+    final bridge = RustBridgeMock();
+    final initial = await bridge.loadSettings();
+    expect(initial.defaultModel, 'tiny');
+
+    final updated = AppSettings(
+      theme: AppThemeMode.dark,
+      defaultModel: 'small',
+      defaultMode: SessionMode.webinar,
+      libraryPath: '/tmp/trascribe',
+      vadEnabled: false,
+      echoDedupeEnabled: false,
+      language: 'en',
+    );
+    await bridge.saveSettings(updated);
+
+    final reloaded = await bridge.loadSettings();
+    expect(reloaded.theme, AppThemeMode.dark);
+    expect(reloaded.defaultModel, 'small');
+    expect(reloaded.libraryPath, '/tmp/trascribe');
+    expect(reloaded.vadEnabled, isFalse);
+    expect(reloaded.echoDedupeEnabled, isFalse);
+    expect(reloaded.language, 'en');
   });
 }

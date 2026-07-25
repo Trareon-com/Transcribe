@@ -2,8 +2,16 @@
 //! higher accuracy. WebRTC VAD is a real `webrtc-vad` binding. The
 //! confirmation stage is defined behind the [`SpeechDetector`] trait so a
 //! Silero ONNX-backed implementation can be dropped in later without
-//! touching call sites — for now it's an energy-based detector, which is a
-//! deliberately simple placeholder until the Silero model is bundled.
+//! touching call sites. For now we keep an explicit adapter boundary with
+//! a fallback energy detector, while an optional `silero-onnx` feature
+//! provides a real ONNX Runtime-backed path when the model/runtime is
+//! available.
+
+#[cfg(feature = "silero-onnx")]
+use std::path::{Path, PathBuf};
+
+#[cfg(feature = "silero-onnx")]
+use ort::value::Tensor;
 
 use webrtc_vad::{SampleRate, Vad, VadMode};
 
@@ -18,6 +26,9 @@ pub struct VadConfig {
     pub webrtc_mode: VadAggressiveness,
     /// Energy threshold used by the confirmation stage, 0.0–1.0.
     pub confirmation_threshold: f32,
+    /// Optional Silero ONNX model path. If absent or unavailable, the
+    /// pipeline falls back to the energy detector.
+    pub silero_model_path: Option<&'static str>,
 }
 
 impl Default for VadConfig {
@@ -25,6 +36,7 @@ impl Default for VadConfig {
         Self {
             webrtc_mode: VadAggressiveness::HighQuality,
             confirmation_threshold: 0.02,
+            silero_model_path: None,
         }
     }
 }
@@ -54,9 +66,8 @@ pub trait SpeechDetector: Send {
     fn is_speech(&mut self, frame_i16: &[i16]) -> bool;
 }
 
-/// Placeholder confirmation detector (RMS energy). Swap for a Silero
-/// ONNX-backed implementation once the model is bundled — the trait
-/// boundary means no caller changes are needed.
+/// Confirmation detector (RMS energy). This remains the fallback until a
+/// bundled Silero runtime/model is available.
 pub struct EnergyDetector {
     threshold: f32,
 }
@@ -78,6 +89,110 @@ impl SpeechDetector for EnergyDetector {
     }
 }
 
+/// Adapter boundary for a future Silero ONNX confirmation detector.
+///
+/// The current tree keeps the type and its model-path validation in place
+/// so the transition to a bundled runtime can happen without changing
+/// call sites again.
+pub struct SileroDetector {
+    #[cfg(feature = "silero-onnx")]
+    session: ort::session::Session,
+    #[cfg(feature = "silero-onnx")]
+    state: [f32; 2 * 1 * 128],
+    #[cfg(feature = "silero-onnx")]
+    sample_rate: i64,
+    #[cfg(not(feature = "silero-onnx"))]
+    model_path: std::path::PathBuf,
+}
+
+impl SileroDetector {
+    pub fn new(model_path: impl Into<std::path::PathBuf>) -> TrascribeResult<Self> {
+        let model_path = model_path.into();
+        if !model_path.exists() {
+            return Err(TrascribeError::Model(format!(
+                "Silero VAD model not found at {}",
+                model_path.display()
+            )));
+        }
+        #[cfg(feature = "silero-onnx")]
+        {
+            ort::init().commit();
+            let session = ort::session::Session::builder()
+                .map_err(|e| TrascribeError::Model(format!("Silero VAD init failed: {e}")))?
+                .commit_from_file(&model_path)
+                .map_err(|e| TrascribeError::Model(format!("Silero VAD load failed: {e}")))?;
+            return Ok(Self {
+                session,
+                state: [0.0; 256],
+                sample_rate: 16_000,
+            });
+        }
+        #[cfg(not(feature = "silero-onnx"))]
+        {
+            Ok(Self { model_path })
+        }
+    }
+
+    #[cfg(feature = "silero-onnx")]
+    fn run_probability(&mut self, frame_i16: &[i16]) -> TrascribeResult<f32> {
+        if frame_i16.len() != 512 {
+            return Err(TrascribeError::InvalidInput(format!(
+                "Silero VAD expects 512 samples, got {}",
+                frame_i16.len()
+            )));
+        }
+        let audio: Vec<f32> = frame_i16
+            .iter()
+            .map(|s| *s as f32 / i16::MAX as f32)
+            .collect();
+        let input = Tensor::from_array(([1usize, 512], audio.into_boxed_slice()))
+            .map_err(|e| TrascribeError::Model(format!("Silero input tensor failed: {e}")))?;
+        let state = Tensor::from_array(([2usize, 1, 128], self.state.to_vec().into_boxed_slice()))
+            .map_err(|e| TrascribeError::Model(format!("Silero state tensor failed: {e}")))?;
+        let sr = Tensor::from_array(([], vec![self.sample_rate].into_boxed_slice()))
+            .map_err(|e| TrascribeError::Model(format!("Silero sample-rate tensor failed: {e}")))?;
+        let outputs = self
+            .session
+            .run(ort::inputs![input, state, sr])
+            .map_err(|e| TrascribeError::Model(format!("Silero inference failed: {e}")))?;
+        let prob = outputs
+            .get("output")
+            .and_then(|v| v.try_extract_tensor::<f32>().ok())
+            .and_then(|tensor| tensor.view().as_slice().and_then(|s| s.first().copied()))
+            .ok_or_else(|| TrascribeError::Model("Silero output missing probability".into()))?;
+        Ok(prob)
+    }
+
+    pub fn model_path(&self) -> &std::path::Path {
+        #[cfg(feature = "silero-onnx")]
+        {
+            // The loaded session owns the path implicitly; expose a stable
+            // placeholder so callers can still report which model is active.
+            return Path::new("silero-vad.onnx");
+        }
+        #[cfg(not(feature = "silero-onnx"))]
+        {
+            &self.model_path
+        }
+    }
+}
+
+impl SpeechDetector for SileroDetector {
+    fn is_speech(&mut self, frame_i16: &[i16]) -> bool {
+        #[cfg(feature = "silero-onnx")]
+        {
+            return self
+                .run_probability(frame_i16)
+                .map(|p| p >= 0.5)
+                .unwrap_or_else(|_| EnergyDetector::new(0.02).is_speech(frame_i16));
+        }
+        #[cfg(not(feature = "silero-onnx"))]
+        {
+            EnergyDetector::new(0.02).is_speech(frame_i16)
+        }
+    }
+}
+
 /// Dual VAD: WebRTC gate -> confirmation stage. A frame is speech only if
 /// both stages agree, which cuts false positives vs either detector alone.
 pub struct DualVad {
@@ -91,9 +206,17 @@ impl DualVad {
         // webrtc-vad crate takes ownership; touch it once to ensure it's usable.
         let _ = vad.is_voice_segment(&[0i16; FRAME_SAMPLES_10MS]);
 
+        let confirmation: Box<dyn SpeechDetector> = match config.silero_model_path {
+            Some(path) => match SileroDetector::new(path) {
+                Ok(detector) => Box::new(detector),
+                Err(_) => Box::new(EnergyDetector::new(config.confirmation_threshold)),
+            },
+            None => Box::new(EnergyDetector::new(config.confirmation_threshold)),
+        };
+
         Ok(Self {
             webrtc: vad,
-            confirmation: Box::new(EnergyDetector::new(config.confirmation_threshold)),
+            confirmation,
         })
     }
 

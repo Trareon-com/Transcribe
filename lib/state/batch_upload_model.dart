@@ -36,11 +36,15 @@ class BatchUploadNotifier extends StateNotifier<List<BatchFileEntry>> {
   List<String> addFiles(List<String> paths) {
     final rejected = <String>[];
     final accepted = <BatchFileEntry>[];
+    final existingPaths = state.map((entry) => entry.path).toSet();
 
     for (final path in paths) {
       final ext = path.split('.').last.toLowerCase();
       if (!_supportedExtensions.contains(ext)) {
         rejected.add(path);
+        continue;
+      }
+      if (existingPaths.contains(path) || accepted.any((entry) => entry.path == path)) {
         continue;
       }
       accepted.add(BatchFileEntry(path: path, filename: path.split('/').last));

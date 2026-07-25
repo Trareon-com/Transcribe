@@ -11,12 +11,14 @@ class TranscriptPlayerScreen extends StatefulWidget {
   final String title;
   final double durationSeconds;
   final List<TranscriptSegment> segments;
+  final ValueChanged<List<TranscriptSegment>>? onSegmentsChanged;
 
   const TranscriptPlayerScreen({
     super.key,
     required this.title,
     required this.durationSeconds,
     required this.segments,
+    this.onSegmentsChanged,
   });
 
   @override
@@ -41,6 +43,7 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
     setState(() {
       _segments[index] = _segments[index].copyWith(text: newText);
     });
+    widget.onSegmentsChanged?.call(List.unmodifiable(_segments));
   }
 
   @override

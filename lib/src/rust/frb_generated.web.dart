@@ -59,6 +59,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   SessionConfig dco_decode_box_autoadd_session_config(dynamic raw);
 
   @protected
+  SessionRecoverySnapshot dco_decode_box_autoadd_session_recovery_snapshot(
+    dynamic raw,
+  );
+
+  @protected
   ExportFormat dco_decode_export_format(dynamic raw);
 
   @protected
@@ -101,6 +106,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<SessionEvent> dco_decode_list_session_event(dynamic raw);
 
   @protected
+  List<SessionRecoverySnapshot> dco_decode_list_session_recovery_snapshot(
+    dynamic raw,
+  );
+
+  @protected
   ModelInfo dco_decode_model_info(dynamic raw);
 
   @protected
@@ -123,6 +133,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   SessionMode dco_decode_session_mode(dynamic raw);
+
+  @protected
+  SessionRecoverySnapshot dco_decode_session_recovery_snapshot(dynamic raw);
 
   @protected
   SessionStatus dco_decode_session_status(dynamic raw);
@@ -183,6 +196,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  SessionRecoverySnapshot sse_decode_box_autoadd_session_recovery_snapshot(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   ExportFormat sse_decode_export_format(SseDeserializer deserializer);
 
   @protected
@@ -233,6 +251,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  List<SessionRecoverySnapshot> sse_decode_list_session_recovery_snapshot(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   ModelInfo sse_decode_model_info(SseDeserializer deserializer);
 
   @protected
@@ -257,6 +280,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   SessionMode sse_decode_session_mode(SseDeserializer deserializer);
+
+  @protected
+  SessionRecoverySnapshot sse_decode_session_recovery_snapshot(
+    SseDeserializer deserializer,
+  );
 
   @protected
   SessionStatus sse_decode_session_status(SseDeserializer deserializer);
@@ -328,6 +356,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_session_recovery_snapshot(
+    SessionRecoverySnapshot self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_export_format(ExportFormat self, SseSerializer serializer);
 
   @protected
@@ -394,6 +428,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_session_recovery_snapshot(
+    List<SessionRecoverySnapshot> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_model_info(ModelInfo self, SseSerializer serializer);
 
   @protected
@@ -419,6 +459,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_session_mode(SessionMode self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_session_recovery_snapshot(
+    SessionRecoverySnapshot self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_session_status(SessionStatus self, SseSerializer serializer);

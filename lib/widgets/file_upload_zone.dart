@@ -80,6 +80,24 @@ class _FileUploadZoneState extends ConsumerState<FileUploadZone> {
         ),
         if (queue.isNotEmpty) ...[
           const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton.icon(
+                onPressed: queue.any((entry) => entry.status == BatchFileStatus.done)
+                    ? () => ref.read(batchUploadProvider.notifier).removeDone()
+                    : null,
+                icon: const Icon(Icons.clear_all),
+                label: const Text('Hapus selesai'),
+              ),
+              const SizedBox(width: 8),
+              TextButton.icon(
+                onPressed: () => ref.read(batchUploadProvider.notifier).clear(),
+                icon: const Icon(Icons.delete_sweep_outlined),
+                label: const Text('Kosongkan'),
+              ),
+            ],
+          ),
           ...queue.map((entry) => _QueueTile(entry: entry)),
         ],
       ],

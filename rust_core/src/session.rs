@@ -1,11 +1,13 @@
 //! Session registry: tracks live capture sessions by UUID and their
-//! mic/speaker toggle state. Actual audio thread wiring (cpal streams,
-//! VAD/STT pipeline hookup) is a hardware-dependent integration step
-//! exercised via manual smoke tests, not CI unit tests — this module owns
-//! the pure state machine so it stays fully testable.
+//! mic/speaker toggle state. The same module also owns crash-recovery
+//! snapshots so we can restore an interrupted session after restart.
 
+use std::cell::RefCell;
 use std::collections::HashMap;
+use std::fs;
+use std::path::{Path, PathBuf};
 use std::sync::{mpsc, Mutex, OnceLock};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::Serialize;
 use uuid::Uuid;
@@ -42,9 +44,12 @@ pub enum SessionEvent {
 }
 
 struct SessionState {
+    session_id: String,
     config: SessionConfig,
     started_at: std::time::Instant,
+    started_at_unix_ms: u64,
     last_split_at: std::time::Instant,
+    last_split_at_unix_ms: u64,
     segments_count: u32,
     mic_capture: Option<CaptureChannel>,
     speaker_capture: Option<CaptureChannel>,
@@ -55,6 +60,15 @@ struct CaptureChannel {
     _capture: AudioCapture,
     _worker: LiveWorker,
     events_rx: mpsc::Receiver<LiveEvent>,
+}
+
+#[derive(Debug, Clone, Serialize, serde::Deserialize)]
+pub struct SessionRecoverySnapshot {
+    pub session_id: String,
+    pub config: SessionConfig,
+    pub started_at_unix_ms: u64,
+    pub last_split_at_unix_ms: u64,
+    pub segments_count: u32,
 }
 
 /// Pure decision logic — trivially unit-testable without real timers or a
@@ -74,35 +88,24 @@ fn registry() -> &'static Mutex<HashMap<String, SessionState>> {
     REGISTRY.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
+thread_local! {
+    static RECOVERY_DIR_OVERRIDE: RefCell<Option<PathBuf>> = const { RefCell::new(None) };
+}
+
+#[cfg(test)]
+pub(crate) fn set_recovery_dir_override(path: Option<PathBuf>) {
+    RECOVERY_DIR_OVERRIDE.with(|slot| {
+        *slot.borrow_mut() = path;
+    });
+}
+
 pub fn start_session(config: SessionConfig) -> Result<String, TrascribeError> {
     let id = Uuid::new_v4().to_string();
-    let now = std::time::Instant::now();
-    let mic_capture = start_capture(
-        config.mic_enabled,
-        config.mic_device_id.clone(),
-        &config.model_path,
-        "mic",
-    )?;
-    let speaker_capture = start_capture(
-        config.speaker_enabled,
-        config.speaker_device_id.clone(),
-        &config.model_path,
-        "spk",
-    )?;
-    let state = SessionState {
-        config,
-        started_at: now,
-        last_split_at: now,
-        segments_count: 0,
-        mic_capture,
-        speaker_capture,
-        pending_events: Vec::new(),
-    };
-    registry()
-        .lock()
-        .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?
-        .insert(id.clone(), state);
-    Ok(id)
+    start_session_with_id(id, config)
+}
+
+pub fn recover_session(snapshot: SessionRecoverySnapshot) -> Result<String, TrascribeError> {
+    start_session_with_id(snapshot.session_id, snapshot.config)
 }
 
 fn start_capture(
@@ -134,16 +137,19 @@ pub fn stop_session(session_id: &str) -> Result<(), TrascribeError> {
         .lock()
         .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
     reg.remove(session_id)
-        .map(|_| ())
-        .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))
+        .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))?;
+    remove_snapshot_file(session_id)?;
+    Ok(())
 }
 
 pub fn toggle_mic(session_id: &str, enabled: bool) -> Result<(), TrascribeError> {
-    with_session_mut(session_id, |s| s.config.mic_enabled = enabled)
+    with_session_mut(session_id, |s| s.config.mic_enabled = enabled)?;
+    persist_session_snapshot(session_id)
 }
 
 pub fn toggle_speaker(session_id: &str, enabled: bool) -> Result<(), TrascribeError> {
-    with_session_mut(session_id, |s| s.config.speaker_enabled = enabled)
+    with_session_mut(session_id, |s| s.config.speaker_enabled = enabled)?;
+    persist_session_snapshot(session_id)
 }
 
 pub fn set_session_mode(session_id: &str, mode: SessionMode) -> Result<(), TrascribeError> {
@@ -152,11 +158,13 @@ pub fn set_session_mode(session_id: &str, mode: SessionMode) -> Result<(), Trasc
         s.config.mode = mode;
         s.config.mic_enabled = mic;
         s.config.speaker_enabled = spk;
-    })
+    })?;
+    persist_session_snapshot(session_id)
 }
 
 pub fn record_segment(session_id: &str) -> Result<(), TrascribeError> {
-    with_session_mut(session_id, |s| s.segments_count += 1)
+    with_session_mut(session_id, |s| s.segments_count += 1)?;
+    persist_session_snapshot(session_id)
 }
 
 /// Call periodically (e.g. every minute) from the live capture loop. If it
@@ -176,7 +184,11 @@ pub fn check_auto_split(session_id: &str) -> Result<Option<AutoSplitReason>, Tra
 }
 
 pub fn mark_split(session_id: &str) -> Result<(), TrascribeError> {
-    with_session_mut(session_id, |s| s.last_split_at = std::time::Instant::now())
+    with_session_mut(session_id, |s| {
+        s.last_split_at = std::time::Instant::now();
+        s.last_split_at_unix_ms = unix_ms_now().unwrap_or(s.last_split_at_unix_ms);
+    })?;
+    persist_session_snapshot(session_id)
 }
 
 pub fn get_status(session_id: &str) -> Result<SessionStatus, TrascribeError> {
@@ -187,26 +199,150 @@ pub fn get_status(session_id: &str) -> Result<SessionStatus, TrascribeError> {
         .get_mut(session_id)
         .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))?;
     state.collect_worker_events();
-
-    Ok(SessionStatus {
+    let status = SessionStatus {
         session_id: session_id.to_string(),
         elapsed_seconds: state.started_at.elapsed().as_secs_f64(),
         mic_enabled: state.config.mic_enabled,
         speaker_enabled: state.config.speaker_enabled,
         segments_count: state.segments_count,
         model_loaded: true,
-    })
+    };
+    drop(reg);
+    let _ = persist_session_snapshot(session_id);
+    Ok(status)
 }
 
 pub fn poll_events(session_id: &str) -> Result<Vec<SessionEvent>, TrascribeError> {
     let mut reg = registry()
         .lock()
         .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
-    let state = reg
-        .get_mut(session_id)
-        .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))?;
-    state.collect_worker_events();
-    Ok(std::mem::take(&mut state.pending_events))
+    let events = {
+        let state = reg
+            .get_mut(session_id)
+            .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))?;
+        state.collect_worker_events();
+        std::mem::take(&mut state.pending_events)
+    };
+    drop(reg);
+    persist_session_snapshot(session_id)?;
+    Ok(events)
+}
+
+pub fn list_recoverable_sessions() -> Result<Vec<SessionRecoverySnapshot>, TrascribeError> {
+    let dir = recovery_dir()?;
+    let mut out = Vec::new();
+    if !dir.exists() {
+        return Ok(out);
+    }
+    for entry in fs::read_dir(dir).map_err(TrascribeError::from)? {
+        let entry = entry.map_err(TrascribeError::from)?;
+        let path = entry.path();
+        if path.extension().and_then(|v| v.to_str()) != Some("inprogress") {
+            continue;
+        }
+        if let Ok(snapshot) = load_snapshot_file(&path) {
+            out.push(snapshot);
+        }
+    }
+    out.sort_by(|a, b| a.session_id.cmp(&b.session_id));
+    Ok(out)
+}
+
+fn start_session_with_id(id: String, config: SessionConfig) -> Result<String, TrascribeError> {
+    let now = std::time::Instant::now();
+    let now_unix_ms = unix_ms_now()?;
+    let mic_capture = start_capture(
+        config.mic_enabled,
+        config.mic_device_id.clone(),
+        &config.model_path,
+        "mic",
+    )?;
+    let speaker_capture = start_capture(
+        config.speaker_enabled,
+        config.speaker_device_id.clone(),
+        &config.model_path,
+        "spk",
+    )?;
+    let state = SessionState {
+        session_id: id.clone(),
+        config,
+        started_at: now,
+        started_at_unix_ms: now_unix_ms,
+        last_split_at: now,
+        last_split_at_unix_ms: now_unix_ms,
+        segments_count: 0,
+        mic_capture,
+        speaker_capture,
+        pending_events: Vec::new(),
+    };
+    registry()
+        .lock()
+        .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?
+        .insert(id.clone(), state);
+    persist_session_snapshot(&id)?;
+    Ok(id)
+}
+
+fn persist_session_snapshot(session_id: &str) -> Result<(), TrascribeError> {
+    let snapshot = {
+        let reg = registry()
+            .lock()
+            .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
+        let state = reg
+            .get(session_id)
+            .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))?;
+        SessionRecoverySnapshot {
+            session_id: state.session_id.clone(),
+            config: state.config.clone(),
+            started_at_unix_ms: state.started_at_unix_ms,
+            last_split_at_unix_ms: state.last_split_at_unix_ms,
+            segments_count: state.segments_count,
+        }
+    };
+    write_snapshot_file(&snapshot)
+}
+
+fn recovery_dir() -> Result<PathBuf, TrascribeError> {
+    if let Some(path) = RECOVERY_DIR_OVERRIDE.with(|slot| slot.borrow().clone()) {
+        return Ok(path);
+    }
+    Ok(std::env::temp_dir().join("Trascribe").join("recovery"))
+}
+
+fn recovery_path(session_id: &str) -> Result<PathBuf, TrascribeError> {
+    Ok(recovery_dir()?.join(format!("{session_id}.inprogress")))
+}
+
+fn write_snapshot_file(snapshot: &SessionRecoverySnapshot) -> Result<(), TrascribeError> {
+    let dir = recovery_dir()?;
+    fs::create_dir_all(&dir).map_err(TrascribeError::from)?;
+    let final_path = recovery_path(&snapshot.session_id)?;
+    let tmp_path = final_path.with_extension("inprogress.tmp");
+    let json = serde_json::to_vec_pretty(snapshot)
+        .map_err(|e| TrascribeError::InvalidInput(e.to_string()))?;
+    fs::write(&tmp_path, json).map_err(TrascribeError::from)?;
+    fs::rename(&tmp_path, &final_path).map_err(TrascribeError::from)
+}
+
+fn remove_snapshot_file(session_id: &str) -> Result<(), TrascribeError> {
+    let path = recovery_path(session_id)?;
+    match fs::remove_file(path) {
+        Ok(_) => Ok(()),
+        Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(err) => Err(TrascribeError::from(err)),
+    }
+}
+
+fn load_snapshot_file(path: &Path) -> Result<SessionRecoverySnapshot, TrascribeError> {
+    let content = fs::read_to_string(path).map_err(TrascribeError::from)?;
+    serde_json::from_str(&content).map_err(|e| TrascribeError::InvalidInput(e.to_string()))
+}
+
+fn unix_ms_now() -> Result<u64, TrascribeError> {
+    let now = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_err(|e| TrascribeError::InvalidInput(e.to_string()))?;
+    Ok(now.as_millis() as u64)
 }
 
 impl SessionState {
@@ -257,6 +393,25 @@ mod tests {
         assert!(get_status(&id).is_ok());
         stop_session(&id).unwrap();
         assert!(get_status(&id).is_err());
+    }
+
+    #[test]
+    fn recovery_snapshot_roundtrip_and_cleanup() {
+        let dir = std::env::temp_dir().join(format!("trascribe_recovery_{}", uuid::Uuid::new_v4()));
+        let _ = std::fs::remove_dir_all(&dir);
+        set_recovery_dir_override(Some(dir.clone()));
+
+        let id = start_session(test_config()).unwrap();
+        let snapshots = list_recoverable_sessions().unwrap();
+        assert_eq!(snapshots.len(), 1);
+        assert_eq!(snapshots[0].session_id, id);
+
+        stop_session(&id).unwrap();
+        let snapshots = list_recoverable_sessions().unwrap();
+        assert!(snapshots.is_empty());
+
+        let _ = std::fs::remove_dir_all(&dir);
+        set_recovery_dir_override(None);
     }
 
     #[test]

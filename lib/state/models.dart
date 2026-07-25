@@ -5,6 +5,17 @@ library;
 
 enum SessionMode { webinar, online, offline }
 
+String modelPathForId(String modelId) {
+  return switch (modelId) {
+    'tiny' => 'models/ggml-tiny.bin',
+    'base' => 'models/ggml-base.bin',
+    'small' => 'models/ggml-small.bin',
+    'medium' => 'models/ggml-medium.bin',
+    'large-v3-turbo' => 'models/ggml-large-v3-turbo.bin',
+    _ => 'models/ggml-$modelId.bin',
+  };
+}
+
 extension SessionModeDefaults on SessionMode {
   (bool mic, bool speaker) get defaultToggles => switch (this) {
         SessionMode.webinar => (false, true),

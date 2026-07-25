@@ -1,24 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../state/privacy_report_model.dart';
+import '../state/settings_model.dart';
 
 /// First-run setup wizard: spec detection -> model choice -> audio setup
 /// -> model download -> tone test. Steps 1/3/4 call into the Rust engine
 /// (system spec, audio device/loopback checks, model download) once FRB
 /// codegen is wired (Fase 5) — this screen owns the step flow and UI state
 /// now so that wiring is a drop-in later.
-class SetupWizardScreen extends StatefulWidget {
+class SetupWizardScreen extends ConsumerStatefulWidget {
   final VoidCallback onFinished;
 
   const SetupWizardScreen({super.key, required this.onFinished});
 
   @override
-  State<SetupWizardScreen> createState() => _SetupWizardScreenState();
+  ConsumerState<SetupWizardScreen> createState() => _SetupWizardScreenState();
 }
 
 enum _WizardStep { specDetect, modelChoice, audioSetup, modelDownload, toneTest }
 
-class _SetupWizardScreenState extends State<SetupWizardScreen> {
+class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   _WizardStep _step = _WizardStep.specDetect;
   String _selectedModel = 'tiny';
+  bool _downloadRecorded = false;
 
   static const _steps = _WizardStep.values;
 
@@ -82,7 +87,10 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
       case _WizardStep.modelChoice:
         return _ModelChoiceStep(
           selected: _selectedModel,
-          onChanged: (id) => setState(() => _selectedModel = id),
+          onChanged: (id) {
+            setState(() => _selectedModel = id);
+            ref.read(settingsProvider.notifier).setDefaultModel(id);
+          },
         );
       case _WizardStep.audioSetup:
         return const _StepBody(
@@ -93,11 +101,17 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
           icon: Icons.speaker_group_outlined,
         );
       case _WizardStep.modelDownload:
-        return _StepBody(
-          title: '4. Unduh Model',
-          description: 'Model "$_selectedModel" akan diunduh dengan progress bar dan dapat '
-              'dilanjutkan (resume) jika koneksi terputus.',
-          icon: Icons.download_outlined,
+        return _DownloadStep(
+          modelId: _selectedModel,
+          downloaded: _downloadRecorded,
+          onDownload: () {
+            if (_downloadRecorded) return;
+            ref.read(privacyReportProvider.notifier).recordModelDownload(_selectedModel);
+            setState(() => _downloadRecorded = true);
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Model "$_selectedModel" dicatat sebagai unduhan.')),
+            );
+          },
         );
       case _WizardStep.toneTest:
         return const _StepBody(
@@ -106,6 +120,41 @@ class _SetupWizardScreenState extends State<SetupWizardScreen> {
           icon: Icons.graphic_eq,
         );
     }
+  }
+}
+
+class _DownloadStep extends StatelessWidget {
+  final String modelId;
+  final bool downloaded;
+  final VoidCallback onDownload;
+
+  const _DownloadStep({
+    required this.modelId,
+    required this.downloaded,
+    required this.onDownload,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.download_outlined, size: 64),
+        const SizedBox(height: 16),
+        Text('4. Unduh Model', style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: 8),
+        Text(
+          'Model "$modelId" siap diunduh. Unduhan model ini akan tercatat di Privacy Report.',
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 20),
+        FilledButton.icon(
+          onPressed: downloaded ? null : onDownload,
+          icon: const Icon(Icons.cloud_download_outlined),
+          label: Text(downloaded ? 'Sudah dicatat' : 'Unduh model'),
+        ),
+      ],
+    );
   }
 }
 

@@ -68,5 +68,15 @@ void main() {
       expect(rejected, isEmpty);
       expect(notifier.state, hasLength(1));
     });
+
+    test('skips duplicate files already in queue', () {
+      final notifier = BatchUploadNotifier();
+      notifier.addFiles(['/a/rapat.mp3']);
+      final rejected = notifier.addFiles(['/a/rapat.mp3', '/a/rapat.mp3']);
+
+      expect(rejected, isEmpty);
+      expect(notifier.state, hasLength(1));
+      expect(notifier.state.single.path, '/a/rapat.mp3');
+    });
   });
 }

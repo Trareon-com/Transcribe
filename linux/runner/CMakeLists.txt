@@ -24,3 +24,7 @@ target_link_libraries(${BINARY_NAME} PRIVATE flutter)
 target_link_libraries(${BINARY_NAME} PRIVATE PkgConfig::GTK)
 
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")
+
+# Ensure the Rust engine is built before the runner links, so the copied
+# shared library is always refreshed for the active build.
+add_dependencies(${BINARY_NAME} rust_core_native)

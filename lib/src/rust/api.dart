@@ -58,6 +58,12 @@ Future<SessionStatus> getSessionStatus({required String sessionId}) =>
 Future<List<SessionEvent>> pollSessionEvents({required String sessionId}) =>
     RustLib.instance.api.crateApiPollSessionEvents(sessionId: sessionId);
 
+Future<List<SessionRecoverySnapshot>> listRecoverableSessions() =>
+    RustLib.instance.api.crateApiListRecoverableSessions();
+
+Future<String> recoverSession({required SessionRecoverySnapshot snapshot}) =>
+    RustLib.instance.api.crateApiRecoverSession(snapshot: snapshot);
+
 Future<List<ModelInfo>> listAvailableModels({required String modelsDir}) =>
     RustLib.instance.api.crateApiListAvailableModels(modelsDir: modelsDir);
 

@@ -10,9 +10,12 @@ product/architecture blueprint this project is built from.
 ## Status
 
 Pre-1.0, active development. Core Rust engine (audio capture, VAD, STT,
-export, model management), the Flutter UI shell, and the scoped
-flutter_rust_bridge event bridge are in place. Device-specific capture and
-end-to-end live transcription still require manual hardware/model validation.
+export, model management), the Flutter UI shell, the scoped
+flutter_rust_bridge event bridge, crash recovery, source release
+workflow, desktop-native Rust build steps for Linux and Windows, and
+cross-platform CI build matrices are in place. Device-specific capture
+and end-to-end live transcription still require manual hardware/model
+validation.
 
 ## Requirements
 
@@ -40,9 +43,12 @@ Batch-transcribe files from the command line (needs a real whisper GGUF
 model):
 
 ```bash
-cd rust_core && cargo run --bin trascribe_cli -- \
+cd rust_core && cargo run --bin trascribe -- \
   --batch "*.mp3" --output ./transkrip/ --model models/ggml-tiny.bin
 ```
+
+`trascribe-cli` remains available as a compatibility alias for the same
+batch flow.
 
 ## Project layout
 

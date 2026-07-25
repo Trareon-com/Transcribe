@@ -38,7 +38,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -1047831957;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1960004312;
 
 // Section: executor
 
@@ -612,6 +612,70 @@ fn wire__crate__audio__device__list_input_devices_impl(
         },
     )
 }
+fn wire__crate__api__list_recoverable_sessions_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "list_recoverable_sessions",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                    let output_ok = crate::api::list_recoverable_sessions()?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__session__list_recoverable_sessions_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "list_recoverable_sessions",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                    let output_ok = crate::session::list_recoverable_sessions()?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__api__load_settings_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -802,6 +866,74 @@ fn wire__crate__session__record_segment_impl(
             move |context| {
                 transform_result_sse::<_, crate::error::TrascribeError>((move || {
                     let output_ok = crate::session::record_segment(&api_session_id)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__api__recover_session_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "recover_session",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_snapshot =
+                <crate::session::SessionRecoverySnapshot>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                    let output_ok = crate::api::recover_session(api_snapshot)?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
+fn wire__crate__session__recover_session_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "recover_session",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_snapshot =
+                <crate::session::SessionRecoverySnapshot>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                    let output_ok = crate::session::recover_session(api_snapshot)?;
                     Ok(output_ok)
                 })())
             }
@@ -1634,6 +1766,20 @@ impl SseDecode for Vec<crate::session::SessionEvent> {
     }
 }
 
+impl SseDecode for Vec<crate::session::SessionRecoverySnapshot> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut len_ = <i32>::sse_decode(deserializer);
+        let mut ans_ = Vec::with_capacity(len_ as usize);
+        for idx_ in 0..len_ {
+            ans_.push(<crate::session::SessionRecoverySnapshot>::sse_decode(
+                deserializer,
+            ));
+        }
+        return ans_;
+    }
+}
+
 impl SseDecode for crate::model::ModelInfo {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
@@ -1770,6 +1916,24 @@ impl SseDecode for crate::audio::SessionMode {
             1 => crate::audio::SessionMode::Online,
             2 => crate::audio::SessionMode::Offline,
             _ => unreachable!("Invalid variant for SessionMode: {}", inner),
+        };
+    }
+}
+
+impl SseDecode for crate::session::SessionRecoverySnapshot {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
+        let mut var_sessionId = <String>::sse_decode(deserializer);
+        let mut var_config = <crate::audio::SessionConfig>::sse_decode(deserializer);
+        let mut var_startedAtUnixMs = <u64>::sse_decode(deserializer);
+        let mut var_lastSplitAtUnixMs = <u64>::sse_decode(deserializer);
+        let mut var_segmentsCount = <u32>::sse_decode(deserializer);
+        return crate::session::SessionRecoverySnapshot {
+            session_id: var_sessionId,
+            config: var_config,
+            started_at_unix_ms: var_startedAtUnixMs,
+            last_split_at_unix_ms: var_lastSplitAtUnixMs,
+            segments_count: var_segmentsCount,
         };
     }
 }
@@ -1913,36 +2077,42 @@ fn pde_ffi_dispatcher_primary_impl(
         17 => {
             wire__crate__audio__device__list_input_devices_impl(port, ptr, rust_vec_len, data_len)
         }
-        18 => wire__crate__api__load_settings_impl(port, ptr, rust_vec_len, data_len),
-        19 => wire__crate__settings__load_settings_impl(port, ptr, rust_vec_len, data_len),
-        20 => wire__crate__session__mark_split_impl(port, ptr, rust_vec_len, data_len),
-        21 => wire__crate__session__poll_events_impl(port, ptr, rust_vec_len, data_len),
-        22 => wire__crate__api__poll_session_events_impl(port, ptr, rust_vec_len, data_len),
-        23 => wire__crate__session__record_segment_impl(port, ptr, rust_vec_len, data_len),
-        24 => wire__crate__api__release_instance_lock_impl(port, ptr, rust_vec_len, data_len),
-        25 => wire__crate__export__sanitize_filename_impl(port, ptr, rust_vec_len, data_len),
-        26 => wire__crate__api__save_settings_impl(port, ptr, rust_vec_len, data_len),
-        27 => wire__crate__settings__save_settings_impl(port, ptr, rust_vec_len, data_len),
-        28 => wire__crate__audio__session_config_for_mode_impl(port, ptr, rust_vec_len, data_len),
-        29 => {
+        18 => wire__crate__api__list_recoverable_sessions_impl(port, ptr, rust_vec_len, data_len),
+        19 => {
+            wire__crate__session__list_recoverable_sessions_impl(port, ptr, rust_vec_len, data_len)
+        }
+        20 => wire__crate__api__load_settings_impl(port, ptr, rust_vec_len, data_len),
+        21 => wire__crate__settings__load_settings_impl(port, ptr, rust_vec_len, data_len),
+        22 => wire__crate__session__mark_split_impl(port, ptr, rust_vec_len, data_len),
+        23 => wire__crate__session__poll_events_impl(port, ptr, rust_vec_len, data_len),
+        24 => wire__crate__api__poll_session_events_impl(port, ptr, rust_vec_len, data_len),
+        25 => wire__crate__session__record_segment_impl(port, ptr, rust_vec_len, data_len),
+        26 => wire__crate__api__recover_session_impl(port, ptr, rust_vec_len, data_len),
+        27 => wire__crate__session__recover_session_impl(port, ptr, rust_vec_len, data_len),
+        28 => wire__crate__api__release_instance_lock_impl(port, ptr, rust_vec_len, data_len),
+        29 => wire__crate__export__sanitize_filename_impl(port, ptr, rust_vec_len, data_len),
+        30 => wire__crate__api__save_settings_impl(port, ptr, rust_vec_len, data_len),
+        31 => wire__crate__settings__save_settings_impl(port, ptr, rust_vec_len, data_len),
+        32 => wire__crate__audio__session_config_for_mode_impl(port, ptr, rust_vec_len, data_len),
+        33 => {
             wire__crate__audio__session_mode_default_toggles_impl(port, ptr, rust_vec_len, data_len)
         }
-        30 => wire__crate__audio__session_mode_echo_dedupe_enabled_impl(
+        34 => wire__crate__audio__session_mode_echo_dedupe_enabled_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        31 => wire__crate__api__set_session_mode_impl(port, ptr, rust_vec_len, data_len),
-        32 => wire__crate__session__set_session_mode_impl(port, ptr, rust_vec_len, data_len),
-        33 => wire__crate__api__start_session_impl(port, ptr, rust_vec_len, data_len),
-        34 => wire__crate__session__start_session_impl(port, ptr, rust_vec_len, data_len),
-        35 => wire__crate__api__stop_session_impl(port, ptr, rust_vec_len, data_len),
-        36 => wire__crate__session__stop_session_impl(port, ptr, rust_vec_len, data_len),
-        37 => wire__crate__api__toggle_mic_impl(port, ptr, rust_vec_len, data_len),
-        38 => wire__crate__session__toggle_mic_impl(port, ptr, rust_vec_len, data_len),
-        39 => wire__crate__api__toggle_speaker_impl(port, ptr, rust_vec_len, data_len),
-        40 => wire__crate__session__toggle_speaker_impl(port, ptr, rust_vec_len, data_len),
+        35 => wire__crate__api__set_session_mode_impl(port, ptr, rust_vec_len, data_len),
+        36 => wire__crate__session__set_session_mode_impl(port, ptr, rust_vec_len, data_len),
+        37 => wire__crate__api__start_session_impl(port, ptr, rust_vec_len, data_len),
+        38 => wire__crate__session__start_session_impl(port, ptr, rust_vec_len, data_len),
+        39 => wire__crate__api__stop_session_impl(port, ptr, rust_vec_len, data_len),
+        40 => wire__crate__session__stop_session_impl(port, ptr, rust_vec_len, data_len),
+        41 => wire__crate__api__toggle_mic_impl(port, ptr, rust_vec_len, data_len),
+        42 => wire__crate__session__toggle_mic_impl(port, ptr, rust_vec_len, data_len),
+        43 => wire__crate__api__toggle_speaker_impl(port, ptr, rust_vec_len, data_len),
+        44 => wire__crate__session__toggle_speaker_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -2200,6 +2370,30 @@ impl flutter_rust_bridge::IntoDart for crate::audio::SessionMode {
 impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::audio::SessionMode {}
 impl flutter_rust_bridge::IntoIntoDart<crate::audio::SessionMode> for crate::audio::SessionMode {
     fn into_into_dart(self) -> crate::audio::SessionMode {
+        self
+    }
+}
+// Codec=Dco (DartCObject based), see doc to use other codecs
+impl flutter_rust_bridge::IntoDart for crate::session::SessionRecoverySnapshot {
+    fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
+        [
+            self.session_id.into_into_dart().into_dart(),
+            self.config.into_into_dart().into_dart(),
+            self.started_at_unix_ms.into_into_dart().into_dart(),
+            self.last_split_at_unix_ms.into_into_dart().into_dart(),
+            self.segments_count.into_into_dart().into_dart(),
+        ]
+        .into_dart()
+    }
+}
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive
+    for crate::session::SessionRecoverySnapshot
+{
+}
+impl flutter_rust_bridge::IntoIntoDart<crate::session::SessionRecoverySnapshot>
+    for crate::session::SessionRecoverySnapshot
+{
+    fn into_into_dart(self) -> crate::session::SessionRecoverySnapshot {
         self
     }
 }
@@ -2491,6 +2685,16 @@ impl SseEncode for Vec<crate::session::SessionEvent> {
     }
 }
 
+impl SseEncode for Vec<crate::session::SessionRecoverySnapshot> {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <i32>::sse_encode(self.len() as _, serializer);
+        for item in self {
+            <crate::session::SessionRecoverySnapshot>::sse_encode(item, serializer);
+        }
+    }
+}
+
 impl SseEncode for crate::model::ModelInfo {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
@@ -2595,6 +2799,17 @@ impl SseEncode for crate::audio::SessionMode {
             },
             serializer,
         );
+    }
+}
+
+impl SseEncode for crate::session::SessionRecoverySnapshot {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
+        <String>::sse_encode(self.session_id, serializer);
+        <crate::audio::SessionConfig>::sse_encode(self.config, serializer);
+        <u64>::sse_encode(self.started_at_unix_ms, serializer);
+        <u64>::sse_encode(self.last_split_at_unix_ms, serializer);
+        <u32>::sse_encode(self.segments_count, serializer);
     }
 }
 

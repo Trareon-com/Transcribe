@@ -11,12 +11,15 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 import 'package:freezed_annotation/freezed_annotation.dart' hide protected;
 part 'session.freezed.dart';
 
-// These functions are ignored because they are not marked as `pub`: `collect_worker_events`, `registry`, `should_split`, `start_capture`, `with_session_mut`
+// These functions are ignored because they are not marked as `pub`: `collect_worker_events`, `load_snapshot_file`, `persist_session_snapshot`, `recovery_dir`, `recovery_path`, `registry`, `remove_snapshot_file`, `should_split`, `start_capture`, `start_session_with_id`, `unix_ms_now`, `with_session_mut`, `write_snapshot_file`
 // These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `CaptureChannel`, `SessionState`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `clone`, `clone`, `clone`, `eq`, `fmt`, `fmt`, `fmt`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`
 
 Future<String> startSession({required SessionConfig config}) =>
     RustLib.instance.api.crateSessionStartSession(config: config);
+
+Future<String> recoverSession({required SessionRecoverySnapshot snapshot}) =>
+    RustLib.instance.api.crateSessionRecoverSession(snapshot: snapshot);
 
 Future<void> stopSession({required String sessionId}) =>
     RustLib.instance.api.crateSessionStopSession(sessionId: sessionId);
@@ -61,6 +64,9 @@ Future<SessionStatus> getStatus({required String sessionId}) =>
 Future<List<SessionEvent>> pollEvents({required String sessionId}) =>
     RustLib.instance.api.crateSessionPollEvents(sessionId: sessionId);
 
+Future<List<SessionRecoverySnapshot>> listRecoverableSessions() =>
+    RustLib.instance.api.crateSessionListRecoverableSessions();
+
 enum AutoSplitReason { timeBoundary, memoryPressure }
 
 @freezed
@@ -73,6 +79,41 @@ sealed class SessionEvent with _$SessionEvent {
     required String source,
     required double level,
   }) = SessionEvent_Vu;
+}
+
+class SessionRecoverySnapshot {
+  final String sessionId;
+  final SessionConfig config;
+  final BigInt startedAtUnixMs;
+  final BigInt lastSplitAtUnixMs;
+  final int segmentsCount;
+
+  const SessionRecoverySnapshot({
+    required this.sessionId,
+    required this.config,
+    required this.startedAtUnixMs,
+    required this.lastSplitAtUnixMs,
+    required this.segmentsCount,
+  });
+
+  @override
+  int get hashCode =>
+      sessionId.hashCode ^
+      config.hashCode ^
+      startedAtUnixMs.hashCode ^
+      lastSplitAtUnixMs.hashCode ^
+      segmentsCount.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is SessionRecoverySnapshot &&
+          runtimeType == other.runtimeType &&
+          sessionId == other.sessionId &&
+          config == other.config &&
+          startedAtUnixMs == other.startedAtUnixMs &&
+          lastSplitAtUnixMs == other.lastSplitAtUnixMs &&
+          segmentsCount == other.segmentsCount;
 }
 
 class SessionStatus {

@@ -99,4 +99,30 @@ void main() {
 
     expect(find.text('Halo semua'), findsOneWidget);
   });
+
+  testWidgets('editing a segment notifies listeners with updated segments', (
+    WidgetTester tester,
+  ) async {
+    List<TranscriptSegment>? updatedSegments;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TranscriptPlayerScreen(
+          title: 'Rapat Q3',
+          durationSeconds: 120,
+          segments: segments,
+          onSegmentsChanged: (value) => updatedSegments = value,
+        ),
+      ),
+    );
+
+    await tester.tap(find.text('Halo semua'));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), 'Halo semua, selamat pagi');
+    await tester.tap(find.text('Simpan'));
+    await tester.pumpAndSettle();
+
+    expect(updatedSegments, isNotNull);
+    expect(updatedSegments!.single.text, 'Halo semua, selamat pagi');
+  });
 }

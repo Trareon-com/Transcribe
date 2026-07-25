@@ -29,6 +29,10 @@ flutter analyze
 flutter test
 ```
 
+Tagged release pushes (`v*`) are expected to produce the source-only
+archive defined in `.github/workflows/release.yml`. Binary installers are
+distributed separately and are not uploaded to GitHub Releases.
+
 ## Code style
 
 - **Rust**: no `unwrap`/`expect`/`panic!` in library code — every

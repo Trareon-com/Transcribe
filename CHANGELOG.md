@@ -33,18 +33,19 @@ phase instead.
   `ARCHITECTURE.md`): the `TrascribeResult<T>` alias not resolving across
   modules, and `TrascribeError::Io` needing to be `String` instead of
   `std::io::Error` for FFI serialization.
+  - Desktop build plumbing now builds and installs the Rust library on
+    Linux, Windows, and macOS as part of the native desktop build flow.
+  - Resume download for models now appends partial files and is covered
+    by a deterministic unit test.
+  - Transcript-player edits now notify listeners, and the session state
+    exposes a shared transcript-edit update path.
 
 ### Known gaps
-- Native library loading uses an explicit-path loader
-  (`rust_library_loader.dart`) rather than a real Xcode/CMake build phase
-  that copies the compiled library into the app bundle automatically —
-  see `ARCHITECTURE.md` for the manual step and the follow-up plan.
-- `transcriptStream`/`vuMeterStream` are stubs (`Stream.empty()`) — no
-  streaming surface in `api.rs` yet.
-- Live audio capture threads (cpal streams → ring buffer → VAD → STT
-  pipeline) are not yet wired to real hardware.
+- Native library loading still has a runtime fallback path in
+  `rust_library_loader.dart` for dev runs and nonstandard bundle layouts.
+- Live audio capture still needs real hardware validation, especially
+  end-to-end on a machine with the target microphones/speakers.
 - No real whisper GGUF model is bundled yet; `model.rs`'s checksum
   pins are placeholders pending the official release manifest.
-- No code signing, no CI build/release pipeline, no distribution channel
-  set up yet.
-- Windows build/test not verified (developed on macOS only).
+- Tagged release publishing is source-only; binary distribution and code
+  signing remain separate follow-up work.

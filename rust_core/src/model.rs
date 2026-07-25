@@ -5,6 +5,7 @@
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+use futures_util::StreamExt;
 use serde::Serialize;
 
 use crate::error::TrascribeError;
@@ -107,17 +108,12 @@ pub struct DownloadProgress {
 pub async fn download_with_resume(
     url: &str,
     dest_path: &Path,
-    mut on_progress: impl FnMut(DownloadProgress),
+    on_progress: impl FnMut(DownloadProgress),
 ) -> Result<(), TrascribeError> {
-    use futures_util::StreamExt;
-
     let already_downloaded = std::fs::metadata(dest_path).map(|m| m.len()).unwrap_or(0);
 
     let client = reqwest::Client::new();
-    let mut request = client.get(url);
-    if already_downloaded > 0 {
-        request = request.header("Range", format!("bytes={already_downloaded}-"));
-    }
+    let request = build_resume_request(client.get(url), already_downloaded);
 
     let response = request
         .send()
@@ -134,6 +130,32 @@ pub async fn download_with_resume(
     let content_length = response.content_length().unwrap_or(0);
     let total_bytes = already_downloaded + content_length;
 
+    let stream = response.bytes_stream();
+    write_download_stream(dest_path, already_downloaded, total_bytes, stream, on_progress).await
+}
+
+fn build_resume_request(
+    request: reqwest::RequestBuilder,
+    already_downloaded: u64,
+) -> reqwest::RequestBuilder {
+    if already_downloaded > 0 {
+        request.header("Range", format!("bytes={already_downloaded}-"))
+    } else {
+        request
+    }
+}
+
+async fn write_download_stream<S, E>(
+    dest_path: &Path,
+    already_downloaded: u64,
+    total_bytes: u64,
+    mut stream: S,
+    mut on_progress: impl FnMut(DownloadProgress),
+) -> Result<(), TrascribeError>
+where
+    S: futures_util::stream::Stream<Item = Result<bytes::Bytes, E>> + Unpin,
+    E: std::error::Error,
+{
     if let Some(parent) = dest_path.parent() {
         std::fs::create_dir_all(parent).map_err(TrascribeError::from)?;
     }
@@ -145,7 +167,6 @@ pub async fn download_with_resume(
         .map_err(TrascribeError::from)?;
 
     let mut downloaded = already_downloaded;
-    let mut stream = response.bytes_stream();
     while let Some(chunk) = stream.next().await {
         let chunk = chunk.map_err(|e| TrascribeError::Model(format!("stream error: {e}")))?;
         file.write_all(&chunk).map_err(TrascribeError::from)?;
@@ -162,7 +183,8 @@ pub async fn download_with_resume(
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    use futures_util::stream;
+    use bytes::Bytes;
     #[test]
     fn list_models_includes_tiny_bundled() {
         let dir = std::env::temp_dir();
@@ -217,5 +239,50 @@ mod tests {
         );
         assert!(result.is_err());
         let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn resume_request_adds_range_header_after_partial_file() {
+        let client = reqwest::Client::new();
+        let request = build_resume_request(client.get("http://example.com/model.bin"), 3);
+        let built = request.build().unwrap();
+        assert_eq!(built.headers().get("Range").unwrap(), "bytes=3-");
+    }
+
+    #[test]
+    fn resume_request_keeps_full_download_without_header() {
+        let client = reqwest::Client::new();
+        let request = build_resume_request(client.get("http://example.com/model.bin"), 0);
+        let built = request.build().unwrap();
+        assert!(built.headers().get("Range").is_none());
+    }
+
+    #[tokio::test]
+    async fn write_download_stream_appends_to_existing_file_and_reports_progress() {
+        let body = b"abcdefghi".to_vec();
+        let dest = std::env::temp_dir().join(format!(
+            "trascribe_resume_download_{}.bin",
+            uuid::Uuid::new_v4()
+        ));
+        std::fs::write(&dest, b"abc").unwrap();
+        let mut progress = Vec::new();
+        let chunks = stream::iter(vec![
+            Ok::<Bytes, std::io::Error>(Bytes::from_static(b"def")),
+            Ok::<Bytes, std::io::Error>(Bytes::from_static(b"ghi")),
+        ]);
+        write_download_stream(&dest, 3, 9, chunks, |p| progress.push((p.bytes_downloaded, p.total_bytes)))
+            .await
+            .unwrap();
+
+        let downloaded = std::fs::read(&dest).unwrap();
+        assert_eq!(downloaded, body);
+        assert_eq!(progress.last().copied(), Some((9, 9)));
+        assert!(verify_checksum(
+            &dest,
+            "19cc02f26df43cc571bc9ed7b0c4d29224a3ec229529221725ef76d021c8326f",
+        )
+        .is_ok());
+
+        let _ = std::fs::remove_file(&dest);
     }
 }

@@ -53,12 +53,52 @@ pub fn list_input_devices() -> Result<Vec<AudioDeviceInfo>, TrascribeError> {
     Ok(out)
 }
 
+pub fn list_output_devices() -> Result<Vec<AudioDeviceInfo>, TrascribeError> {
+    let host = cpal::default_host();
+    let default_name = host.default_output_device().and_then(|d| d.name().ok());
+
+    let devices = host
+        .output_devices()
+        .map_err(|e| TrascribeError::AudioDevice(e.to_string()))?;
+
+    let mut out = Vec::new();
+    for device in devices {
+        let name = device
+            .name()
+            .map_err(|e| TrascribeError::AudioDevice(e.to_string()))?;
+        let is_default = default_name.as_deref() == Some(name.as_str());
+
+        let (channels, sample_rates) = match device.supported_output_configs() {
+            Ok(configs) => {
+                let configs: Vec<_> = configs.collect();
+                let channels = configs.first().map(|c| c.channels()).unwrap_or(1);
+                let rates = configs
+                    .iter()
+                    .map(|c| c.min_sample_rate().0)
+                    .collect::<Vec<_>>();
+                (channels, rates)
+            }
+            Err(_) => (1, vec![]),
+        };
+
+        out.push(AudioDeviceInfo {
+            name,
+            device_id: format!("output:{}", out.len()),
+            is_default,
+            channels,
+            sample_rates,
+        });
+    }
+    Ok(out)
+}
+
 /// Best-effort lookup for a macOS/Windows loopback device by name convention
-/// (BlackHole on macOS, WASAPI loopback exposed as an input-capable output
-/// device on Windows). Returns an error the caller should surface as
-/// "install BlackHole" / wizard guidance rather than a crash.
+/// (BlackHole on macOS, WASAPI loopback exposed as an output device on
+/// Windows). Returns an error the caller should surface as "install
+/// BlackHole" / wizard guidance rather than a crash.
 pub fn get_loopback_device(name_hint: &str) -> Result<AudioDeviceInfo, TrascribeError> {
-    let devices = list_input_devices()?;
+    let mut devices = list_input_devices()?;
+    devices.extend(list_output_devices()?);
     devices
         .into_iter()
         .find(|d| d.name.to_lowercase().contains(&name_hint.to_lowercase()))
@@ -76,6 +116,12 @@ mod tests {
         // CI runners may have zero audio devices; this must not panic or
         // error out just because the list is empty.
         let result = list_input_devices();
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn list_output_devices_does_not_error() {
+        let result = list_output_devices();
         assert!(result.is_ok());
     }
 

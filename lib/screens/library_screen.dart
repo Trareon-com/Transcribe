@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
+import '../state/models.dart';
 import '../widgets/file_upload_zone.dart';
 import 'transcript_player_screen.dart';
 
@@ -10,12 +11,14 @@ class SessionSummary {
   final String date;
   final double durationSeconds;
   final int segmentsCount;
+  final List<TranscriptSegment> segments;
 
   const SessionSummary({
     required this.id,
     required this.title,
     required this.date,
     required this.segmentsCount,
+    this.segments = const [],
     this.durationSeconds = 0,
   });
 }
@@ -38,6 +41,17 @@ class _LibraryScreenState extends State<LibraryScreen> {
   void initState() {
     super.initState();
     _sessions = List.of(widget.sessions);
+  }
+
+  @override
+  void didUpdateWidget(covariant LibraryScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.sessions != widget.sessions) {
+      _sessions = List.of(widget.sessions);
+      if (_query.isNotEmpty) {
+        setState(() {});
+      }
+    }
   }
 
   @override
@@ -74,6 +88,24 @@ class _LibraryScreenState extends State<LibraryScreen> {
         duration: const Duration(seconds: 6),
       ),
     );
+  }
+
+  void _updateSessionSegments(String sessionId, List<TranscriptSegment> segments) {
+    final index = _sessions.indexWhere((session) => session.id == sessionId);
+    if (index == -1) return;
+
+    final updatedSession = SessionSummary(
+      id: _sessions[index].id,
+      title: _sessions[index].title,
+      date: _sessions[index].date,
+      durationSeconds: _sessions[index].durationSeconds,
+      segmentsCount: segments.length,
+      segments: segments,
+    );
+
+    setState(() {
+      _sessions[index] = updatedSession;
+    });
   }
 
   @override
@@ -130,6 +162,8 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               itemBuilder: (context, index) => _SessionCard(
                                 session: filtered[index],
                                 onDelete: () => _deleteSession(filtered[index]),
+                                onSegmentsChanged: (segments) =>
+                                    _updateSessionSegments(filtered[index].id, segments),
                               ),
                             ),
                 ),
@@ -149,8 +183,13 @@ class _LibraryScreenState extends State<LibraryScreen> {
 class _SessionCard extends StatelessWidget {
   final SessionSummary session;
   final VoidCallback onDelete;
+  final ValueChanged<List<TranscriptSegment>> onSegmentsChanged;
 
-  const _SessionCard({required this.session, required this.onDelete});
+  const _SessionCard({
+    required this.session,
+    required this.onDelete,
+    required this.onSegmentsChanged,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -164,7 +203,8 @@ class _SessionCard extends StatelessWidget {
             builder: (_) => TranscriptPlayerScreen(
               title: session.title,
               durationSeconds: session.durationSeconds,
-              segments: const [],
+              segments: session.segments,
+              onSegmentsChanged: onSegmentsChanged,
             ),
           ),
         ),
@@ -197,14 +237,21 @@ class _SessionCard extends StatelessWidget {
 /// exported files (once export writes real bytes via the Rust bridge) is
 /// a drop-in extension: `SharePlus.instance.share(ShareParams(files: ...))`.
 Future<void> shareSessionSummary(SessionSummary session) {
-  final minutes = (session.durationSeconds / 60).floor();
   return SharePlus.instance.share(
     ShareParams(
       subject: session.title,
-      text: '${session.title}\n${session.date} · $minutes menit · '
-          '${session.segmentsCount} segmen\n\nDitranskrip dengan Trascribe.',
+      text: buildSessionShareText(session),
     ),
   );
+}
+
+String buildSessionShareText(SessionSummary session) {
+  final minutes = (session.durationSeconds / 60).floor();
+  final transcript = session.segments.isEmpty
+      ? 'Tidak ada transkrip yang tersimpan.'
+      : session.segments.map((segment) => '${segment.speaker}: ${segment.text}').join('\n');
+  return '${session.title}\n${session.date} · $minutes menit · '
+      '${session.segmentsCount} segmen\n\n$transcript\n\nDitranskrip dengan Trascribe.';
 }
 
 Future<void> showExportDialog(BuildContext context, SessionSummary session) {
