@@ -75,4 +75,35 @@ void main() {
 
     expect(find.text('Rapat Q3'), findsOneWidget);
   });
+
+  testWidgets('delete removes session and shows undo snackbar', (WidgetTester tester) async {
+    const sessions = [
+      SessionSummary(id: '1', title: 'Rapat Q3', date: '2026-07-25', segmentsCount: 10),
+    ];
+    await tester.pumpWidget(const MaterialApp(home: LibraryScreen(sessions: sessions)));
+
+    await tester.tap(find.byTooltip('Hapus'));
+    await tester.pump();
+
+    expect(find.text('Rapat Q3'), findsNothing);
+    expect(find.textContaining('dihapus'), findsOneWidget);
+    expect(find.text('Urungkan'), findsOneWidget);
+  });
+
+  testWidgets('undo restores the deleted session', (WidgetTester tester) async {
+    const sessions = [
+      SessionSummary(id: '1', title: 'Rapat Q3', date: '2026-07-25', segmentsCount: 10),
+    ];
+    await tester.pumpWidget(const MaterialApp(home: LibraryScreen(sessions: sessions)));
+
+    await tester.tap(find.byTooltip('Hapus'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Rapat Q3'), findsNothing);
+
+    await tester.tap(find.text('Urungkan'));
+    await tester.pump();
+
+    expect(find.text('Rapat Q3'), findsOneWidget);
+  });
 }

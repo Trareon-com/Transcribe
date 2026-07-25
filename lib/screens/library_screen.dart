@@ -31,6 +31,13 @@ class LibraryScreen extends StatefulWidget {
 class _LibraryScreenState extends State<LibraryScreen> {
   final _searchController = TextEditingController();
   String _query = '';
+  late List<SessionSummary> _sessions;
+
+  @override
+  void initState() {
+    super.initState();
+    _sessions = List.of(widget.sessions);
+  }
 
   @override
   void dispose() {
@@ -39,9 +46,33 @@ class _LibraryScreenState extends State<LibraryScreen> {
   }
 
   List<SessionSummary> get _filteredSessions {
-    if (_query.isEmpty) return widget.sessions;
+    if (_query.isEmpty) return _sessions;
     final q = _query.toLowerCase();
-    return widget.sessions.where((s) => s.title.toLowerCase().contains(q)).toList();
+    return _sessions.where((s) => s.title.toLowerCase().contains(q)).toList();
+  }
+
+  /// Soft-delete: removes from the visible list immediately, but keeps the
+  /// entry recoverable via the snackbar's Undo action. The 7-day retention
+  /// window (moving the session folder to `.trash/`) is a filesystem
+  /// operation on the Rust side, not yet wired — this owns the UI half.
+  void _deleteSession(SessionSummary session) {
+    final index = _sessions.indexOf(session);
+    if (index == -1) return;
+
+    setState(() => _sessions.removeAt(index));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('"${session.title}" dihapus. Akan dihapus permanen dalam 7 hari.'),
+        action: SnackBarAction(
+          label: 'Urungkan',
+          onPressed: () {
+            setState(() => _sessions.insert(index.clamp(0, _sessions.length), session));
+          },
+        ),
+        duration: const Duration(seconds: 6),
+      ),
+    );
   }
 
   @override
@@ -87,7 +118,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   ),
                 ),
                 Expanded(
-                  child: widget.sessions.isEmpty
+                  child: _sessions.isEmpty
                       ? const Center(child: Text('Belum ada sesi tersimpan.'))
                       : filtered.isEmpty
                           ? const Center(child: Text('Tidak ada sesi yang cocok.'))
@@ -95,8 +126,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
                               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                               itemCount: filtered.length,
                               separatorBuilder: (_, _) => const SizedBox(height: 8),
-                              itemBuilder: (context, index) =>
-                                  _SessionCard(session: filtered[index]),
+                              itemBuilder: (context, index) => _SessionCard(
+                                session: filtered[index],
+                                onDelete: () => _deleteSession(filtered[index]),
+                              ),
                             ),
                 ),
               ],
@@ -114,8 +147,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
 
 class _SessionCard extends StatelessWidget {
   final SessionSummary session;
+  final VoidCallback onDelete;
 
-  const _SessionCard({required this.session});
+  const _SessionCard({required this.session, required this.onDelete});
 
   @override
   Widget build(BuildContext context) {
@@ -144,7 +178,7 @@ class _SessionCard extends StatelessWidget {
             IconButton(
               tooltip: 'Hapus',
               icon: const Icon(Icons.delete_outline),
-              onPressed: () {},
+              onPressed: onDelete,
             ),
           ],
         ),
