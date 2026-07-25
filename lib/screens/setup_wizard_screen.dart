@@ -2,8 +2,10 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../src/rust/audio/device.dart';
 import '../state/privacy_report_model.dart';
 import '../state/settings_model.dart';
 
@@ -153,8 +155,10 @@ class _AudioSetupStep extends ConsumerStatefulWidget {
 
 class _AudioSetupStepState extends ConsumerState<_AudioSetupStep> {
   bool _loading = true;
+  List<AudioDeviceInfo> _devices = [];
   String? _selectedMic;
   String? _selectedSpeaker;
+  bool _showGuide = false;
 
   @override
   void initState() {
@@ -163,16 +167,21 @@ class _AudioSetupStepState extends ConsumerState<_AudioSetupStep> {
   }
 
   Future<void> _loadDevices() async {
+    setState(() => _loading = true);
     final bridge = ref.read(rustBridgeProvider);
     final devices = await bridge.listAudioDevices();
     if (mounted) {
       setState(() {
         _loading = false;
+        _devices = devices;
         _selectedMic = devices.isNotEmpty ? devices.first.name : 'Built-in Microphone';
         _selectedSpeaker = 'System Speaker Loopback';
       });
     }
   }
+
+  bool get _hasBlackHole => _devices.any(
+      (d) => d.name.toLowerCase().contains('blackhole') || d.name.toLowerCase().contains('loopback'));
 
   @override
   Widget build(BuildContext context) {
@@ -183,11 +192,14 @@ class _AudioSetupStepState extends ConsumerState<_AudioSetupStep> {
         const SizedBox(height: 16),
         Text('3. Setup Audio', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 8),
-        const Text(
-          'Pilih perangkat input mikrofon dan output speaker untuk perekaman percakapan.',
-          textAlign: TextAlign.center,
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'Pilih perangkat input mikrofon dan output speaker untuk perekaman percakapan.',
+            textAlign: TextAlign.center,
+          ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
         if (_loading)
           const CircularProgressIndicator()
         else
@@ -199,9 +211,14 @@ class _AudioSetupStepState extends ConsumerState<_AudioSetupStep> {
                   labelText: 'Perangkat Mikrofon (Input)',
                   border: OutlineInputBorder(),
                 ),
-                items: [
-                  DropdownMenuItem(value: _selectedMic, child: Text(_selectedMic ?? 'Built-in Microphone')),
-                ],
+                items: _devices.isNotEmpty
+                    ? _devices
+                        .map((d) => DropdownMenuItem(value: d.name, child: Text(d.name)))
+                        .toList()
+                    : [
+                        DropdownMenuItem(
+                            value: _selectedMic, child: Text(_selectedMic ?? 'Built-in Microphone')),
+                      ],
                 onChanged: (val) => setState(() => _selectedMic = val),
               ),
               const SizedBox(height: 16),
@@ -212,9 +229,127 @@ class _AudioSetupStepState extends ConsumerState<_AudioSetupStep> {
                   border: OutlineInputBorder(),
                 ),
                 items: [
-                  DropdownMenuItem(value: _selectedSpeaker, child: Text(_selectedSpeaker ?? 'System Speaker Loopback')),
+                  DropdownMenuItem(
+                      value: _selectedSpeaker, child: Text(_selectedSpeaker ?? 'System Speaker Loopback')),
                 ],
                 onChanged: (val) => setState(() => _selectedSpeaker = val),
+              ),
+              const SizedBox(height: 20),
+              // Loopback Driver Guide Box
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  color: _hasBlackHole
+                      ? Colors.green.withValues(alpha: 0.08)
+                      : Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: _hasBlackHole
+                        ? Colors.green.withValues(alpha: 0.4)
+                        : Theme.of(context).colorScheme.error.withValues(alpha: 0.4),
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            _hasBlackHole ? Icons.check_circle_outline : Icons.info_outline,
+                            color: _hasBlackHole
+                                ? Colors.green
+                                : Theme.of(context).colorScheme.error,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _hasBlackHole
+                                  ? 'Driver Virtual Audio (BlackHole 2ch) Terdeteksi!'
+                                  : 'Belum Ada Virtual Audio Driver untuk Rekam Meeting (Zoom/Webinar)',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: _hasBlackHole
+                                    ? Colors.green
+                                    : Theme.of(context).colorScheme.onErrorContainer,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _hasBlackHole
+                            ? 'Sistem Anda siap merekam audio internal speaker & percakapan online secara jernih.'
+                            : 'Untuk merekam suara dari Zoom/Google Meet/YouTube, macOS memerlukan Virtual Audio Driver gratis (seperti BlackHole 2ch).',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: () => setState(() => _showGuide = !_showGuide),
+                            icon: Icon(_showGuide ? Icons.expand_less : Icons.help_outline, size: 16),
+                            label: Text(_showGuide ? 'Sembunyikan Panduan' : 'Panduan Install (1-Menit)'),
+                          ),
+                          IconButton(
+                            onPressed: _loadDevices,
+                            icon: const Icon(Icons.refresh),
+                            tooltip: 'Muat ulang perangkat audio',
+                          ),
+                        ],
+                      ),
+                      if (_showGuide) ...[
+                        const Divider(height: 24),
+                        Text(
+                          '📖 Cara Install & Setup BlackHole 2ch di macOS:',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          '1. Buka aplikasi Terminal di Mac, lalu jalankan perintah berikut:',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const SelectableText(
+                                'brew install blackhole-2ch',
+                                style: TextStyle(fontFamily: 'monospace', fontWeight: FontWeight.bold),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.copy, size: 16),
+                                onPressed: () {
+                                  Clipboard.setData(const ClipboardData(text: 'brew install blackhole-2ch'));
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Perintah disalin ke clipboard!')),
+                                  );
+                                },
+                                tooltip: 'Salin perintah brew',
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          '2. Buka aplikasi "Audio MIDI Setup" di macOS -> Klik "+" di kiri bawah -> Buat "Multi-Output Device".\n'
+                          '3. Centang "MacBook Pro Speakers" DAN "BlackHole 2ch".\n'
+                          '4. Klik tombol refresh 🔄 di atas setelah proses selesai.',
+                          style: TextStyle(fontSize: 12, height: 1.4),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
               ),
             ],
           ),
