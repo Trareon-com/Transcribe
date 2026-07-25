@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/models.dart';
 import '../state/settings_model.dart';
+import 'privacy_report_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -62,6 +63,15 @@ class SettingsScreen extends ConsumerWidget {
             title: const Text('Echo-dedupe'),
             value: settings.echoDedupeEnabled,
             onChanged: null,
+          ),
+          const Divider(),
+          ListTile(
+            title: const Text('Privacy Report'),
+            subtitle: const Text('Lihat aktivitas jaringan sejak app dibuka'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const PrivacyReportScreen()),
+            ),
           ),
         ],
       ),

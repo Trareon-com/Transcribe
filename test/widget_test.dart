@@ -111,6 +111,18 @@ void main() {
     expect(find.text('Tema'), findsOneWidget);
   });
 
+  testWidgets('settings screen navigates into Privacy Report', (WidgetTester tester) async {
+    await tester.pumpWidget(buildApp());
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Pengaturan'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Privacy Report'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('0 network calls since launch'), findsOneWidget);
+  });
+
   testWidgets('shortcuts icon opens the keyboard shortcuts panel', (WidgetTester tester) async {
     await tester.pumpWidget(buildApp());
     await tester.pump();
