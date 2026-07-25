@@ -39,8 +39,10 @@ pub const KNOWN_MODELS: &[(&str, &str, u32, bool, &str)] = &[
         true,
         "be07e048e1e599ad46341c8d2a135645097a538221678b7acdd1b1919c6e1b21",
     ),
-    ("base", "ggml-base.bin", 1, false, ""),
-    ("small", "ggml-small.bin", 2, false, ""),
+    ("base", "ggml-base.bin", 1, false,
+        "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe"),
+    ("small", "ggml-small.bin", 2, false,
+        "1be3a9b2063867b937e64e2ec7483364a79917e157fa98c5d94b5c1fffea987b"),
     ("medium", "ggml-medium.bin", 4, false, ""),
     ("large-v3-turbo", "ggml-large-v3-turbo.bin", 6, false, ""),
 ];
