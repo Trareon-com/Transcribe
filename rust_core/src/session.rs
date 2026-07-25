@@ -12,6 +12,16 @@ use uuid::Uuid;
 
 use crate::audio::{SessionConfig, SessionMode};
 use crate::error::{TrascribeError, TrascribeResult};
+use crate::memory;
+
+/// Long sessions (>4h) auto-split per hour to bound memory growth (PP-21).
+pub const AUTO_SPLIT_INTERVAL_SECS: u64 = 3600;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum AutoSplitReason {
+    TimeBoundary,
+    MemoryPressure,
+}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct SessionStatus {
@@ -26,7 +36,20 @@ pub struct SessionStatus {
 struct SessionState {
     config: SessionConfig,
     started_at: std::time::Instant,
+    last_split_at: std::time::Instant,
     segments_count: u32,
+}
+
+/// Pure decision logic — trivially unit-testable without real timers or a
+/// real memory read.
+fn should_split(elapsed_since_last_split_secs: u64, memory_ratio: f32) -> Option<AutoSplitReason> {
+    if memory::is_under_memory_pressure(memory_ratio) {
+        Some(AutoSplitReason::MemoryPressure)
+    } else if elapsed_since_last_split_secs >= AUTO_SPLIT_INTERVAL_SECS {
+        Some(AutoSplitReason::TimeBoundary)
+    } else {
+        None
+    }
 }
 
 fn registry() -> &'static Mutex<HashMap<String, SessionState>> {
@@ -36,9 +59,11 @@ fn registry() -> &'static Mutex<HashMap<String, SessionState>> {
 
 pub fn start_session(config: SessionConfig) -> TrascribeResult<String> {
     let id = Uuid::new_v4().to_string();
+    let now = std::time::Instant::now();
     let state = SessionState {
         config,
-        started_at: std::time::Instant::now(),
+        started_at: now,
+        last_split_at: now,
         segments_count: 0,
     };
     registry()
@@ -76,6 +101,26 @@ pub fn set_session_mode(session_id: &str, mode: SessionMode) -> TrascribeResult<
 
 pub fn record_segment(session_id: &str) -> TrascribeResult<()> {
     with_session_mut(session_id, |s| s.segments_count += 1)
+}
+
+/// Call periodically (e.g. every minute) from the live capture loop. If it
+/// returns `Some`, the caller should flush the current chunk to disk and
+/// start a new file segment, then call [`mark_split`].
+pub fn check_auto_split(session_id: &str) -> TrascribeResult<Option<AutoSplitReason>> {
+    let reg = registry()
+        .lock()
+        .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
+    let state = reg
+        .get(session_id)
+        .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))?;
+
+    let elapsed = state.last_split_at.elapsed().as_secs();
+    let memory_ratio = memory::system_memory_usage_ratio();
+    Ok(should_split(elapsed, memory_ratio))
+}
+
+pub fn mark_split(session_id: &str) -> TrascribeResult<()> {
+    with_session_mut(session_id, |s| s.last_split_at = std::time::Instant::now())
 }
 
 pub fn get_status(session_id: &str) -> TrascribeResult<SessionStatus> {
@@ -168,5 +213,52 @@ mod tests {
     #[test]
     fn toggle_on_unknown_session_errors() {
         assert!(toggle_mic("nonexistent", true).is_err());
+    }
+
+    #[test]
+    fn no_split_before_interval_or_pressure() {
+        assert_eq!(should_split(0, 0.1), None);
+        assert_eq!(should_split(AUTO_SPLIT_INTERVAL_SECS - 1, 0.5), None);
+    }
+
+    #[test]
+    fn time_boundary_triggers_split() {
+        assert_eq!(
+            should_split(AUTO_SPLIT_INTERVAL_SECS, 0.1),
+            Some(AutoSplitReason::TimeBoundary)
+        );
+    }
+
+    #[test]
+    fn memory_pressure_triggers_split_even_before_interval() {
+        assert_eq!(
+            should_split(10, 0.85),
+            Some(AutoSplitReason::MemoryPressure)
+        );
+    }
+
+    #[test]
+    fn memory_pressure_takes_priority_over_time_boundary() {
+        // Both conditions true — memory pressure is the more urgent reason.
+        assert_eq!(
+            should_split(AUTO_SPLIT_INTERVAL_SECS, 0.9),
+            Some(AutoSplitReason::MemoryPressure)
+        );
+    }
+
+    #[test]
+    fn check_auto_split_and_mark_split_roundtrip() {
+        let id = start_session(test_config()).unwrap();
+        // Freshly started session, real memory ratio on a test machine
+        // should be well under the emergency threshold.
+        let result = check_auto_split(&id).unwrap();
+        assert_ne!(result, Some(AutoSplitReason::TimeBoundary));
+        mark_split(&id).unwrap();
+        stop_session(&id).unwrap();
+    }
+
+    #[test]
+    fn check_auto_split_unknown_session_errors() {
+        assert!(check_auto_split("nonexistent").is_err());
     }
 }
