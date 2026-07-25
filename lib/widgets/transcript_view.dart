@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../state/models.dart';
 import '../theme/app_colors.dart';
@@ -7,28 +8,149 @@ import '../theme/app_colors.dart';
 /// sessions (thousands of segments) stay smooth (see architecture
 /// bottleneck notes: avoid full-list rebuilds for live sessions).
 ///
-/// Pass [onEdit] to enable inline editing (tap a segment to correct its
-/// text) — used by the transcript player for saved sessions; the live
-/// main-screen view omits it since editing mid-recording doesn't apply.
-class TranscriptView extends StatelessWidget {
+/// Includes action toolbar with live keyword search, 1-click clipboard copy,
+/// and auto-scroll pin control.
+class TranscriptView extends StatefulWidget {
   final List<TranscriptSegment> segments;
   final void Function(int index, String newText)? onEdit;
 
   const TranscriptView({super.key, required this.segments, this.onEdit});
 
   @override
+  State<TranscriptView> createState() => _TranscriptViewState();
+}
+
+class _TranscriptViewState extends State<TranscriptView> {
+  final ScrollController _scrollController = ScrollController();
+  String _searchQuery = '';
+  bool _autoScroll = true;
+
+  @override
+  void didUpdateWidget(TranscriptView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_autoScroll && widget.segments.length > oldWidget.segments.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController.animateTo(
+            _scrollController.position.maxScrollExtent,
+            duration: const Duration(milliseconds: 200),
+            curve: Curves.easeOut,
+          );
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _copyAllToClipboard(BuildContext context) {
+    if (widget.segments.isEmpty) return;
+    final text = widget.segments
+        .map((s) => '[${s.speaker} · ${_formatSecs(s.timestamp)}] ${s.text}')
+        .join('\n');
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Transkrip berhasil disalin ke clipboard!'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  String _formatSecs(double secs) {
+    final m = (secs / 60).floor();
+    final s = (secs % 60).floor();
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
+  @override
   Widget build(BuildContext context) {
-    if (segments.isEmpty) {
+    if (widget.segments.isEmpty) {
       return const Center(child: Text('Belum ada transkrip. Mulai sesi untuk memulai.'));
     }
 
-    return ListView.builder(
-      itemCount: segments.length,
-      itemExtent: 64,
-      itemBuilder: (context, index) => _SegmentTile(
-        segment: segments[index],
-        onEdit: onEdit == null ? null : (newText) => onEdit!(index, newText),
-      ),
+    final query = _searchQuery.trim().toLowerCase();
+    final filtered = query.isEmpty
+        ? widget.segments
+        : widget.segments
+            .where((s) =>
+                s.text.toLowerCase().contains(query) ||
+                s.speaker.toLowerCase().contains(query))
+            .toList();
+
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          child: Row(
+            children: [
+              Expanded(
+                child: SizedBox(
+                  height: 36,
+                  child: TextField(
+                    onChanged: (val) => setState(() => _searchQuery = val),
+                    decoration: InputDecoration(
+                      hintText: 'Cari dalam transkrip...',
+                      prefixIcon: const Icon(Icons.search, size: 18),
+                      contentPadding: EdgeInsets.zero,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              if (query.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: Chip(
+                    label: Text('${filtered.length} cocok'),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              IconButton(
+                tooltip: _autoScroll ? 'Auto-scroll aktif' : 'Auto-scroll mati',
+                icon: Icon(
+                  _autoScroll ? Icons.vertical_align_bottom : Icons.pause_circle_outline,
+                  color: _autoScroll ? Theme.of(context).colorScheme.primary : null,
+                ),
+                onPressed: () => setState(() => _autoScroll = !_autoScroll),
+              ),
+              IconButton(
+                tooltip: 'Salin Seluruh Transkrip',
+                icon: const Icon(Icons.copy_outlined),
+                onPressed: () => _copyAllToClipboard(context),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: filtered.isEmpty
+              ? const Center(child: Text('Tidak ada segmen yang cocok.'))
+              : ListView.builder(
+                  controller: _scrollController,
+                  itemCount: filtered.length,
+                  itemExtent: 64,
+                  itemBuilder: (context, index) {
+                    final seg = filtered[index];
+                    final originalIndex = widget.segments.indexOf(seg);
+                    return _SegmentTile(
+                      segment: seg,
+                      onEdit: widget.onEdit == null
+                          ? null
+                          : (newText) => widget.onEdit!(originalIndex, newText),
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 }
@@ -63,11 +185,6 @@ class _SegmentTile extends StatelessWidget {
         ],
       ),
     );
-    // Not disposed here: the dialog's closing transition can still touch
-    // the controller for a frame after showDialog resolves. It's a
-    // short-lived local controller, so leaving it to be garbage collected
-    // (rather than racing dispose() against the animation) is the safer
-    // trade-off. See https://github.com/flutter/flutter/issues/106549
     if (newText != null && newText.trim().isNotEmpty && newText != segment.text) {
       onEdit?.call(newText);
     }

@@ -71,7 +71,7 @@ void main() {
 
     expect(find.text('Edit Transkrip'), findsOneWidget);
 
-    await tester.enterText(find.byType(TextField), 'Halo semua, selamat pagi');
+    await tester.enterText(find.byType(TextField).last, 'Halo semua, selamat pagi');
     await tester.tap(find.text('Simpan'));
     await tester.pumpAndSettle();
 
@@ -93,7 +93,7 @@ void main() {
     await tester.tap(find.text('Halo semua'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField), 'diubah tapi dibatalkan');
+    await tester.enterText(find.byType(TextField).last, 'diubah tapi dibatalkan');
     await tester.tap(find.text('Batal'));
     await tester.pumpAndSettle();
 
@@ -118,11 +118,56 @@ void main() {
     await tester.tap(find.text('Halo semua'));
     await tester.pumpAndSettle();
 
-    await tester.enterText(find.byType(TextField), 'Halo semua, selamat pagi');
+    await tester.enterText(find.byType(TextField).last, 'Halo semua, selamat pagi');
     await tester.tap(find.text('Simpan'));
     await tester.pumpAndSettle();
 
     expect(updatedSegments, isNotNull);
     expect(updatedSegments!.single.text, 'Halo semua, selamat pagi');
+  });
+
+  testWidgets('transcript view live search filters matching segments', (WidgetTester tester) async {
+    const multiSegments = [
+      TranscriptSegment(
+        source: 'mic',
+        speaker: 'MIC',
+        text: 'Agenda pertama adalah budgeting',
+        timestamp: 0,
+        duration: 2,
+        language: 'id',
+        confidence: 0.9,
+        isPartial: false,
+      ),
+      TranscriptSegment(
+        source: 'spk',
+        speaker: 'SPK',
+        text: 'Agenda kedua adalah roadmap',
+        timestamp: 2,
+        duration: 2,
+        language: 'id',
+        confidence: 0.9,
+        isPartial: false,
+      ),
+    ];
+
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: TranscriptPlayerScreen(
+          title: 'Rapat Q3',
+          durationSeconds: 120,
+          segments: multiSegments,
+        ),
+      ),
+    );
+
+    expect(find.text('Agenda pertama adalah budgeting'), findsOneWidget);
+    expect(find.text('Agenda kedua adalah roadmap'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField).first, 'budgeting');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Agenda pertama adalah budgeting'), findsOneWidget);
+    expect(find.text('Agenda kedua adalah roadmap'), findsNothing);
+    expect(find.text('1 cocok'), findsOneWidget);
   });
 }

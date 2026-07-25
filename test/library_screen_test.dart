@@ -108,7 +108,7 @@ void main() {
 
     await tester.tap(find.text('Halo semua'));
     await tester.pumpAndSettle();
-    await tester.enterText(find.byType(TextField), 'Halo semua, selamat pagi');
+    await tester.enterText(find.byType(TextField).last, 'Halo semua, selamat pagi');
     await tester.tap(find.text('Simpan'));
     await tester.pumpAndSettle();
 

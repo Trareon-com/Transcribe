@@ -8,6 +8,7 @@ class AppColors {
   static const Color micAccent = Color(0xFF34C759);
   static const Color spkAccent = Color(0xFFFF9F0A);
   static const Color warning = Color(0xFFFF3B30);
+  static const Color recordingDot = Color(0xFFFF3B30);
 
   static const LightColors light = LightColors();
   static const DarkColors dark = DarkColors();
