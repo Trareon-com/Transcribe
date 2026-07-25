@@ -82,7 +82,11 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     });
   }
 
+  static bool _isBlankAudio(TranscriptSegment s) =>
+      s.text.trim() == '[BLANK_AUDIO]';
+
   void _onTranscriptSegment(TranscriptSegment segment) {
+    if (_isBlankAudio(segment)) return;
     state = state.copyWith(segments: [...state.segments, segment]);
     _resetAutoStopTimer();
   }
@@ -276,10 +280,14 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
       return;
     }
     _autoStopMinutes = settings.autoStopMinutes;
+    final (mic, speaker) = settings.defaultMode.defaultToggles;
     state = state.copyWith(
-      config: SessionConfig.forMode(
-        settings.defaultMode,
-        modelPathForId(settings.defaultModel, libraryPath: settings.libraryPath),
+      config: SessionConfig(
+        micEnabled: mic,
+        speakerEnabled: speaker,
+        mode: settings.defaultMode,
+        modelPath: modelPathForId(settings.defaultModel, libraryPath: settings.libraryPath),
+        vadEnabled: settings.vadEnabled,
       ),
     );
   }

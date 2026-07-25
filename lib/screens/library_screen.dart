@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -25,9 +28,14 @@ class SessionSummary {
 }
 
 class LibraryScreen extends StatefulWidget {
-  final List<SessionSummary> sessions;
+  /// Optional seed list used in tests to bypass the async disk load.
+  final List<SessionSummary>? sessions;
 
-  const LibraryScreen({super.key, this.sessions = const []});
+  /// Resolved library directory path. When null and [sessions] is also null,
+  /// the screen shows an empty state without hitting disk.
+  final String? libraryPath;
+
+  const LibraryScreen({super.key, this.sessions, this.libraryPath});
 
   @override
   State<LibraryScreen> createState() => _LibraryScreenState();
@@ -36,20 +44,80 @@ class LibraryScreen extends StatefulWidget {
 class _LibraryScreenState extends State<LibraryScreen> {
   final _searchController = TextEditingController();
   String _query = '';
-  late List<SessionSummary> _sessions;
+  List<SessionSummary> _sessions = [];
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _sessions = List.of(widget.sessions);
+    if (widget.sessions != null) {
+      _sessions = List.of(widget.sessions!);
+      _loading = false;
+    } else {
+      _loadFromDisk();
+    }
   }
 
-  @override
-  void didUpdateWidget(covariant LibraryScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.sessions != widget.sessions) {
-      _sessions = List.of(widget.sessions);
+  Future<void> _loadFromDisk() async {
+    final libraryPath = widget.libraryPath;
+    if (libraryPath == null) {
+      setState(() => _loading = false);
+      return;
     }
+    final dir = Directory(libraryPath);
+    if (!dir.existsSync()) {
+      setState(() => _loading = false);
+      return;
+    }
+    final sessions = <SessionSummary>[];
+    try {
+      for (final entry in dir.listSync()) {
+        if (entry is! Directory) continue;
+        final sessionDir = entry;
+        final jsonFile = sessionDir
+            .listSync()
+            .whereType<File>()
+            .where((f) => f.path.endsWith('.json'))
+            .firstOrNull;
+        if (jsonFile == null) continue;
+        try {
+          final raw = await jsonFile.readAsString();
+          final list = jsonDecode(raw) as List<dynamic>;
+          final segments = list.map((e) {
+            final m = e as Map<String, dynamic>;
+            return TranscriptSegment(
+              source: m['source'] as String? ?? '',
+              speaker: m['speaker'] as String? ?? '',
+              text: m['text'] as String? ?? '',
+              timestamp: (m['timestamp'] as num?)?.toDouble() ?? 0,
+              duration: (m['duration'] as num?)?.toDouble() ?? 0,
+              language: m['language'] as String? ?? '',
+              confidence: (m['confidence'] as num?)?.toDouble() ?? 1.0,
+              isPartial: m['is_partial'] as bool? ?? false,
+            );
+          }).toList();
+          final title = sessionDir.path.split(Platform.pathSeparator).last;
+          final stat = await sessionDir.stat();
+          final duration = segments.isEmpty ? 0.0
+              : (segments.last.timestamp + segments.last.duration);
+          sessions.add(SessionSummary(
+            id: sessionDir.path,
+            title: title,
+            date: stat.modified.toIso8601String().substring(0, 10),
+            segmentsCount: segments.length,
+            segments: segments,
+            durationSeconds: duration,
+          ));
+        } catch (_) {
+          continue;
+        }
+      }
+      sessions.sort((a, b) => b.date.compareTo(a.date));
+    } catch (_) {}
+    setState(() {
+      _sessions = sessions;
+      _loading = false;
+    });
   }
 
   @override
@@ -68,6 +136,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
     final index = _sessions.indexOf(session);
     if (index == -1) return;
     setState(() => _sessions.removeAt(index));
+    // Delete from disk immediately — the undo action restores the
+    // in-memory item so the list entry reappears, but won't recreate
+    // the folder on disk.
+    final dir = Directory(session.id);
+    if (dir.existsSync()) dir.deleteSync(recursive: true);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('"${session.title}" dihapus.'),
@@ -145,40 +218,42 @@ class _LibraryScreenState extends State<LibraryScreen> {
                   ),
                 ),
                 Expanded(
-                  child: _sessions.isEmpty
-                      ? Center(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.folder_open_outlined, size: 48, color: colors.textTertiary),
-                              const SizedBox(height: 12),
-                              Text('Belum ada sesi tersimpan', style: TextStyle(color: colors.textSecondary)),
-                            ],
-                          ),
-                        )
-                      : filtered.isEmpty
-                          ? Center(child: Text('Tidak ada sesi cocok', style: TextStyle(color: colors.textSecondary)))
-                          : ListView.separated(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              itemCount: filtered.length,
-                              separatorBuilder: (_, _) => const SizedBox(height: 8),
-                              itemBuilder: (context, index) {
-                                final session = filtered[index];
-                                return _SessionCard(
-                                  session: session,
-                                  onDelete: () => _deleteSession(session),
-                                  onTap: () => Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => TranscriptPlayerScreen(
-                                        title: session.title,
-                                        durationSeconds: session.durationSeconds,
-                                        segments: session.segments,
+                  child: _loading
+                      ? const Center(child: CircularProgressIndicator())
+                      : _sessions.isEmpty
+                          ? Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.folder_open_outlined, size: 48, color: colors.textTertiary),
+                                  const SizedBox(height: 12),
+                                  Text('Belum ada sesi tersimpan', style: TextStyle(color: colors.textSecondary)),
+                                ],
+                              ),
+                            )
+                          : filtered.isEmpty
+                              ? Center(child: Text('Tidak ada sesi cocok', style: TextStyle(color: colors.textSecondary)))
+                              : ListView.separated(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                                  itemCount: filtered.length,
+                                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                                  itemBuilder: (context, index) {
+                                    final session = filtered[index];
+                                    return _SessionCard(
+                                      session: session,
+                                      onDelete: () => _deleteSession(session),
+                                      onTap: () => Navigator.of(context).push(
+                                        MaterialPageRoute(
+                                          builder: (_) => TranscriptPlayerScreen(
+                                            title: session.title,
+                                            durationSeconds: session.durationSeconds,
+                                            segments: session.segments,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                  ),
-                                );
-                              },
-                            ),
+                                    );
+                                  },
+                                ),
                 ),
               ],
             ),

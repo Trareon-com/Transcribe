@@ -158,6 +158,7 @@ class SessionConfig {
     bool? micEnabled,
     bool? speakerEnabled,
     SessionMode? mode,
+    bool? vadEnabled,
     String? micDeviceId,
     String? speakerDeviceId,
   }) {
@@ -166,7 +167,7 @@ class SessionConfig {
       speakerEnabled: speakerEnabled ?? this.speakerEnabled,
       mode: mode ?? this.mode,
       modelPath: modelPath,
-      vadEnabled: vadEnabled,
+      vadEnabled: vadEnabled ?? this.vadEnabled,
       micDeviceId: micDeviceId ?? this.micDeviceId,
       speakerDeviceId: speakerDeviceId ?? this.speakerDeviceId,
     );

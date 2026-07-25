@@ -180,9 +180,15 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           if (isPaused) notifier.resume();
         },
         const SingleActivator(LogicalKeyboardKey.keyL, meta: true): () =>
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LibraryScreen())),
+            Navigator.of(context).push(MaterialPageRoute(builder: (ctx) {
+              final lp = ref.read(settingsProvider).libraryPath;
+              return LibraryScreen(libraryPath: resolveTilde(lp));
+            })),
         const SingleActivator(LogicalKeyboardKey.keyL, control: true): () =>
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const LibraryScreen())),
+            Navigator.of(context).push(MaterialPageRoute(builder: (ctx) {
+              final lp = ref.read(settingsProvider).libraryPath;
+              return LibraryScreen(libraryPath: resolveTilde(lp));
+            })),
         const SingleActivator(LogicalKeyboardKey.comma, meta: true): () =>
             Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
         const SingleActivator(LogicalKeyboardKey.comma, control: true): () =>

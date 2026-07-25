@@ -124,6 +124,7 @@ fn start_capture(
     device_name: Option<String>,
     model_path: &str,
     source: &str,
+    language: Option<String>,
 ) -> Result<Option<CaptureChannel>, TrascribeError> {
     // A missing device id means the session has not completed audio setup yet.
     // Keep the state machine usable in CI and let the setup wizard provide the
@@ -141,7 +142,7 @@ fn start_capture(
         AudioCapture::start(device_name, samples_tx)?
     };
     let (events_tx, events_rx) = mpsc::channel();
-    let worker = LiveWorker::spawn(model_path, source, None, samples_rx, events_tx)?;
+    let worker = LiveWorker::spawn(model_path, source, language, samples_rx, events_tx)?;
     Ok(Some(CaptureChannel {
         _capture: capture,
         _worker: worker,
@@ -268,17 +269,20 @@ pub fn list_recoverable_sessions() -> Result<Vec<SessionRecoverySnapshot>, Trasc
 fn start_session_with_id(id: String, config: SessionConfig) -> Result<String, TrascribeError> {
     let now = std::time::Instant::now();
     let now_unix_ms = unix_ms_now()?;
+    let language = crate::settings::load_settings().language;
     let mic_capture = start_capture(
         config.mic_enabled,
         config.mic_device_id.clone(),
         &config.model_path,
         "mic",
+        language.clone(),
     )?;
     let speaker_capture = start_capture(
         config.speaker_enabled,
         config.speaker_device_id.clone(),
         &config.model_path,
         "spk",
+        language,
     )?;
     let state = SessionState {
         session_id: id.clone(),
