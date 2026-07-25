@@ -16,13 +16,13 @@ jobs:
       run:
         working-directory: rust_core
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install native audio dependencies
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y pkg-config libasound2-dev
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2.9.1
         with:
           workspaces: rust_core
 
@@ -49,8 +49,8 @@ jobs:
     name: Flutter (analyze, test)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2.23.0
         with:
           channel: stable
       - name: flutter pub get
@@ -75,12 +75,12 @@ jobs:
         working-directory: rust_core
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install native audio dependencies (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y pkg-config libasound2-dev
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2.9.1
         with:
           workspaces: rust_core
       - name: cargo build --release --lib
@@ -106,7 +106,7 @@ jobs:
       run:
         shell: ${{ matrix.shell }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install Linux desktop dependencies
         if: matrix.target == 'linux'
         run: |
@@ -116,12 +116,12 @@ jobs:
             libasound2-dev libxkbcommon-dev libegl1-mesa-dev
           rustup target add x86_64-unknown-linux-gnu
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2.9.1
         with:
           workspaces: rust_core
       - name: Build rust_core library
         run: cd rust_core && cargo build --release --lib
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2.23.0
         with:
           channel: stable
       - name: flutter pub get
@@ -142,12 +142,12 @@ jobs:
     runs-on: macos-latest
     if: github.event_name == 'push'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2.9.1
         with:
           workspaces: rust_core
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2.23.0
         with:
           channel: stable
       - name: flutter pub get
@@ -155,7 +155,7 @@ jobs:
       - name: Package macOS (build + ad-hoc sign + dmg)
         run: ./scripts/package_macos.sh
       - name: Upload dmg as CI artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: trascribe-macos-dmg-unsigned-adhoc
           path: dist/*.dmg
@@ -166,12 +166,12 @@ jobs:
     runs-on: windows-latest
     if: github.event_name == 'push'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@v2.9.1
         with:
           workspaces: rust_core
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2.23.0
         with:
           channel: stable
       - name: flutter pub get
@@ -180,7 +180,7 @@ jobs:
         run: ./scripts/package_windows.ps1
         shell: pwsh
       - name: Upload zip as CI artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: trascribe-windows-zip-unsigned
           path: dist/*.zip
@@ -191,7 +191,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rust, flutter]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Run benchmarks
         run: |
           chmod +x scripts/benchmark.sh
