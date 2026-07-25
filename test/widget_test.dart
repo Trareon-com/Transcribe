@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -108,5 +109,28 @@ void main() {
 
     expect(find.text('Pengaturan'), findsWidgets);
     expect(find.text('Tema'), findsOneWidget);
+  });
+
+  testWidgets('shortcuts icon opens the keyboard shortcuts panel', (WidgetTester tester) async {
+    await tester.pumpWidget(buildApp());
+    await tester.pump();
+
+    await tester.tap(find.byTooltip('Keyboard Shortcuts'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Keyboard Shortcuts'), findsWidgets);
+    expect(find.text('Mulai / Stop merekam'), findsOneWidget);
+  });
+
+  testWidgets('Ctrl+/ shortcut opens the keyboard shortcuts panel', (WidgetTester tester) async {
+    await tester.pumpWidget(buildApp());
+    await tester.pump();
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.control);
+    await tester.sendKeyEvent(LogicalKeyboardKey.slash);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.control);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Mulai / Stop merekam'), findsOneWidget);
   });
 }
