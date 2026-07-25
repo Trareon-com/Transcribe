@@ -1,10 +1,11 @@
-//! Ring buffer for chunked STT: 30s chunks with 10s overlap, bounded
+//! Ring buffer for chunked STT: 5s chunks with 1s overlap for responsive
+//! transcription (text appears every ~5s instead of ~30s).
 //! memory, no allocation on the audio hot path once warmed up.
 
 use crate::decode::TARGET_SAMPLE_RATE;
 
-pub const CHUNK_SECS: f64 = 30.0;
-pub const OVERLAP_SECS: f64 = 10.0;
+pub const CHUNK_SECS: f64 = 5.0;
+pub const OVERLAP_SECS: f64 = 1.0;
 
 /// Internal implementation detail, not part of the FRB-facing API surface.
 #[flutter_rust_bridge::frb(ignore)]
