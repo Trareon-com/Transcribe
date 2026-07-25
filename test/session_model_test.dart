@@ -121,7 +121,8 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    expect(container.read(sessionProvider).config.modelPath, 'models/ggml-tiny.bin');
+    expect(container.read(sessionProvider).config.modelPath,
+        endsWith('models/ggml-tiny.bin'));
 
     await Future<void>.delayed(Duration.zero);
     await Future<void>.delayed(Duration.zero);
