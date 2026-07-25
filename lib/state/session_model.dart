@@ -147,8 +147,9 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     // throw a raw "model file not found" exception with no UI handling —
     // this previously crashed session start unhandled whenever the
     // configured default model (e.g. from stale persisted settings) wasn't
-    // actually downloaded.
-    if (!File(state.config.modelPath).existsSync()) {
+    // actually downloaded. Only applies to the real bridge: RustBridgeMock
+    // (used in tests/dev-without-a-build) never touches the filesystem.
+    if (_bridge is RustEngineBridge && !File(state.config.modelPath).existsSync()) {
       throw StateError(
         'Model tidak ditemukan di ${state.config.modelPath}. '
         'Unduh model lewat Setup Wizard terlebih dahulu.',

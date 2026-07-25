@@ -148,8 +148,17 @@ mod windows {
     use crate::decode::resample_to_target;
     use crate::error::TrascribeError;
     use std::sync::mpsc;
+    use windows_sys::core::GUID;
     use windows_sys::Win32::Media::Audio::*;
     use windows_sys::Win32::System::Com::*;
+
+    // windows-sys only generates a GUID constant for the MMDeviceEnumerator
+    // CLSID (used below via its own name); it doesn't generate IID_* constants
+    // for interfaces the way the higher-level `windows` crate does, so these
+    // well-known, publicly documented Win32 interface IIDs are declared here.
+    const IID_IMMDEVICEENUMERATOR: GUID = GUID::from_u128(0xa95664d2_9614_4f35_a746_de8db63617e6);
+    const IID_IAUDIOCLIENT: GUID = GUID::from_u128(0x1cb9ad4c_dbfa_4c32_b178_c2f568a703b2);
+    const IID_IAUDIOCAPTURECLIENT: GUID = GUID::from_u128(0xc8adbd64_e71e_48a0_a4de_185c395cd317);
 
     pub fn capture_loopback(
         _device_hint: Option<String>,
@@ -159,7 +168,7 @@ mod windows {
         let (ready_tx, ready_rx) = mpsc::channel::<Result<(), TrascribeError>>();
 
         let thread = std::thread::spawn(move || {
-            let result = run_wasapi_loopback(&samples_tx, &stop_rx);
+            let result = run_wasapi_loopback(&samples_tx, &stop_rx, &ready_tx);
             let _ = ready_tx.send(result);
         });
 
@@ -173,15 +182,16 @@ mod windows {
     unsafe fn run_wasapi_loopback(
         samples_tx: &mpsc::Sender<Vec<f32>>,
         stop_rx: &mpsc::Receiver<()>,
+        ready_tx: &mpsc::Sender<Result<(), TrascribeError>>,
     ) -> Result<(), TrascribeError> {
         CoInitializeEx(std::ptr::null_mut(), COINIT_APARTMENTTHREADED);
 
         let mut enumerator: *mut IMMDeviceEnumerator = std::ptr::null_mut();
         let hr = CoCreateInstance(
-            &CLSID_MMDeviceEnumerator,
+            &MMDeviceEnumerator,
             std::ptr::null_mut(),
             CLSCTX_ALL,
-            &IID_IMMDeviceEnumerator,
+            &IID_IMMDEVICEENUMERATOR,
             &mut enumerator as *mut *mut IMMDeviceEnumerator as *mut *mut _,
         );
         if hr != 0 {
@@ -195,7 +205,7 @@ mod windows {
 
         let mut client: *mut IAudioClient = std::ptr::null_mut();
         (*device).Activate(
-            &IID_IAudioClient,
+            &IID_IAUDIOCLIENT,
             CLSCTX_ALL,
             std::ptr::null_mut(),
             &mut client as *mut *mut IAudioClient as *mut *mut _,
@@ -218,7 +228,7 @@ mod windows {
 
         let mut cc: *mut IAudioCaptureClient = std::ptr::null_mut();
         (*client).GetService(
-            &IID_IAudioCaptureClient,
+            &IID_IAUDIOCAPTURECLIENT,
             &mut cc as *mut *mut IAudioCaptureClient as *mut *mut _,
         );
 
@@ -291,7 +301,7 @@ mod linux {
         let (ready_tx, ready_rx) = mpsc::channel::<Result<(), TrascribeError>>();
 
         let thread = std::thread::spawn(move || {
-            let result = run_linux_loopback(&samples_tx, &stop_rx);
+            let result = run_linux_loopback(&samples_tx, &stop_rx, &ready_tx);
             let _ = ready_tx.send(result);
         });
 
@@ -307,6 +317,7 @@ mod linux {
     fn run_linux_loopback(
         samples_tx: &mpsc::Sender<Vec<f32>>,
         stop_rx: &mpsc::Receiver<()>,
+        ready_tx: &mpsc::Sender<Result<(), TrascribeError>>,
     ) -> Result<(), TrascribeError> {
         // ffmpeg -f pulse -i default -ac 1 -ar 16000 -f f32le -
         // fallback: parec --rate=16000 --channels=1 --format=float32le
