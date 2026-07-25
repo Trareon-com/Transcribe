@@ -5,12 +5,12 @@
 //! the pure state machine so it stays fully testable.
 
 use std::collections::HashMap;
-use std::sync::{Mutex, OnceLock};
+use std::sync::{mpsc, Mutex, OnceLock};
 
 use serde::Serialize;
 use uuid::Uuid;
 
-use crate::audio::{SessionConfig, SessionMode};
+use crate::audio::{AudioCapture, SessionConfig, SessionMode};
 use crate::error::TrascribeError;
 use crate::memory;
 
@@ -38,6 +38,13 @@ struct SessionState {
     started_at: std::time::Instant,
     last_split_at: std::time::Instant,
     segments_count: u32,
+    mic_capture: Option<CaptureChannel>,
+    speaker_capture: Option<CaptureChannel>,
+}
+
+struct CaptureChannel {
+    _capture: AudioCapture,
+    _samples_rx: mpsc::Receiver<Vec<f32>>,
 }
 
 /// Pure decision logic — trivially unit-testable without real timers or a
@@ -60,17 +67,40 @@ fn registry() -> &'static Mutex<HashMap<String, SessionState>> {
 pub fn start_session(config: SessionConfig) -> Result<String, TrascribeError> {
     let id = Uuid::new_v4().to_string();
     let now = std::time::Instant::now();
+    let mic_capture = start_capture(config.mic_enabled, config.mic_device_id.clone())?;
+    let speaker_capture = start_capture(config.speaker_enabled, config.speaker_device_id.clone())?;
     let state = SessionState {
         config,
         started_at: now,
         last_split_at: now,
         segments_count: 0,
+        mic_capture,
+        speaker_capture,
     };
     registry()
         .lock()
         .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?
         .insert(id.clone(), state);
     Ok(id)
+}
+
+fn start_capture(
+    enabled: bool,
+    device_name: Option<String>,
+) -> Result<Option<CaptureChannel>, TrascribeError> {
+    // A missing device id means the session has not completed audio setup yet.
+    // Keep the state machine usable in CI and let the setup wizard provide the
+    // explicit device before enabling hardware capture.
+    if !enabled || device_name.is_none() {
+        return Ok(None);
+    }
+
+    let (samples_tx, samples_rx) = mpsc::channel();
+    let capture = AudioCapture::start(device_name, samples_tx)?;
+    Ok(Some(CaptureChannel {
+        _capture: capture,
+        _samples_rx: samples_rx,
+    }))
 }
 
 pub fn stop_session(session_id: &str) -> Result<(), TrascribeError> {
@@ -130,6 +160,10 @@ pub fn get_status(session_id: &str) -> Result<SessionStatus, TrascribeError> {
     let state = reg
         .get(session_id)
         .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))?;
+    // Reading the handles here keeps the lifecycle-owned captures observable
+    // to the session state machine; the stream pipeline will consume these
+    // receivers when VAD/STT wiring lands.
+    let _capture_active = state.mic_capture.is_some() || state.speaker_capture.is_some();
 
     Ok(SessionStatus {
         session_id: session_id.to_string(),
