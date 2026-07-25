@@ -176,9 +176,17 @@ async fn download_single_url(
         Ok(res) => res,
         Err(_) if already_downloaded > 0 => {
             let _ = std::fs::remove_file(dest_path);
-            client.get(url).send().await.map_err(|e| TrascribeError::Model(format!("download request failed: {e}")))?
+            client
+                .get(url)
+                .send()
+                .await
+                .map_err(|e| TrascribeError::Model(format!("download request failed: {e}")))?
         }
-        Err(e) => return Err(TrascribeError::Model(format!("download request failed: {e}"))),
+        Err(e) => {
+            return Err(TrascribeError::Model(format!(
+                "download request failed: {e}"
+            )))
+        }
     };
 
     let status = response.status();
@@ -186,14 +194,29 @@ async fn download_single_url(
         if already_downloaded > 0 {
             let _ = std::fs::remove_file(dest_path);
             let fresh_req = client.get(url);
-            let fresh_res = fresh_req.send().await.map_err(|e| TrascribeError::Model(format!("download request failed: {e}")))?;
+            let fresh_res = fresh_req
+                .send()
+                .await
+                .map_err(|e| TrascribeError::Model(format!("download request failed: {e}")))?;
             if !fresh_res.status().is_success() {
-                return Err(TrascribeError::Model(format!("download failed with status {}", fresh_res.status())));
+                return Err(TrascribeError::Model(format!(
+                    "download failed with status {}",
+                    fresh_res.status()
+                )));
             }
             let content_length = fresh_res.content_length().unwrap_or(0);
-            return write_download_stream(dest_path, 0, content_length, fresh_res.bytes_stream(), on_progress).await;
+            return write_download_stream(
+                dest_path,
+                0,
+                content_length,
+                fresh_res.bytes_stream(),
+                on_progress,
+            )
+            .await;
         }
-        return Err(TrascribeError::Model(format!("download failed with status {status}")));
+        return Err(TrascribeError::Model(format!(
+            "download failed with status {status}"
+        )));
     }
 
     let is_partial = status.as_u16() == 206;

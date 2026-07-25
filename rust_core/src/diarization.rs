@@ -63,10 +63,8 @@ impl Diarizer {
             let z_diff = cluster.centroid_zcr - zcr;
             let dist = (p_diff * p_diff + e_diff * e_diff + z_diff * z_diff).sqrt();
 
-            if dist < threshold {
-                if best_match.map_or(true, |(_, min_dist)| dist < min_dist) {
-                    best_match = Some((idx, dist));
-                }
+            if dist < threshold && best_match.is_none_or(|(_, min_dist)| dist < min_dist) {
+                best_match = Some((idx, dist));
             }
         }
 
@@ -125,7 +123,11 @@ fn extract_acoustic_features(pcm: &[f32]) -> (f32, f32, f32) {
             }
         }
     }
-    let pitch_proxy = if pcm.len() > 0 { max_corr / pcm.len() as f32 } else { 0.0 };
+    let pitch_proxy = if !pcm.is_empty() {
+        max_corr / pcm.len() as f32
+    } else {
+        0.0
+    };
 
     (pitch_proxy, energy, zcr)
 }
