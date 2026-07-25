@@ -257,12 +257,29 @@ class _DownloadStepState extends State<_DownloadStep> {
           const SizedBox(height: 12),
           Text('Mengunduh model ${widget.modelId}...', style: Theme.of(context).textTheme.bodySmall),
         ] else if (_error != null) ...[
-          Text('Gagal mengunduh: $_error', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Gagal mengunduh model (${widget.modelId}). Silakan periksa koneksi internet atau coba lagi nanti.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ),
           const SizedBox(height: 12),
-          FilledButton.icon(
-            onPressed: _handleDownload,
-            icon: const Icon(Icons.refresh),
-            label: const Text('Coba Lagi'),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              OutlinedButton(
+                onPressed: () => setState(() => _error = null),
+                child: const Text('Lewati untuk Saat Ini'),
+              ),
+              const SizedBox(width: 12),
+              FilledButton.icon(
+                onPressed: _handleDownload,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Coba Lagi'),
+              ),
+            ],
           ),
         ] else
           FilledButton.icon(

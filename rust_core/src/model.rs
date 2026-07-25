@@ -133,7 +133,14 @@ pub async fn download_with_resume(
 ) -> Result<(), TrascribeError> {
     let already_downloaded = std::fs::metadata(dest_path).map(|m| m.len()).unwrap_or(0);
 
-    let client = reqwest::Client::new();
+    let client = reqwest::Client::builder()
+        .user_agent("Trascribe/1.0 (https://github.com/Trareon-com/Transcribe)")
+        .redirect(reqwest::redirect::Policy::limited(10))
+        .tcp_keepalive(std::time::Duration::from_secs(30))
+        .connect_timeout(std::time::Duration::from_secs(15))
+        .build()
+        .map_err(|e| TrascribeError::Model(format!("failed to build HTTP client: {e}")))?;
+
     let request = build_resume_request(client.get(url), already_downloaded);
 
     let response = request
