@@ -7,10 +7,12 @@ import 'package:trascribe/services/bridge_service.dart';
 import 'package:trascribe/state/models.dart';
 import 'package:trascribe/state/privacy_report_model.dart';
 import 'package:trascribe/state/settings_model.dart';
+import 'package:trascribe/src/rust/audio/device.dart' as rust_device;
 import 'package:trascribe/src/rust/session.dart' as rust_session;
 
 class _FakeBridge implements RustBridge {
   AppSettings savedSettings = AppSettings.defaults();
+  final List<(String, String)> downloadModelCalls = [];
 
   @override
   Future<String> startSession(SessionConfig config) async => 'test-session';
@@ -44,13 +46,25 @@ class _FakeBridge implements RustBridge {
   Future<void> saveSettings(AppSettings settings) async {
     savedSettings = settings;
   }
+
+  @override
+  Future<void> downloadModel(String modelsDir, String modelId) async {
+    downloadModelCalls.add((modelsDir, modelId));
+  }
+
+  @override
+  Future<List<rust_device.AudioDeviceInfo>> listAudioDevices() async => const [];
 }
 
 void main() {
   testWidgets('wizard walks through all 5 steps and calls onFinished', (WidgetTester tester) async {
     var finished = false;
+    final bridge = _FakeBridge();
     await tester.pumpWidget(
-      MaterialApp(home: SetupWizardScreen(onFinished: () => finished = true)),
+      ProviderScope(
+        overrides: [rustBridgeProvider.overrideWithValue(bridge)],
+        child: MaterialApp(home: SetupWizardScreen(onFinished: () => finished = true)),
+      ),
     );
 
     expect(find.text('1. Deteksi Spesifikasi'), findsOneWidget);
@@ -74,7 +88,13 @@ void main() {
   });
 
   testWidgets('back button disabled on first step, enabled after', (WidgetTester tester) async {
-    await tester.pumpWidget(MaterialApp(home: SetupWizardScreen(onFinished: () {})));
+    final bridge = _FakeBridge();
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [rustBridgeProvider.overrideWithValue(bridge)],
+        child: MaterialApp(home: SetupWizardScreen(onFinished: () {})),
+      ),
+    );
 
     final backButton = tester.widget<TextButton>(find.widgetWithText(TextButton, 'Kembali'));
     expect(backButton.onPressed, isNull);
@@ -109,12 +129,15 @@ void main() {
     expect(bridge.savedSettings.defaultModel, 'small');
   });
 
-  testWidgets('downloading a model records a privacy report event', (
+  testWidgets('downloading a model calls bridge and records a privacy report event', (
     WidgetTester tester,
   ) async {
+    final bridge = _FakeBridge();
+
     await tester.pumpWidget(
-      const ProviderScope(
-        child: MaterialApp(
+      ProviderScope(
+        overrides: [rustBridgeProvider.overrideWithValue(bridge)],
+        child: const MaterialApp(
           home: SetupWizardScreen(onFinished: _noop),
         ),
       ),
@@ -132,6 +155,9 @@ void main() {
     await tester.tap(find.text('Unduh model'));
     await tester.pumpAndSettle();
 
+    expect(bridge.downloadModelCalls.length, 1);
+    expect(bridge.downloadModelCalls.single.$2, 'tiny');
+
     final container = ProviderScope.containerOf(
       tester.element(find.byType(SetupWizardScreen)),
       listen: false,
@@ -141,6 +167,36 @@ void main() {
     expect(report.networkCallCount, 1);
     expect(report.events.single, contains('Download model "tiny"'));
     expect(find.text('Sudah dicatat'), findsOneWidget);
+  });
+
+  testWidgets('navigating past download step without clicking does not trigger bridge or privacy report', (
+    WidgetTester tester,
+  ) async {
+    final bridge = _FakeBridge();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [rustBridgeProvider.overrideWithValue(bridge)],
+        child: const MaterialApp(
+          home: SetupWizardScreen(onFinished: _noop),
+        ),
+      ),
+    );
+
+    for (var i = 0; i < 4; i++) {
+      await tester.tap(find.text('Lanjut'));
+      await tester.pumpAndSettle();
+    }
+
+    expect(bridge.downloadModelCalls, isEmpty);
+
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(SetupWizardScreen)),
+      listen: false,
+    );
+    final report = container.read(privacyReportProvider);
+
+    expect(report.networkCallCount, 0);
   });
 }
 

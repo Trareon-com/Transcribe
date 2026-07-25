@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:typed_data';
 
 import '../src/rust/api.dart' as rust_api;
 import '../src/rust/audio.dart' as rust_audio;
+import '../src/rust/audio/device.dart' as rust_device;
 import '../src/rust/export.dart' as rust_export;
 import '../src/rust/session.dart' as rust_session;
 import '../src/rust/settings.dart' as rust_settings;
@@ -23,6 +25,8 @@ abstract class RustBridge {
   Future<String> recoverSession(rust_session.SessionRecoverySnapshot snapshot);
   Future<AppSettings> loadSettings();
   Future<void> saveSettings(AppSettings settings);
+  Future<void> downloadModel(String modelsDir, String modelId);
+  Future<List<rust_device.AudioDeviceInfo>> listAudioDevices();
 }
 
 class RustBridgeMock implements RustBridge {
@@ -116,6 +120,27 @@ class RustBridgeMock implements RustBridge {
   Future<void> saveSettings(AppSettings settings) async {
     _settings = settings;
   }
+
+  @override
+  Future<void> downloadModel(String modelsDir, String modelId) async {}
+
+  @override
+  Future<List<rust_device.AudioDeviceInfo>> listAudioDevices() async => [
+        rust_device.AudioDeviceInfo(
+          name: 'Built-in Microphone',
+          deviceId: 'mic-1',
+          isDefault: true,
+          channels: 1,
+          sampleRates: Uint32List.fromList([16000, 44100, 48000]),
+        ),
+        rust_device.AudioDeviceInfo(
+          name: 'System Speaker Loopback',
+          deviceId: 'spk-1',
+          isDefault: true,
+          channels: 2,
+          sampleRates: Uint32List.fromList([16000, 44100, 48000]),
+        ),
+      ];
 }
 
 /// Real bridge backed by the flutter_rust_bridge-generated bindings in
@@ -230,6 +255,13 @@ class RustEngineBridge implements RustBridge {
   Future<void> saveSettings(AppSettings settings) {
     return rust_api.saveSettings(settings: _toRustSettings(settings));
   }
+
+  @override
+  Future<void> downloadModel(String modelsDir, String modelId) =>
+      rust_api.downloadModel(modelsDir: modelsDir, modelId: modelId);
+
+  @override
+  Future<List<rust_device.AudioDeviceInfo>> listAudioDevices() => rust_api.listAudioDevices();
 
   rust_audio.SessionConfig _toRustSessionConfig(SessionConfig config) {
     return rust_audio.SessionConfig(

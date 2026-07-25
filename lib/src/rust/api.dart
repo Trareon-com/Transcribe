@@ -75,6 +75,14 @@ Future<bool> isModelDownloaded({
   modelId: modelId,
 );
 
+Future<void> downloadModel({
+  required String modelsDir,
+  required String modelId,
+}) => RustLib.instance.api.crateApiDownloadModel(
+  modelsDir: modelsDir,
+  modelId: modelId,
+);
+
 Future<List<ExportedFile>> exportSession({
   required List<Segment> segments,
   required List<ExportFormat> formats,

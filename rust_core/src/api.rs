@@ -80,6 +80,24 @@ pub fn is_model_downloaded(models_dir: String, model_id: String) -> bool {
     crate::model::is_model_downloaded(&PathBuf::from(models_dir), &model_id)
 }
 
+pub async fn download_model(models_dir: String, model_id: String) -> Result<(), TrascribeError> {
+    let models_path = PathBuf::from(models_dir);
+    let info = crate::model::resolve_model_info(&models_path, &model_id)?;
+    let dest_path = crate::model::resolve_model_path(&models_path, &model_id)?;
+
+    if let Some(parent) = dest_path.parent() {
+        std::fs::create_dir_all(parent).map_err(TrascribeError::from)?;
+    }
+
+    crate::model::download_with_resume(&info.url, &dest_path, |_progress| {}).await?;
+
+    if !info.sha256.is_empty() {
+        crate::model::verify_checksum(&dest_path, &info.sha256)?;
+    }
+
+    Ok(())
+}
+
 // --- Export -----------------------------------------------------
 
 pub fn export_session(
@@ -150,6 +168,13 @@ mod tests {
         let dir = std::env::temp_dir().to_string_lossy().to_string();
         let models = list_available_models(dir);
         assert!(models.iter().any(|m| m.id == "tiny"));
+    }
+
+    #[tokio::test]
+    async fn download_unknown_model_errors() {
+        let dir = std::env::temp_dir().to_string_lossy().to_string();
+        let res = download_model(dir, "invalid-model-id".into()).await;
+        assert!(res.is_err());
     }
 
     #[test]

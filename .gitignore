@@ -24,6 +24,7 @@ models/*.gguf
 
 # Generated test fixtures (regenerate via `cargo run --bin gen_fixtures`)
 test/fixtures/
+rust_core/test/fixtures/
 
 # Env / secrets
 .env

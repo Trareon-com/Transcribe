@@ -7,6 +7,7 @@ import 'package:trascribe/main.dart';
 import 'package:trascribe/services/bridge_service.dart';
 import 'package:trascribe/state/models.dart';
 import 'package:trascribe/state/settings_model.dart';
+import 'package:trascribe/src/rust/audio/device.dart' as rust_device;
 import 'package:trascribe/src/rust/session.dart' as rust_session;
 
 /// Timer-free test double — the real [RustBridgeMock] runs a periodic
@@ -42,6 +43,12 @@ class _NoopBridge implements RustBridge {
 
   @override
   Future<void> saveSettings(AppSettings settings) async {}
+
+  @override
+  Future<void> downloadModel(String modelsDir, String modelId) async {}
+
+  @override
+  Future<List<rust_device.AudioDeviceInfo>> listAudioDevices() async => const [];
 }
 
 void main() {

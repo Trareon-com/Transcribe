@@ -93,24 +93,23 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
           },
         );
       case _WizardStep.audioSetup:
-        return const _StepBody(
-          title: '3. Setup Audio',
-          description:
-              'macOS: ScreenCaptureKit (tanpa install) atau BlackHole (fallback macOS lama).\n'
-              'Windows: WASAPI loopback native, tanpa driver tambahan.',
-          icon: Icons.speaker_group_outlined,
-        );
+        return const _AudioSetupStep();
       case _WizardStep.modelDownload:
         return _DownloadStep(
           modelId: _selectedModel,
           downloaded: _downloadRecorded,
-          onDownload: () {
+          onDownload: () async {
             if (_downloadRecorded) return;
+            final settings = ref.read(settingsProvider);
+            final bridge = ref.read(rustBridgeProvider);
+            await bridge.downloadModel(settings.libraryPath, _selectedModel);
             ref.read(privacyReportProvider.notifier).recordModelDownload(_selectedModel);
-            setState(() => _downloadRecorded = true);
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Model "$_selectedModel" dicatat sebagai unduhan.')),
-            );
+            if (mounted) {
+              setState(() => _downloadRecorded = true);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Model "$_selectedModel" dicatat sebagai unduhan.')),
+              );
+            }
           },
         );
       case _WizardStep.toneTest:
@@ -123,16 +122,121 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   }
 }
 
-class _DownloadStep extends StatelessWidget {
+class _AudioSetupStep extends ConsumerStatefulWidget {
+  const _AudioSetupStep();
+
+  @override
+  ConsumerState<_AudioSetupStep> createState() => _AudioSetupStepState();
+}
+
+class _AudioSetupStepState extends ConsumerState<_AudioSetupStep> {
+  bool _loading = true;
+  String? _selectedMic;
+  String? _selectedSpeaker;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadDevices();
+  }
+
+  Future<void> _loadDevices() async {
+    final bridge = ref.read(rustBridgeProvider);
+    final devices = await bridge.listAudioDevices();
+    if (mounted) {
+      setState(() {
+        _loading = false;
+        _selectedMic = devices.isNotEmpty ? devices.first.name : 'Built-in Microphone';
+        _selectedSpeaker = 'System Speaker Loopback';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.speaker_group_outlined, size: 64),
+        const SizedBox(height: 16),
+        Text('3. Setup Audio', style: Theme.of(context).textTheme.headlineSmall),
+        const SizedBox(height: 8),
+        const Text(
+          'Deteksi otomatis perangkat mic dan loopback speaker sistem.',
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 20),
+        if (_loading)
+          const CircularProgressIndicator()
+        else
+          Column(
+            children: [
+              DropdownButtonFormField<String>(
+                initialValue: _selectedMic,
+                decoration: const InputDecoration(
+                  labelText: 'Perangkat Mikrofon (Input)',
+                  border: OutlineInputBorder(),
+                ),
+                items: [
+                  DropdownMenuItem(value: _selectedMic, child: Text(_selectedMic ?? 'Built-in Microphone')),
+                ],
+                onChanged: (val) => setState(() => _selectedMic = val),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: _selectedSpeaker,
+                decoration: const InputDecoration(
+                  labelText: 'Perangkat Speaker / Loopback (Output)',
+                  border: OutlineInputBorder(),
+                ),
+                items: [
+                  DropdownMenuItem(value: _selectedSpeaker, child: Text(_selectedSpeaker ?? 'System Speaker Loopback')),
+                ],
+                onChanged: (val) => setState(() => _selectedSpeaker = val),
+              ),
+            ],
+          ),
+      ],
+    );
+  }
+}
+
+class _DownloadStep extends StatefulWidget {
   final String modelId;
   final bool downloaded;
-  final VoidCallback onDownload;
+  final Future<void> Function() onDownload;
 
   const _DownloadStep({
     required this.modelId,
     required this.downloaded,
     required this.onDownload,
   });
+
+  @override
+  State<_DownloadStep> createState() => _DownloadStepState();
+}
+
+class _DownloadStepState extends State<_DownloadStep> {
+  bool _isDownloading = false;
+  String? _error;
+
+  Future<void> _handleDownload() async {
+    setState(() {
+      _isDownloading = true;
+      _error = null;
+    });
+    try {
+      await widget.onDownload();
+    } catch (e) {
+      if (mounted) {
+        setState(() => _error = e.toString());
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isDownloading = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -144,15 +248,28 @@ class _DownloadStep extends StatelessWidget {
         Text('4. Unduh Model', style: Theme.of(context).textTheme.headlineSmall),
         const SizedBox(height: 8),
         Text(
-          'Model "$modelId" siap diunduh. Unduhan model ini akan tercatat di Privacy Report.',
+          'Model "${widget.modelId}" siap diunduh. Unduhan model ini akan tercatat di Privacy Report.',
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 20),
-        FilledButton.icon(
-          onPressed: downloaded ? null : onDownload,
-          icon: const Icon(Icons.cloud_download_outlined),
-          label: Text(downloaded ? 'Sudah dicatat' : 'Unduh model'),
-        ),
+        if (_isDownloading) ...[
+          const CircularProgressIndicator(),
+          const SizedBox(height: 12),
+          Text('Mengunduh model ${widget.modelId}...', style: Theme.of(context).textTheme.bodySmall),
+        ] else if (_error != null) ...[
+          Text('Gagal mengunduh: $_error', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: _handleDownload,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Coba Lagi'),
+          ),
+        ] else
+          FilledButton.icon(
+            onPressed: widget.downloaded ? null : _handleDownload,
+            icon: const Icon(Icons.cloud_download_outlined),
+            label: Text(widget.downloaded ? 'Sudah dicatat' : 'Unduh model'),
+          ),
       ],
     );
   }

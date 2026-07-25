@@ -4,10 +4,23 @@ version = "0.1.0"
 edition = "2021"
 license = "MIT"
 description = "Trascribe Rust engine — audio capture, VAD, STT, export"
+autobins = false
 
 [lib]
 name = "rust_core"
 crate-type = ["staticlib", "cdylib", "lib"]
+
+[[bin]]
+name = "gen_fixtures"
+path = "src/bin/gen_fixtures.rs"
+
+[[bin]]
+name = "trascribe"
+path = "src/bin/trascribe.rs"
+
+[[bin]]
+name = "trascribe_cli"
+path = "src/bin/trascribe_cli.rs"
 
 [dependencies]
 thiserror = "2"

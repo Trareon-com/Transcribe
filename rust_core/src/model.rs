@@ -71,6 +71,27 @@ pub fn resolve_model_path(models_dir: &Path, model_id: &str) -> Result<PathBuf, 
         .ok_or_else(|| TrascribeError::Model(format!("unknown model id: {model_id}")))
 }
 
+#[flutter_rust_bridge::frb(ignore)]
+pub fn resolve_model_info(models_dir: &Path, model_id: &str) -> Result<ModelInfo, TrascribeError> {
+    let (id, filename, min_ram_gb, is_bundled) = KNOWN_MODELS
+        .iter()
+        .find(|(id, ..)| *id == model_id)
+        .copied()
+        .ok_or_else(|| TrascribeError::Model(format!("unknown model id: {model_id}")))?;
+
+    let path = models_dir.join(filename);
+    let size_bytes = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
+    Ok(ModelInfo {
+        id: id.to_string(),
+        name: format!("{id} ({filename})"),
+        url: format!("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/{filename}"),
+        sha256: String::new(),
+        size_bytes,
+        min_ram_gb,
+        is_bundled,
+    })
+}
+
 /// Verify a downloaded file's SHA256 against an expected hex digest.
 /// Empty `expected` means "no pin configured" — treated as a hard failure
 /// rather than silently trusting the download (see STRIDE §86.1).
@@ -131,7 +152,14 @@ pub async fn download_with_resume(
     let total_bytes = already_downloaded + content_length;
 
     let stream = response.bytes_stream();
-    write_download_stream(dest_path, already_downloaded, total_bytes, stream, on_progress).await
+    write_download_stream(
+        dest_path,
+        already_downloaded,
+        total_bytes,
+        stream,
+        on_progress,
+    )
+    .await
 }
 
 fn build_resume_request(
@@ -183,8 +211,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use futures_util::stream;
     use bytes::Bytes;
+    use futures_util::stream;
     #[test]
     fn list_models_includes_tiny_bundled() {
         let dir = std::env::temp_dir();
@@ -270,9 +298,11 @@ mod tests {
             Ok::<Bytes, std::io::Error>(Bytes::from_static(b"def")),
             Ok::<Bytes, std::io::Error>(Bytes::from_static(b"ghi")),
         ]);
-        write_download_stream(&dest, 3, 9, chunks, |p| progress.push((p.bytes_downloaded, p.total_bytes)))
-            .await
-            .unwrap();
+        write_download_stream(&dest, 3, 9, chunks, |p| {
+            progress.push((p.bytes_downloaded, p.total_bytes))
+        })
+        .await
+        .unwrap();
 
         let downloaded = std::fs::read(&dest).unwrap();
         assert_eq!(downloaded, body);
