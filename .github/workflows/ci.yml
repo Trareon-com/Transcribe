@@ -127,3 +127,29 @@ jobs:
       - name: flutter build windows
         if: matrix.target == 'windows'
         run: flutter build windows --release
+
+  macos-packaging-smoke-test:
+    name: macOS packaging smoke test (build, ad-hoc sign, dmg)
+    runs-on: macos-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: rust_core
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: flutter pub get
+        run: flutter pub get
+      - name: Package macOS (build + ad-hoc sign + dmg)
+        run: ./scripts/package_macos.sh
+      # Internal verification only — binaries are distributed via Lynk.ID
+      # per ADR-12, never published as public GitHub artifacts/releases.
+      - name: Upload dmg as CI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: trascribe-macos-dmg-unsigned-adhoc
+          path: dist/*.dmg
+          retention-days: 7
