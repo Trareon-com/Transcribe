@@ -128,11 +128,15 @@ impl<'a> LivePipeline<'a> {
             return Ok(Vec::new());
         }
 
-        let has_speech = samples
-            .chunks_exact(FRAME_SAMPLES_10MS)
-            .try_fold(false, |found, frame| {
-                Ok::<bool, TrascribeError>(found || self.vad.is_speech(&to_i16(frame))?)
-            })?;
+        let mut frame_buf = [0i16; FRAME_SAMPLES_10MS];
+        let mut has_speech = false;
+        for frame in samples.chunks_exact(FRAME_SAMPLES_10MS) {
+            fill_i16_slice(frame, &mut frame_buf);
+            if self.vad.is_speech(&frame_buf)? {
+                has_speech = true;
+                break;
+            }
+        }
         self.ring.push(samples);
         self.samples_seen = self.samples_seen.saturating_add(samples.len() as u64);
 
@@ -168,11 +172,10 @@ impl<'a> LivePipeline<'a> {
     }
 }
 
-fn to_i16(samples: &[f32]) -> Vec<i16> {
-    samples
-        .iter()
-        .map(|sample| (sample.clamp(-1.0, 1.0) * i16::MAX as f32) as i16)
-        .collect()
+fn fill_i16_slice(src: &[f32], dst: &mut [i16]) {
+    for (s, d) in src.iter().zip(dst.iter_mut()) {
+        *d = (s.clamp(-1.0, 1.0) * i16::MAX as f32) as i16;
+    }
 }
 
 fn rms_level(samples: &[f32]) -> f32 {
@@ -184,14 +187,22 @@ fn rms_level(samples: &[f32]) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use super::{rms_level, to_i16};
+    use super::{fill_i16_slice, rms_level};
+
+    #[test]
+    fn fill_i16_slice_clamps_samples() {
+        let input = [-2.0f32, -1.0f32, 0.0f32, 1.0f32, 2.0f32];
+        let mut out = [0i16; 5];
+        fill_i16_slice(&input, &mut out);
+        assert_eq!(out, [-32767, -32767, 0, 32767, 32767]);
+    }
 
     #[test]
     fn pcm_conversion_clamps_float_bounds() {
-        assert_eq!(
-            to_i16(&[-2.0, -1.0, 0.0, 1.0, 2.0]),
-            vec![-32767, -32767, 0, 32767, 32767]
-        );
+        let input = [-2.0f32, -1.0f32, 0.0f32, 1.0f32, 2.0f32];
+        let mut out = [0i16; 5];
+        fill_i16_slice(&input, &mut out);
+        assert_eq!(out, [-32767, -32767, 0, 32767, 32767]);
     }
 
     #[test]

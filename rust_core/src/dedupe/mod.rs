@@ -11,11 +11,19 @@ pub const SIMILARITY_THRESHOLD: f64 = 0.8;
 /// already present in `existing` (source differs, timestamps within window,
 /// text similarity above threshold).
 pub fn is_echo(candidate: &Segment, existing: &[Segment]) -> bool {
-    existing.iter().any(|prior| {
-        prior.source != candidate.source
-            && (candidate.timestamp - prior.timestamp).abs() <= DEDUPE_WINDOW_SECS
+    for prior in existing.iter().rev() {
+        let time_diff = candidate.timestamp - prior.timestamp;
+        if time_diff > DEDUPE_WINDOW_SECS {
+            break;
+        }
+        if prior.source != candidate.source
+            && time_diff.abs() <= DEDUPE_WINDOW_SECS
             && text_similarity(&candidate.text, &prior.text) >= SIMILARITY_THRESHOLD
-    })
+        {
+            return true;
+        }
+    }
+    false
 }
 
 /// Filter a batch, keeping the first occurrence and dropping later echoes.
