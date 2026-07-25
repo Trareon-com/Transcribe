@@ -108,6 +108,13 @@ pub async fn download_model(models_dir: String, model_id: String) -> Result<(), 
     Ok(())
 }
 
+/// Poll the current download progress. Returns `None` if no download is
+/// in progress or progress tracking has been reset.
+pub fn get_download_progress() -> Option<(u64, u64)> {
+    crate::model::read_download_progress()
+        .map(|p| (p.bytes_downloaded, p.total_bytes))
+}
+
 // --- Export -----------------------------------------------------
 
 pub fn export_session(

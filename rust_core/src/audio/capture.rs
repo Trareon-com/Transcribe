@@ -20,8 +20,8 @@ use crate::error::TrascribeError;
 /// orchestration, not directly from Dart.
 #[flutter_rust_bridge::frb(ignore)]
 pub struct AudioCapture {
-    stop_tx: Option<mpsc::Sender<()>>,
-    thread: Option<JoinHandle<()>>,
+    pub(crate) stop_tx: Option<mpsc::Sender<()>>,
+    pub(crate) thread: Option<JoinHandle<()>>,
 }
 
 impl AudioCapture {

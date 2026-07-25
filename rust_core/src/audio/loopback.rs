@@ -37,7 +37,7 @@ pub fn start_loopback(
 // macOS — BlackHole via cpal, fallback to ffmpeg avfoundation
 // ---------------------------------------------------------------------------
 #[cfg(target_os = "macos")]
-mod macos {
+pub(crate) mod macos {
     use crate::audio::capture::AudioCapture;
     use crate::error::TrascribeError;
     use std::io::Read;
@@ -143,7 +143,7 @@ mod macos {
 // Windows — WASAPI loopback
 // ---------------------------------------------------------------------------
 #[cfg(target_os = "windows")]
-mod windows {
+pub(crate) mod windows {
     use crate::audio::capture::AudioCapture;
     use crate::decode::resample_to_target;
     use crate::error::TrascribeError;
@@ -275,7 +275,7 @@ mod windows {
 // Linux — ffmpeg PulseAudio monitor, fallback to parec
 // ---------------------------------------------------------------------------
 #[cfg(target_os = "linux")]
-mod linux {
+pub(crate) mod linux {
     use crate::audio::capture::AudioCapture;
     use crate::error::TrascribeError;
     use std::io::Read;

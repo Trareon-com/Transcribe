@@ -91,6 +91,11 @@ Future<void> downloadModel({
   modelId: modelId,
 );
 
+/// Poll the current download progress. Returns `None` if no download is
+/// in progress or progress tracking has been reset.
+Future<(BigInt, BigInt)?> getDownloadProgress() =>
+    RustLib.instance.api.crateApiGetDownloadProgress();
+
 Future<List<ExportedFile>> exportSession({
   required List<Segment> segments,
   required List<ExportFormat> formats,
