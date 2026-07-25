@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 
-use crate::error::{TrascribeError, TrascribeResult};
+use crate::error::TrascribeError;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ModelInfo {
@@ -32,6 +32,7 @@ pub const KNOWN_MODELS: &[(&str, &str, u32, bool)] = &[
     ("large-v3-turbo", "ggml-large-v3-turbo.bin", 6, false),
 ];
 
+#[flutter_rust_bridge::frb(ignore)]
 pub fn list_available_models(models_dir: &Path) -> Vec<ModelInfo> {
     KNOWN_MODELS
         .iter()
@@ -53,13 +54,15 @@ pub fn list_available_models(models_dir: &Path) -> Vec<ModelInfo> {
         .collect()
 }
 
+#[flutter_rust_bridge::frb(ignore)]
 pub fn is_model_downloaded(models_dir: &Path, model_id: &str) -> bool {
     resolve_model_path(models_dir, model_id)
         .map(|p| p.exists())
         .unwrap_or(false)
 }
 
-pub fn resolve_model_path(models_dir: &Path, model_id: &str) -> TrascribeResult<PathBuf> {
+#[flutter_rust_bridge::frb(ignore)]
+pub fn resolve_model_path(models_dir: &Path, model_id: &str) -> Result<PathBuf, TrascribeError> {
     KNOWN_MODELS
         .iter()
         .find(|(id, ..)| *id == model_id)
@@ -70,7 +73,8 @@ pub fn resolve_model_path(models_dir: &Path, model_id: &str) -> TrascribeResult<
 /// Verify a downloaded file's SHA256 against an expected hex digest.
 /// Empty `expected` means "no pin configured" — treated as a hard failure
 /// rather than silently trusting the download (see STRIDE §86.1).
-pub fn verify_checksum(path: &Path, expected_sha256: &str) -> TrascribeResult<()> {
+#[flutter_rust_bridge::frb(ignore)]
+pub fn verify_checksum(path: &Path, expected_sha256: &str) -> Result<(), TrascribeError> {
     use sha2::{Digest, Sha256};
     if expected_sha256.is_empty() {
         return Err(TrascribeError::Model(
@@ -78,7 +82,7 @@ pub fn verify_checksum(path: &Path, expected_sha256: &str) -> TrascribeResult<()
         ));
     }
 
-    let bytes = std::fs::read(path).map_err(TrascribeError::Io)?;
+    let bytes = std::fs::read(path).map_err(TrascribeError::from)?;
     let mut hasher = Sha256::new();
     hasher.update(&bytes);
     let actual = hex::encode(hasher.finalize());
@@ -104,7 +108,7 @@ pub async fn download_with_resume(
     url: &str,
     dest_path: &Path,
     mut on_progress: impl FnMut(DownloadProgress),
-) -> TrascribeResult<()> {
+) -> Result<(), TrascribeError> {
     use futures_util::StreamExt;
 
     let already_downloaded = std::fs::metadata(dest_path).map(|m| m.len()).unwrap_or(0);
@@ -131,20 +135,20 @@ pub async fn download_with_resume(
     let total_bytes = already_downloaded + content_length;
 
     if let Some(parent) = dest_path.parent() {
-        std::fs::create_dir_all(parent).map_err(TrascribeError::Io)?;
+        std::fs::create_dir_all(parent).map_err(TrascribeError::from)?;
     }
 
     let mut file = std::fs::OpenOptions::new()
         .create(true)
         .append(true)
         .open(dest_path)
-        .map_err(TrascribeError::Io)?;
+        .map_err(TrascribeError::from)?;
 
     let mut downloaded = already_downloaded;
     let mut stream = response.bytes_stream();
     while let Some(chunk) = stream.next().await {
         let chunk = chunk.map_err(|e| TrascribeError::Model(format!("stream error: {e}")))?;
-        file.write_all(&chunk).map_err(TrascribeError::Io)?;
+        file.write_all(&chunk).map_err(TrascribeError::from)?;
         downloaded += chunk.len() as u64;
         on_progress(DownloadProgress {
             bytes_downloaded: downloaded,

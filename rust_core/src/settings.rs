@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use crate::audio::SessionMode;
-use crate::error::{TrascribeError, TrascribeResult};
+use crate::error::TrascribeError;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Theme {
@@ -50,7 +50,7 @@ pub fn default_library_path() -> String {
         .unwrap_or_else(|| "./Trascribe".to_string())
 }
 
-fn settings_path() -> TrascribeResult<PathBuf> {
+fn settings_path() -> Result<PathBuf, TrascribeError> {
     let dir = dirs::config_dir()
         .ok_or_else(|| TrascribeError::InvalidInput("no config directory available".into()))?
         .join("Trascribe");
@@ -71,14 +71,14 @@ fn load_settings_from(path: &Option<PathBuf>) -> AppSettings {
     }
 }
 
-pub fn save_settings(settings: &AppSettings) -> TrascribeResult<()> {
+pub fn save_settings(settings: &AppSettings) -> Result<(), TrascribeError> {
     let path = settings_path()?;
     if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(TrascribeError::Io)?;
+        fs::create_dir_all(parent).map_err(TrascribeError::from)?;
     }
     let json = serde_json::to_string_pretty(settings)
         .map_err(|e| TrascribeError::InvalidInput(e.to_string()))?;
-    fs::write(&path, json).map_err(TrascribeError::Io)
+    fs::write(&path, json).map_err(TrascribeError::from)
 }
 
 #[cfg(test)]

@@ -43,15 +43,15 @@ fn acquire_lock_at(path: &PathBuf) -> TrascribeResult<()> {
         ));
     }
     if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(TrascribeError::Io)?;
+        fs::create_dir_all(parent).map_err(TrascribeError::from)?;
     }
-    fs::write(path, std::process::id().to_string()).map_err(TrascribeError::Io)
+    fs::write(path, std::process::id().to_string()).map_err(TrascribeError::from)
 }
 
 pub fn release_lock() -> TrascribeResult<()> {
     let path = lock_path()?;
     if path.exists() {
-        fs::remove_file(path).map_err(TrascribeError::Io)?;
+        fs::remove_file(path).map_err(TrascribeError::from)?;
     }
     Ok(())
 }

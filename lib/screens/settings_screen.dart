@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/models.dart';
 import '../state/settings_model.dart';
 import 'privacy_report_screen.dart';
+import 'usage_dashboard_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -71,6 +72,14 @@ class SettingsScreen extends ConsumerWidget {
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const PrivacyReportScreen()),
+            ),
+          ),
+          ListTile(
+            title: const Text('Statistik Penggunaan'),
+            subtitle: const Text('Total sesi, jam ditranskrip, dan mode yang paling sering dipakai'),
+            trailing: const Icon(Icons.chevron_right),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const UsageDashboardScreen()),
             ),
           ),
         ],

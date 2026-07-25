@@ -15,21 +15,35 @@ class VuMeter extends ConsumerWidget {
 
     return Row(
       children: [
-        Expanded(child: _bar(mic, AppColors.micAccent)),
+        Expanded(
+          child: Semantics(
+            label: 'Level mic',
+            value: '${(mic * 100).round()} persen',
+            child: _bar(mic, AppColors.micAccent),
+          ),
+        ),
         const SizedBox(width: 8),
-        Expanded(child: _bar(speaker, AppColors.spkAccent)),
+        Expanded(
+          child: Semantics(
+            label: 'Level speaker',
+            value: '${(speaker * 100).round()} persen',
+            child: _bar(speaker, AppColors.spkAccent),
+          ),
+        ),
       ],
     );
   }
 
   Widget _bar(double level, Color color) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(4),
-      child: LinearProgressIndicator(
-        value: level.clamp(0.0, 1.0),
-        minHeight: 6,
-        color: color,
-        backgroundColor: color.withValues(alpha: 0.15),
+    return ExcludeSemantics(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(4),
+        child: LinearProgressIndicator(
+          value: level.clamp(0.0, 1.0),
+          minHeight: 6,
+          color: color,
+          backgroundColor: color.withValues(alpha: 0.15),
+        ),
       ),
     );
   }

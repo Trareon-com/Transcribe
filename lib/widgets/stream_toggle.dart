@@ -18,21 +18,25 @@ class StreamToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: enabled ? accent : AppColors.warning,
+    return MergeSemantics(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ExcludeSemantics(
+            child: Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: enabled ? accent : AppColors.warning,
+              ),
+            ),
           ),
-        ),
-        const SizedBox(width: 6),
-        Text(label),
-        Switch(value: enabled, onChanged: onChanged),
-      ],
+          const SizedBox(width: 6),
+          Text(label),
+          Switch(value: enabled, onChanged: onChanged),
+        ],
+      ),
     );
   }
 }

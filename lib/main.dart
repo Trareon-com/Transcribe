@@ -3,11 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'screens/main_screen.dart';
 import 'screens/setup_wizard_screen.dart';
+import 'services/rust_library_loader.dart';
+import 'src/rust/frb_generated.dart';
 import 'state/settings_model.dart';
 import 'state/models.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await RustLib.init(externalLibrary: tryLoadRustCoreLibrary());
   runApp(const ProviderScope(child: TrascribeApp()));
 }
 

@@ -5,14 +5,15 @@
 //! the pure state machine so it stays fully testable.
 
 use std::collections::HashMap;
-use std::sync::{Mutex, OnceLock};
+use std::sync::{mpsc, Mutex, OnceLock};
 
 use serde::Serialize;
 use uuid::Uuid;
 
-use crate::audio::{SessionConfig, SessionMode};
-use crate::error::{TrascribeError, TrascribeResult};
+use crate::audio::{AudioCapture, SessionConfig, SessionMode};
+use crate::error::TrascribeError;
 use crate::memory;
+use crate::pipeline::{LiveEvent, LiveWorker};
 
 /// Long sessions (>4h) auto-split per hour to bound memory growth (PP-21).
 pub const AUTO_SPLIT_INTERVAL_SECS: u64 = 3600;
@@ -38,6 +39,14 @@ struct SessionState {
     started_at: std::time::Instant,
     last_split_at: std::time::Instant,
     segments_count: u32,
+    mic_capture: Option<CaptureChannel>,
+    speaker_capture: Option<CaptureChannel>,
+}
+
+struct CaptureChannel {
+    _capture: AudioCapture,
+    _worker: LiveWorker,
+    events_rx: mpsc::Receiver<LiveEvent>,
 }
 
 /// Pure decision logic — trivially unit-testable without real timers or a
@@ -57,14 +66,28 @@ fn registry() -> &'static Mutex<HashMap<String, SessionState>> {
     REGISTRY.get_or_init(|| Mutex::new(HashMap::new()))
 }
 
-pub fn start_session(config: SessionConfig) -> TrascribeResult<String> {
+pub fn start_session(config: SessionConfig) -> Result<String, TrascribeError> {
     let id = Uuid::new_v4().to_string();
     let now = std::time::Instant::now();
+    let mic_capture = start_capture(
+        config.mic_enabled,
+        config.mic_device_id.clone(),
+        &config.model_path,
+        "mic",
+    )?;
+    let speaker_capture = start_capture(
+        config.speaker_enabled,
+        config.speaker_device_id.clone(),
+        &config.model_path,
+        "spk",
+    )?;
     let state = SessionState {
         config,
         started_at: now,
         last_split_at: now,
         segments_count: 0,
+        mic_capture,
+        speaker_capture,
     };
     registry()
         .lock()
@@ -73,7 +96,31 @@ pub fn start_session(config: SessionConfig) -> TrascribeResult<String> {
     Ok(id)
 }
 
-pub fn stop_session(session_id: &str) -> TrascribeResult<()> {
+fn start_capture(
+    enabled: bool,
+    device_name: Option<String>,
+    model_path: &str,
+    source: &str,
+) -> Result<Option<CaptureChannel>, TrascribeError> {
+    // A missing device id means the session has not completed audio setup yet.
+    // Keep the state machine usable in CI and let the setup wizard provide the
+    // explicit device before enabling hardware capture.
+    if !enabled || device_name.is_none() {
+        return Ok(None);
+    }
+
+    let (samples_tx, samples_rx) = mpsc::channel();
+    let capture = AudioCapture::start(device_name, samples_tx)?;
+    let (events_tx, events_rx) = mpsc::channel();
+    let worker = LiveWorker::spawn(model_path, source, None, samples_rx, events_tx)?;
+    Ok(Some(CaptureChannel {
+        _capture: capture,
+        _worker: worker,
+        events_rx,
+    }))
+}
+
+pub fn stop_session(session_id: &str) -> Result<(), TrascribeError> {
     let mut reg = registry()
         .lock()
         .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
@@ -82,15 +129,15 @@ pub fn stop_session(session_id: &str) -> TrascribeResult<()> {
         .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))
 }
 
-pub fn toggle_mic(session_id: &str, enabled: bool) -> TrascribeResult<()> {
+pub fn toggle_mic(session_id: &str, enabled: bool) -> Result<(), TrascribeError> {
     with_session_mut(session_id, |s| s.config.mic_enabled = enabled)
 }
 
-pub fn toggle_speaker(session_id: &str, enabled: bool) -> TrascribeResult<()> {
+pub fn toggle_speaker(session_id: &str, enabled: bool) -> Result<(), TrascribeError> {
     with_session_mut(session_id, |s| s.config.speaker_enabled = enabled)
 }
 
-pub fn set_session_mode(session_id: &str, mode: SessionMode) -> TrascribeResult<()> {
+pub fn set_session_mode(session_id: &str, mode: SessionMode) -> Result<(), TrascribeError> {
     with_session_mut(session_id, |s| {
         let (mic, spk) = mode.default_toggles();
         s.config.mode = mode;
@@ -99,14 +146,14 @@ pub fn set_session_mode(session_id: &str, mode: SessionMode) -> TrascribeResult<
     })
 }
 
-pub fn record_segment(session_id: &str) -> TrascribeResult<()> {
+pub fn record_segment(session_id: &str) -> Result<(), TrascribeError> {
     with_session_mut(session_id, |s| s.segments_count += 1)
 }
 
 /// Call periodically (e.g. every minute) from the live capture loop. If it
 /// returns `Some`, the caller should flush the current chunk to disk and
 /// start a new file segment, then call [`mark_split`].
-pub fn check_auto_split(session_id: &str) -> TrascribeResult<Option<AutoSplitReason>> {
+pub fn check_auto_split(session_id: &str) -> Result<Option<AutoSplitReason>, TrascribeError> {
     let reg = registry()
         .lock()
         .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
@@ -119,17 +166,18 @@ pub fn check_auto_split(session_id: &str) -> TrascribeResult<Option<AutoSplitRea
     Ok(should_split(elapsed, memory_ratio))
 }
 
-pub fn mark_split(session_id: &str) -> TrascribeResult<()> {
+pub fn mark_split(session_id: &str) -> Result<(), TrascribeError> {
     with_session_mut(session_id, |s| s.last_split_at = std::time::Instant::now())
 }
 
-pub fn get_status(session_id: &str) -> TrascribeResult<SessionStatus> {
-    let reg = registry()
+pub fn get_status(session_id: &str) -> Result<SessionStatus, TrascribeError> {
+    let mut reg = registry()
         .lock()
         .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
     let state = reg
-        .get(session_id)
+        .get_mut(session_id)
         .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))?;
+    state.collect_worker_events();
 
     Ok(SessionStatus {
         session_id: session_id.to_string(),
@@ -141,7 +189,25 @@ pub fn get_status(session_id: &str) -> TrascribeResult<SessionStatus> {
     })
 }
 
-fn with_session_mut(session_id: &str, f: impl FnOnce(&mut SessionState)) -> TrascribeResult<()> {
+impl SessionState {
+    fn collect_worker_events(&mut self) {
+        for capture in [&self.mic_capture, &self.speaker_capture]
+            .into_iter()
+            .flatten()
+        {
+            while let Ok(event) = capture.events_rx.try_recv() {
+                if matches!(event, LiveEvent::Segment(_)) {
+                    self.segments_count = self.segments_count.saturating_add(1);
+                }
+            }
+        }
+    }
+}
+
+fn with_session_mut(
+    session_id: &str,
+    f: impl FnOnce(&mut SessionState),
+) -> Result<(), TrascribeError> {
     let mut reg = registry()
         .lock()
         .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;

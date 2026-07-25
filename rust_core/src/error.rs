@@ -20,8 +20,11 @@ pub enum TrascribeError {
     #[error("export error: {0}")]
     Export(String),
 
+    /// String, not `std::io::Error` — the latter has no FRB `SseEncode`
+    /// impl, which broke bridge codegen. Construct via
+    /// `TrascribeError::from(io_err)` or `.map_err(TrascribeError::from)`.
     #[error("io error: {0}")]
-    Io(#[from] std::io::Error),
+    Io(String),
 
     #[error("invalid input: {0}")]
     InvalidInput(String),
@@ -30,4 +33,14 @@ pub enum TrascribeError {
     SessionNotFound(String),
 }
 
+impl From<std::io::Error> for TrascribeError {
+    fn from(e: std::io::Error) -> Self {
+        TrascribeError::Io(e.to_string())
+    }
+}
+
+/// Internal-only convenience alias. FRB-exposed signatures (anything in a
+/// module listed in the codegen `--rust-input`) must spell out
+/// `Result<T, TrascribeError>` explicitly — the codegen doesn't resolve
+/// this alias when scanning multiple modules.
 pub type TrascribeResult<T> = Result<T, TrascribeError>;
