@@ -129,41 +129,88 @@ pub struct DownloadProgress {
 pub async fn download_with_resume(
     url: &str,
     dest_path: &Path,
-    on_progress: impl FnMut(DownloadProgress),
+    mut on_progress: impl FnMut(DownloadProgress),
 ) -> Result<(), TrascribeError> {
-    let already_downloaded = std::fs::metadata(dest_path).map(|m| m.len()).unwrap_or(0);
+    let filename = dest_path
+        .file_name()
+        .and_then(|f| f.to_str())
+        .unwrap_or("model.bin");
 
+    let urls = vec![
+        url.to_string(),
+        format!("https://huggingface.co/ggerganov/whisper.cpp/raw/main/{filename}"),
+        format!("https://github.com/ggerganov/whisper.cpp/releases/download/v1.7.1/{filename}"),
+    ];
+
+    let mut last_error = None;
+    for target_url in &urls {
+        match download_single_url(target_url, dest_path, &mut on_progress).await {
+            Ok(()) => return Ok(()),
+            Err(e) => {
+                tracing::warn!(url = %target_url, error = %e, "download attempt failed, trying fallback url");
+                last_error = Some(e);
+            }
+        }
+    }
+
+    Err(last_error.unwrap_or_else(|| TrascribeError::Model("download failed".into())))
+}
+
+async fn download_single_url(
+    url: &str,
+    dest_path: &Path,
+    on_progress: &mut impl FnMut(DownloadProgress),
+) -> Result<(), TrascribeError> {
     let client = reqwest::Client::builder()
-        .user_agent("Trascribe/1.0 (https://github.com/Trareon-com/Transcribe)")
+        .user_agent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
         .redirect(reqwest::redirect::Policy::limited(10))
         .tcp_keepalive(std::time::Duration::from_secs(30))
         .connect_timeout(std::time::Duration::from_secs(15))
         .build()
         .map_err(|e| TrascribeError::Model(format!("failed to build HTTP client: {e}")))?;
 
+    let already_downloaded = std::fs::metadata(dest_path).map(|m| m.len()).unwrap_or(0);
     let request = build_resume_request(client.get(url), already_downloaded);
 
-    let response = request
-        .send()
-        .await
-        .map_err(|e| TrascribeError::Model(format!("download request failed: {e}")))?;
+    let response = match request.send().await {
+        Ok(res) => res,
+        Err(_) if already_downloaded > 0 => {
+            let _ = std::fs::remove_file(dest_path);
+            client.get(url).send().await.map_err(|e| TrascribeError::Model(format!("download request failed: {e}")))?
+        }
+        Err(e) => return Err(TrascribeError::Model(format!("download request failed: {e}"))),
+    };
 
-    if !response.status().is_success() && response.status().as_u16() != 206 {
-        return Err(TrascribeError::Model(format!(
-            "download failed with status {}",
-            response.status()
-        )));
+    let status = response.status();
+    if !status.is_success() && status.as_u16() != 206 {
+        if already_downloaded > 0 {
+            let _ = std::fs::remove_file(dest_path);
+            let fresh_req = client.get(url);
+            let fresh_res = fresh_req.send().await.map_err(|e| TrascribeError::Model(format!("download request failed: {e}")))?;
+            if !fresh_res.status().is_success() {
+                return Err(TrascribeError::Model(format!("download failed with status {}", fresh_res.status())));
+            }
+            let content_length = fresh_res.content_length().unwrap_or(0);
+            return write_download_stream(dest_path, 0, content_length, fresh_res.bytes_stream(), on_progress).await;
+        }
+        return Err(TrascribeError::Model(format!("download failed with status {status}")));
+    }
+
+    let is_partial = status.as_u16() == 206;
+    let start_offset = if is_partial { already_downloaded } else { 0 };
+
+    if !is_partial && already_downloaded > 0 {
+        let _ = std::fs::remove_file(dest_path);
     }
 
     let content_length = response.content_length().unwrap_or(0);
-    let total_bytes = already_downloaded + content_length;
+    let total_bytes = start_offset + content_length;
 
-    let stream = response.bytes_stream();
     write_download_stream(
         dest_path,
-        already_downloaded,
+        start_offset,
         total_bytes,
-        stream,
+        response.bytes_stream(),
         on_progress,
     )
     .await
