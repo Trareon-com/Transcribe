@@ -180,7 +180,7 @@ class RustEngineBridge implements RustBridge {
     final id = await rust_api.startSession(config: _toRustSessionConfig(config));
     _transcriptControllers[id] = StreamController<TranscriptSegment>.broadcast();
     _vuControllers[id] = StreamController<VuLevel>.broadcast();
-    _pollTimers[id] = Timer.periodic(const Duration(milliseconds: 100), (_) => _poll(id));
+    _pollTimers[id] = Timer.periodic(const Duration(milliseconds: 200), (_) => _poll(id));
     return id;
   }
 
