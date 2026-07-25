@@ -67,6 +67,38 @@ void main() {
     expect(find.text('Stop'), findsOneWidget);
   });
 
+  testWidgets('pause button appears while recording and toggles to resume', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(buildApp());
+    await tester.pump();
+
+    await tester.tap(find.text('Mulai'));
+    await tester.pump();
+
+    expect(find.byTooltip('Jeda'), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Jeda'));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Lanjutkan'), findsOneWidget);
+  });
+
+  testWidgets('stop without segments does not show confirmation dialog', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(buildApp());
+    await tester.pump();
+
+    await tester.tap(find.text('Mulai'));
+    await tester.pump();
+    await tester.tap(find.text('Stop'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Berhenti merekam?'), findsNothing);
+    expect(find.text('Mulai'), findsOneWidget);
+  });
+
   testWidgets('settings icon navigates to settings screen', (WidgetTester tester) async {
     await tester.pumpWidget(buildApp());
     await tester.pump();

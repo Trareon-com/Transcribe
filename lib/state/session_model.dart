@@ -6,7 +6,7 @@ import '../services/bridge_service.dart';
 import 'models.dart';
 import 'settings_model.dart';
 
-enum SessionLifecycle { idle, recording, stopped }
+enum SessionLifecycle { idle, recording, paused, stopped }
 
 class SessionUiState {
   final SessionLifecycle lifecycle;
@@ -63,9 +63,31 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
   Future<void> stop() async {
     final id = state.sessionId;
     if (id == null) return;
-    await _transcriptSub?.cancel();
+    _transcriptSub?.cancel();
+    _transcriptSub = null;
     await _bridge.stopSession(id);
     state = state.copyWith(lifecycle: SessionLifecycle.stopped);
+  }
+
+  /// Pauses live transcript updates without tearing down the session —
+  /// distinct from stop(), which ends it entirely (PP: pause/resume
+  /// recording, not just start/stop). Cancellation of the old stream
+  /// subscription is fire-and-forget: the UI toggle doesn't await pause(),
+  /// so lifecycle must flip synchronously rather than after an async gap.
+  void pause() {
+    if (state.lifecycle != SessionLifecycle.recording) return;
+    _transcriptSub?.cancel();
+    _transcriptSub = null;
+    state = state.copyWith(lifecycle: SessionLifecycle.paused);
+  }
+
+  void resume() {
+    final id = state.sessionId;
+    if (id == null || state.lifecycle != SessionLifecycle.paused) return;
+    _transcriptSub = _bridge.transcriptStream(id).listen((segment) {
+      state = state.copyWith(segments: [...state.segments, segment]);
+    });
+    state = state.copyWith(lifecycle: SessionLifecycle.recording);
   }
 
   Future<void> toggleMic(bool enabled) async {

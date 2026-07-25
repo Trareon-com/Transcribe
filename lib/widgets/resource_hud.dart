@@ -25,6 +25,7 @@ class ResourceHud extends StatelessWidget {
   String _statusLabel(SessionLifecycle lifecycle) => switch (lifecycle) {
         SessionLifecycle.idle => 'Siap',
         SessionLifecycle.recording => 'Merekam…',
+        SessionLifecycle.paused => 'Dijeda',
         SessionLifecycle.stopped => 'Berhenti',
       };
 }
