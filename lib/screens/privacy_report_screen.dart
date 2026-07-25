@@ -48,7 +48,7 @@ class PrivacyReportScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           const Text(
-            'Trascribe tidak melakukan panggilan jaringan apa pun selama transkripsi '
+            'Trareon Transcribe tidak melakukan panggilan jaringan apa pun selama transkripsi '
             'berlangsung — baik live capture maupun file upload. Satu-satunya aktivitas '
             'jaringan yang sah adalah unduhan model whisper yang kamu pilih sendiri di wizard '
             'atau pengaturan.',

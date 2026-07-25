@@ -80,7 +80,8 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
         return _StepContent(
           icon: Icons.memory,
           title: '1. Deteksi Spesifikasi',
-          description: 'Trascribe akan memeriksa CPU, RAM, dan GPU untuk menyarankan model whisper yang paling optimal untuk sistem Anda.',
+          description: 'Trareon Transcribe akan memeriksa CPU, RAM, dan GPU untuk menyarankan model whisper yang paling optimal untuk sistem Anda.',
+          showLogo: true,
         );
       case _WizardStep.modelChoice:
         return _ModelChoiceStep(
@@ -234,12 +235,14 @@ class _StepContent extends StatelessWidget {
   final String title;
   final String description;
   final Widget? child;
+  final bool showLogo;
 
   const _StepContent({
     required this.icon,
     required this.title,
     required this.description,
     this.child,
+    this.showLogo = false,
   });
 
   @override
@@ -255,7 +258,14 @@ class _StepContent extends StatelessWidget {
             shape: BoxShape.circle,
             color: colors.primary.withValues(alpha: 0.1),
           ),
-          child: Icon(icon, size: 40, color: colors.primary),
+          child: showLogo
+              ? ClipOval(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Image.asset('assets/logo.png', fit: BoxFit.contain),
+                  ),
+                )
+              : Icon(icon, size: 40, color: colors.primary),
         ),
         const SizedBox(height: 20),
         Text(

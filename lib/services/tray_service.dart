@@ -23,11 +23,11 @@ class TrayService with TrayListener, WindowListener {
 
     final iconPath = Platform.isWindows ? 'assets/tray_icon.ico' : 'assets/tray_icon.png';
     await trayManager.setIcon(iconPath);
-    await trayManager.setToolTip('Trascribe');
+    await trayManager.setToolTip('Trareon Transcribe');
     await trayManager.setContextMenu(
       Menu(
         items: [
-          MenuItem(key: 'show', label: 'Buka Trascribe'),
+          MenuItem(key: 'show', label: 'Buka Trareon Transcribe'),
           MenuItem.separator(),
           MenuItem(key: 'quit', label: 'Keluar'),
         ],

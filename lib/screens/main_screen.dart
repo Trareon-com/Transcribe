@@ -271,7 +271,7 @@ class _HeaderBar extends StatelessWidget {
       child: Row(
         children: [
           // Logo + Title
-          Icon(Icons.graphic_eq, color: colors.primary, size: 28),
+          Image.asset('assets/logo.png', width: 28, height: 28),
           const SizedBox(width: 8),
           Text(
             'Trareon Transcribe',

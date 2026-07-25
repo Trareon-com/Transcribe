@@ -143,7 +143,7 @@ class SettingsScreen extends ConsumerWidget {
               _SettingsTile(
                 icon: Icons.system_update_outlined,
                 label: 'Periksa Pembaruan',
-                subtitle: 'Cek versi terbaru Trascribe',
+                subtitle: 'Cek versi terbaru Trareon Transcribe',
                 trailing: Icon(Icons.download_outlined, color: colors.textTertiary, size: 18),
                 onTap: () => _checkForUpdates(context),
               ),

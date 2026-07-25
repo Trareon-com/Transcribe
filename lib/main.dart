@@ -51,13 +51,13 @@ class _AlreadyRunningApp extends StatelessWidget {
                 const Icon(Icons.info_outline, size: 48),
                 const SizedBox(height: 16),
                 const Text(
-                  'Trascribe sudah berjalan',
+                  'Trareon Transcribe sudah berjalan',
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'Hanya satu instance Trascribe yang bisa berjalan pada saat '
+                  'Hanya satu instance Trareon Transcribe yang bisa berjalan pada saat '
                   'yang sama. Tutup jendela ini dan gunakan instance yang '
                   'sudah terbuka.',
                   textAlign: TextAlign.center,
@@ -85,7 +85,7 @@ class TrascribeApp extends ConsumerWidget {
     final firstRunComplete = ref.watch(firstRunCompleteProvider);
 
     return MaterialApp(
-      title: 'Trascribe',
+      title: 'Trareon Transcribe',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
