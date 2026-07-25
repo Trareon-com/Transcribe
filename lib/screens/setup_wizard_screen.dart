@@ -25,7 +25,7 @@ enum _WizardStep { specDetect, modelChoice, audioSetup, modelDownload, toneTest 
 class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   _WizardStep _step = _WizardStep.specDetect;
   String _selectedModel = 'tiny';
-  bool _downloadRecorded = false;
+  final bool _downloadRecorded = false;
 
   // Spec detection results
   int? _cpuCores;
