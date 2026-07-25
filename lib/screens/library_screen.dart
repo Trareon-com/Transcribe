@@ -14,18 +14,40 @@ class SessionSummary {
     required this.id,
     required this.title,
     required this.date,
-    required this.durationSeconds,
     required this.segmentsCount,
+    this.durationSeconds = 0,
   });
 }
 
-class LibraryScreen extends StatelessWidget {
+class LibraryScreen extends StatefulWidget {
   final List<SessionSummary> sessions;
 
   const LibraryScreen({super.key, this.sessions = const []});
 
   @override
+  State<LibraryScreen> createState() => _LibraryScreenState();
+}
+
+class _LibraryScreenState extends State<LibraryScreen> {
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  List<SessionSummary> get _filteredSessions {
+    if (_query.isEmpty) return widget.sessions;
+    final q = _query.toLowerCase();
+    return widget.sessions.where((s) => s.title.toLowerCase().contains(q)).toList();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final filtered = _filteredSessions;
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -40,14 +62,45 @@ class LibraryScreen extends StatelessWidget {
         ),
         body: TabBarView(
           children: [
-            sessions.isEmpty
-                ? const Center(child: Text('Belum ada sesi tersimpan.'))
-                : ListView.separated(
-                    padding: const EdgeInsets.all(12),
-                    itemCount: sessions.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (context, index) => _SessionCard(session: sessions[index]),
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: TextField(
+                    controller: _searchController,
+                    decoration: InputDecoration(
+                      hintText: 'Cari sesi berdasarkan judul…',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: _query.isEmpty
+                          ? null
+                          : IconButton(
+                              icon: const Icon(Icons.clear),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _query = '');
+                              },
+                            ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                      isDense: true,
+                    ),
+                    onChanged: (value) => setState(() => _query = value),
                   ),
+                ),
+                Expanded(
+                  child: widget.sessions.isEmpty
+                      ? const Center(child: Text('Belum ada sesi tersimpan.'))
+                      : filtered.isEmpty
+                          ? const Center(child: Text('Tidak ada sesi yang cocok.'))
+                          : ListView.separated(
+                              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                              itemCount: filtered.length,
+                              separatorBuilder: (_, _) => const SizedBox(height: 8),
+                              itemBuilder: (context, index) =>
+                                  _SessionCard(session: filtered[index]),
+                            ),
+                ),
+              ],
+            ),
             const Padding(
               padding: EdgeInsets.all(12),
               child: FileUploadZone(),
