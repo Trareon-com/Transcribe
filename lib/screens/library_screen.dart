@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../state/models.dart';
+import '../theme/app_colors.dart';
 import '../widgets/file_upload_zone.dart';
 import 'transcript_player_screen.dart';
 
@@ -48,9 +49,6 @@ class _LibraryScreenState extends State<LibraryScreen> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.sessions != widget.sessions) {
       _sessions = List.of(widget.sessions);
-      if (_query.isNotEmpty) {
-        setState(() {});
-      }
     }
   }
 
@@ -66,123 +64,126 @@ class _LibraryScreenState extends State<LibraryScreen> {
     return _sessions.where((s) => s.title.toLowerCase().contains(q)).toList();
   }
 
-  /// Soft-delete: removes from the visible list immediately, but keeps the
-  /// entry recoverable via the snackbar's Undo action. The 7-day retention
-  /// window (moving the session folder to `.trash/`) is a filesystem
-  /// operation on the Rust side, not yet wired — this owns the UI half.
   void _deleteSession(SessionSummary session) {
     final index = _sessions.indexOf(session);
     if (index == -1) return;
-
     setState(() => _sessions.removeAt(index));
-
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('"${session.title}" dihapus. Akan dihapus permanen dalam 7 hari.'),
+        content: Text('"${session.title}" dihapus.'),
         action: SnackBarAction(
           label: 'Urungkan',
-          onPressed: () {
-            setState(() => _sessions.insert(index.clamp(0, _sessions.length), session));
-          },
+          onPressed: () => setState(() => _sessions.insert(index.clamp(0, _sessions.length), session)),
         ),
-        duration: const Duration(seconds: 6),
+        duration: const Duration(seconds: 4),
       ),
     );
   }
 
-  void _updateSessionSegments(String sessionId, List<TranscriptSegment> segments) {
-    final index = _sessions.indexWhere((session) => session.id == sessionId);
-    if (index == -1) return;
-
-    final updatedSession = SessionSummary(
-      id: _sessions[index].id,
-      title: _sessions[index].title,
-      date: _sessions[index].date,
-      durationSeconds: _sessions[index].durationSeconds,
-      segmentsCount: segments.length,
-      segments: segments,
-    );
-
-    setState(() {
-      _sessions[index] = updatedSession;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
     final filtered = _filteredSessions;
 
     return DefaultTabController(
       length: 2,
       child: Scaffold(
+        backgroundColor: colors.background,
         appBar: AppBar(
-          title: const Text('Library'),
+          backgroundColor: colors.headerBackground,
+          foregroundColor: colors.text,
+          title: const Text('Library', style: TextStyle(fontWeight: FontWeight.w600)),
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
           bottom: TabBar(
-            tabs: [
-              Semantics(label: 'Tab sesi tersimpan', child: const Tab(text: 'Sesi')),
-              Semantics(label: 'Tab upload file', child: const Tab(text: 'Upload File')),
+            labelColor: colors.primary,
+            unselectedLabelColor: colors.textSecondary,
+            indicatorColor: colors.primary,
+            tabs: const [
+              Tab(text: 'Sesi'),
+              Tab(text: 'Upload File'),
             ],
           ),
         ),
         body: TabBarView(
           children: [
+            // Sessions tab
             Column(
               children: [
                 Padding(
                   padding: const EdgeInsets.all(12),
-                  child: Semantics(
-                    textField: true,
-                    label: 'Cari sesi berdasarkan judul',
-                    child: TextField(
-                      controller: _searchController,
-                      decoration: InputDecoration(
-                        hintText: 'Cari sesi berdasarkan judul…',
-                        prefixIcon: const Icon(Icons.search),
-                        suffixIcon: _query.isEmpty
-                            ? null
-                            : Semantics(
-                                button: true,
-                                label: 'Hapus pencarian',
-                                child: IconButton(
-                                  icon: const Icon(Icons.clear),
-                                  onPressed: () {
-                                    _searchController.clear();
-                                    setState(() => _query = '');
-                                  },
-                                ),
-                              ),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        isDense: true,
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (v) => setState(() => _query = v),
+                    decoration: InputDecoration(
+                      hintText: 'Cari sesi...',
+                      prefixIcon: Icon(Icons.search, color: colors.textTertiary, size: 18),
+                      suffixIcon: _query.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.clear, size: 18, color: colors.textTertiary),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _query = '');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: colors.chipBackground,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: colors.border),
                       ),
-                      onChanged: (value) => setState(() => _query = value),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide(color: colors.border),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                     ),
                   ),
                 ),
                 Expanded(
                   child: _sessions.isEmpty
-                      ? Semantics(
-                          label: 'Belum ada sesi tersimpan',
-                          child: const Center(child: Text('Belum ada sesi tersimpan.')),
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.folder_open_outlined, size: 48, color: colors.textTertiary),
+                              const SizedBox(height: 12),
+                              Text('Belum ada sesi tersimpan', style: TextStyle(color: colors.textSecondary)),
+                            ],
+                          ),
                         )
                       : filtered.isEmpty
-                          ? Semantics(
-                              label: 'Tidak ada sesi yang cocok dengan pencarian',
-                              child: const Center(child: Text('Tidak ada sesi yang cocok.')),
-                            )
+                          ? Center(child: Text('Tidak ada sesi cocok', style: TextStyle(color: colors.textSecondary)))
                           : ListView.separated(
-                              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
                               itemCount: filtered.length,
-                              separatorBuilder: (_, _) => const SizedBox(height: 8),
-                              itemBuilder: (context, index) => _SessionCard(
-                                session: filtered[index],
-                                onDelete: () => _deleteSession(filtered[index]),
-                                onSegmentsChanged: (segments) =>
-                                    _updateSessionSegments(filtered[index].id, segments),
-                              ),
+                              separatorBuilder: (_, __) => const SizedBox(height: 8),
+                              itemBuilder: (context, index) {
+                                final session = filtered[index];
+                                return _SessionCard(
+                                  session: session,
+                                  onDelete: () => _deleteSession(session),
+                                  onTap: () => Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => TranscriptPlayerScreen(
+                                        title: session.title,
+                                        durationSeconds: session.durationSeconds,
+                                        segments: session.segments,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
                             ),
                 ),
               ],
             ),
+
+            // Upload tab
             const Padding(
               padding: EdgeInsets.all(12),
               child: FileUploadZone(),
@@ -197,50 +198,59 @@ class _LibraryScreenState extends State<LibraryScreen> {
 class _SessionCard extends StatelessWidget {
   final SessionSummary session;
   final VoidCallback onDelete;
-  final ValueChanged<List<TranscriptSegment>> onSegmentsChanged;
+  final VoidCallback onTap;
 
-  const _SessionCard({
-    required this.session,
-    required this.onDelete,
-    required this.onSegmentsChanged,
-  });
+  const _SessionCard({required this.session, required this.onDelete, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
     final minutes = (session.durationSeconds / 60).floor();
-    return Semantics(
-      label: '${session.title}, ${session.date}, $minutes menit, ${session.segmentsCount} segmen',
-      button: true,
-      child: Card(
-        child: ListTile(
-          title: Text(session.title),
-          subtitle: Text('${session.date} · $minutes menit · ${session.segmentsCount} segmen'),
-          onTap: () => Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => TranscriptPlayerScreen(
-                title: session.title,
-                durationSeconds: session.durationSeconds,
-                segments: session.segments,
-                onSegmentsChanged: onSegmentsChanged,
-              ),
-            ),
-          ),
-          trailing: Row(
-            mainAxisSize: MainAxisSize.min,
+
+    return Card(
+      color: colors.surface,
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+        side: BorderSide(color: colors.border),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
             children: [
-              IconButton(
-                tooltip: 'Export',
-                icon: const Icon(Icons.file_download_outlined),
-                onPressed: () => showExportDialog(context, session),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: colors.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.mic_outlined, color: colors.primary, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      session.title,
+                      style: TextStyle(color: colors.text, fontWeight: FontWeight.w600, fontSize: 14),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$minutes menit · ${session.segmentsCount} segmen',
+                      style: TextStyle(color: colors.textTertiary, fontSize: 12),
+                    ),
+                  ],
+                ),
               ),
               IconButton(
-                tooltip: 'Share',
-                icon: const Icon(Icons.ios_share),
-                onPressed: () => shareSessionSummary(session),
-              ),
-              IconButton(
-                tooltip: 'Hapus',
-                icon: const Icon(Icons.delete_outline),
+                icon: Icon(Icons.delete_outline, size: 18, color: colors.textTertiary),
                 onPressed: onDelete,
               ),
             ],
@@ -251,55 +261,30 @@ class _SessionCard extends StatelessWidget {
   }
 }
 
-/// Shares a text summary via the OS-native share sheet. Sharing the actual
-/// exported files (once export writes real bytes via the Rust bridge) is
-/// a drop-in extension: `SharePlus.instance.share(ShareParams(files: ...))`.
-Future<void> shareSessionSummary(SessionSummary session) {
-  return SharePlus.instance.share(
-    ShareParams(
-      subject: session.title,
-      text: buildSessionShareText(session),
-    ),
-  );
-}
-
-String buildSessionShareText(SessionSummary session) {
-  final minutes = (session.durationSeconds / 60).floor();
-  final transcript = session.segments.isEmpty
-      ? 'Tidak ada transkrip yang tersimpan.'
-      : session.segments.map((segment) => '${segment.speaker}: ${segment.text}').join('\n');
-  return '${session.title}\n${session.date} · $minutes menit · '
-      '${session.segmentsCount} segmen\n\n$transcript\n\nDitranskrip dengan Trascribe.';
-}
-
 Future<void> showExportDialog(BuildContext context, SessionSummary session) {
   final selected = <String>{'md'};
   return showDialog(
     context: context,
     builder: (context) => StatefulBuilder(
-      builder: (context, setState) => AlertDialog(
-        title: Text('Export "${session.title}"'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                for (final format in const [
-                  ('md', 'Markdown'),
-                  ('txt', 'TXT'),
-                  ('json', 'JSON'),
-                  ('srt', 'SRT'),
-                  ('vtt', 'VTT'),
-                  ('html', 'HTML'),
-                  ('docx', 'DOCX (Word)'),
-                  ('wav', 'WAV (audio)'),
-                ])
-                  Semantics(
-                    label: 'Format ${format.$2}, ${selected.contains(format.$1) ? 'terpilih' : 'tidak terpilih'}',
-                    child: CheckboxListTile(
-                      title: Text(format.$2),
+      builder: (context, setState) {
+        final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+        return AlertDialog(
+          backgroundColor: colors.surface,
+          title: Text('Export "${session.title}"', style: TextStyle(color: colors.text)),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  for (final format in const [
+                    ('md', 'Markdown'), ('txt', 'TXT'), ('json', 'JSON'),
+                    ('srt', 'SRT'), ('vtt', 'VTT'), ('wav', 'WAV'),
+                  ])
+                    CheckboxListTile(
+                      title: Text(format.$2, style: TextStyle(color: colors.text)),
                       value: selected.contains(format.$1),
+                      activeColor: colors.primary,
                       onChanged: (checked) {
                         setState(() {
                           if (checked == true) {
@@ -310,30 +295,44 @@ Future<void> showExportDialog(BuildContext context, SessionSummary session) {
                         });
                       },
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-        actions: [
-          Semantics(
-            label: 'Batal export',
-            button: true,
-            child: TextButton(
+          actions: [
+            TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Batal'),
+              child: Text('Batal', style: TextStyle(color: colors.textSecondary)),
             ),
-          ),
-          Semantics(
-            label: 'Konfirmasi export',
-            button: true,
-            child: FilledButton(
+            FilledButton(
               onPressed: selected.isEmpty ? null : () => Navigator.of(context).pop(),
               child: const Text('Export'),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     ),
   );
+}
+
+Future<void> shareSessionSummary(SessionSummary session) {
+  final minutes = (session.durationSeconds / 60).floor();
+  final transcript = session.segments.isEmpty
+      ? 'Tidak ada transkrip.'
+      : session.segments.map((s) => '${s.speaker}: ${s.text}').join('\n');
+  return SharePlus.instance.share(
+    ShareParams(
+      subject: session.title,
+      text: '${session.title}\n$minutes menit · ${session.segmentsCount} segmen\n\n$transcript',
+    ),
+  );
+}
+
+String buildSessionShareText(SessionSummary session) {
+  final minutes = (session.durationSeconds / 60).floor();
+  final transcript = session.segments.isEmpty
+      ? 'Tidak ada transkrip yang tersimpan.'
+      : session.segments.map((s) => '${s.speaker}: ${s.text}').join('\n');
+  return '${session.title}\n${session.date} · $minutes menit · '
+      '${session.segmentsCount} segmen\n\n$transcript\n\nDitranskrip dengan Trareon Transcribe.';
 }

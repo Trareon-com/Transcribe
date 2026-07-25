@@ -15,48 +15,38 @@ class _RecoveryBridge implements RustBridge {
 
   @override
   Future<String> startSession(SessionConfig config) async => 'test-session';
-
   @override
   Future<void> stopSession(String sessionId) async {}
-
   @override
   Future<void> toggleMic(String sessionId, bool enabled) async {}
-
   @override
   Future<void> toggleSpeaker(String sessionId, bool enabled) async {}
-
   @override
   Stream<TranscriptSegment> transcriptStream(String sessionId) => const Stream.empty();
-
   @override
   Stream<VuLevel> vuMeterStream(String sessionId) => const Stream.empty();
-
   @override
-  Future<List<rust_session.SessionRecoverySnapshot>> listRecoverableSessions() async =>
-      recoveries;
-
+  Future<List<rust_session.SessionRecoverySnapshot>> listRecoverableSessions() async => recoveries;
   @override
-  Future<String> recoverSession(rust_session.SessionRecoverySnapshot snapshot) async =>
-      'test-session';
-
+  Future<String> recoverSession(rust_session.SessionRecoverySnapshot snapshot) async => 'test-session';
   @override
   Future<AppSettings> loadSettings() async => AppSettings.defaults();
-
   @override
   Future<void> saveSettings(AppSettings settings) async {}
-
   @override
   Future<void> downloadModel(String modelsDir, String modelId) async {}
-
   @override
   Future<List<rust_device.AudioDeviceInfo>> listAudioDevices() async => const [];
-
   @override
   Future<String> detectFrontmostWindowTitle() async => '';
 }
 
 void main() {
-  testWidgets('refresh recovery button reloads recoverable sessions', (WidgetTester tester) async {
+  testWidgets('recovery banner shows when sessions are recoverable', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1440, 900);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+
     final bridge = _RecoveryBridge();
     final snapshot = rust_session.SessionRecoverySnapshot(
       sessionId: 'crash-1',
@@ -74,6 +64,8 @@ void main() {
       segmentsCount: 1,
     );
 
+    bridge.recoveries = [snapshot];
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -83,10 +75,6 @@ void main() {
         child: const MaterialApp(home: TrascribeApp()),
       ),
     );
-    await tester.pumpAndSettle();
-
-    bridge.recoveries = [snapshot];
-    await tester.tap(find.byTooltip('Muat ulang recovery'));
     await tester.pumpAndSettle();
 
     expect(find.textContaining('sesi yang bisa dipulihkan'), findsOneWidget);

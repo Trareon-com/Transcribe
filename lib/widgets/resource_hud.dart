@@ -11,60 +11,50 @@ class ResourceHud extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
     final isRecording = lifecycle == SessionLifecycle.recording;
     final isPaused = lifecycle == SessionLifecycle.paused;
     final statusColor = isRecording
-        ? AppColors.recordingDot
+        ? AppColors.statusActive
         : isPaused
             ? Colors.orange
-            : Theme.of(context).disabledColor;
+            : colors.textTertiary;
 
-    return Semantics(
-      label: 'Status: ${_statusLabel(lifecycle)}. $segmentsCount segmen',
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                ExcludeSemantics(
-                  child: Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: statusColor,
-                      shape: BoxShape.circle,
-                      boxShadow: isRecording
-                          ? [
-                              BoxShadow(
-                                color: statusColor.withValues(alpha: 0.6),
-                                blurRadius: 6,
-                                spreadRadius: 2,
-                              ),
-                            ]
-                          : null,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 6),
-                Text(_statusLabel(lifecycle), style: Theme.of(context).textTheme.labelSmall),
-              ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      child: Row(
+        children: [
+          // Status dot
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: statusColor,
+              boxShadow: isRecording
+                  ? [BoxShadow(color: statusColor.withValues(alpha: 0.5), blurRadius: 4, spreadRadius: 1)]
+                  : null,
             ),
-            Semantics(
-              label: '$segmentsCount segmen transkrip',
-              child: Text('$segmentsCount segmen', style: Theme.of(context).textTheme.labelSmall),
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            _statusLabel(lifecycle),
+            style: TextStyle(color: colors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500),
+          ),
+          const Spacer(),
+          Text(
+            '$segmentsCount segmen',
+            style: TextStyle(color: colors.textTertiary, fontSize: 11),
+          ),
+        ],
       ),
     );
   }
 
   String _statusLabel(SessionLifecycle lifecycle) => switch (lifecycle) {
-        SessionLifecycle.idle => 'Siap',
-        SessionLifecycle.recording => 'Merekam…',
-        SessionLifecycle.paused => 'Dijeda',
-        SessionLifecycle.stopped => 'Berhenti',
-      };
+    SessionLifecycle.idle => 'Siap',
+    SessionLifecycle.recording => 'Merekam…',
+    SessionLifecycle.paused => 'Dijeda',
+    SessionLifecycle.stopped => 'Berhenti',
+  };
 }

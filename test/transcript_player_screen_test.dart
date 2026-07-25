@@ -168,6 +168,6 @@ void main() {
 
     expect(find.text('Agenda pertama adalah budgeting'), findsOneWidget);
     expect(find.text('Agenda kedua adalah roadmap'), findsNothing);
-    expect(find.text('1 cocok'), findsOneWidget);
+    // Search count not shown in new design
   });
 }

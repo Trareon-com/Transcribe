@@ -4,12 +4,6 @@ import 'package:flutter/services.dart';
 import '../state/models.dart';
 import '../theme/app_colors.dart';
 
-/// Virtualized transcript list — `ListView.builder` + `itemExtent` so long
-/// sessions (thousands of segments) stay smooth (see architecture
-/// bottleneck notes: avoid full-list rebuilds for live sessions).
-///
-/// Includes action toolbar with live keyword search, 1-click clipboard copy,
-/// and auto-scroll pin control.
 class TranscriptView extends StatefulWidget {
   final List<TranscriptSegment> segments;
   final void Function(int index, String newText)? onEdit;
@@ -22,6 +16,7 @@ class TranscriptView extends StatefulWidget {
 
 class _TranscriptViewState extends State<TranscriptView> {
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _autoScroll = true;
 
@@ -31,12 +26,10 @@ class _TranscriptViewState extends State<TranscriptView> {
     _scrollController.addListener(_onScroll);
   }
 
-  /// Detect when user scrolls away from the bottom → disable auto-scroll.
-  /// When user scrolls back to bottom → re-enable.
   void _onScroll() {
     if (!_scrollController.hasClients) return;
     final pos = _scrollController.position;
-    const threshold = 50.0; // px from bottom to consider "at bottom"
+    const threshold = 50.0;
     final atBottom = pos.maxScrollExtent - pos.pixels < threshold;
     if (_autoScroll != atBottom) {
       setState(() => _autoScroll = atBottom);
@@ -62,24 +55,22 @@ class _TranscriptViewState extends State<TranscriptView> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
   void _copyAllToClipboard(BuildContext context) {
     if (widget.segments.isEmpty) return;
     final text = widget.segments
-        .map((s) => '[${s.speaker} · ${_formatSecs(s.timestamp)}] ${s.text}')
+        .map((s) => '[${s.speaker} · ${_formatTime(s.timestamp)}] ${s.text}')
         .join('\n');
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Transkrip berhasil disalin ke clipboard!'),
-        duration: Duration(seconds: 2),
-      ),
+      const SnackBar(content: Text('Transkrip disalin ke clipboard'), duration: Duration(seconds: 2)),
     );
   }
 
-  String _formatSecs(double secs) {
+  String _formatTime(double secs) {
     final m = (secs / 60).floor();
     final s = (secs % 60).floor();
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
@@ -87,104 +78,132 @@ class _TranscriptViewState extends State<TranscriptView> {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+
     if (widget.segments.isEmpty) {
-      return Semantics(
-        label: 'Belum ada transkrip. Mulai sesi untuk memulai.',
-        child: const Center(child: Text('Belum ada transkrip. Mulai sesi untuk memulai.')),
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.mic_none_outlined, size: 48, color: colors.textTertiary),
+            const SizedBox(height: 12),
+            Text(
+              'Belum ada transkrip',
+              style: TextStyle(color: colors.textSecondary, fontSize: 14),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Mulai sesi untuk memulai transkripsi',
+              style: TextStyle(color: colors.textTertiary, fontSize: 12),
+            ),
+          ],
+        ),
       );
     }
 
-    final query = _searchQuery.trim().toLowerCase();
-    final filtered = query.isEmpty
-        ? widget.segments
-        : widget.segments
-            .where((s) =>
-                s.text.toLowerCase().contains(query) ||
-                s.speaker.toLowerCase().contains(query))
-            .toList();
-
     return Column(
       children: [
+        // Search + Toolbar
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          color: Theme.of(context).colorScheme.surfaceContainerLow,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: colors.surface,
+            border: Border(bottom: BorderSide(color: colors.divider, width: 0.5)),
+          ),
           child: Row(
             children: [
               Expanded(
                 child: SizedBox(
-                  height: 36,
-                  child: Semantics(
-                    label: 'Cari dalam transkrip',
-                    child: TextField(
-                      onChanged: (val) => setState(() => _searchQuery = val),
-                      decoration: InputDecoration(
-                        hintText: 'Cari dalam transkrip...',
-                        prefixIcon: const Icon(Icons.search, size: 18),
-                        contentPadding: EdgeInsets.zero,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(18),
-                        ),
+                  height: 32,
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (val) => setState(() => _searchQuery = val),
+                    style: TextStyle(color: colors.text, fontSize: 12),
+                    decoration: InputDecoration(
+                      hintText: 'Cari...',
+                      hintStyle: TextStyle(color: colors.textTertiary, fontSize: 12),
+                      prefixIcon: Icon(Icons.search, size: 14, color: colors.textTertiary),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.clear, size: 14, color: colors.textTertiary),
+                              onPressed: () {
+                                _searchController.clear();
+                                setState(() => _searchQuery = '');
+                              },
+                            )
+                          : null,
+                      filled: true,
+                      fillColor: colors.chipBackground,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
                       ),
+                      contentPadding: EdgeInsets.zero,
+                      isDense: true,
                     ),
                   ),
                 ),
               ),
               const SizedBox(width: 8),
-              if (query.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: Semantics(
-                    label: '${filtered.length} hasil cocok',
-                    child: Chip(
-                      label: Text('${filtered.length} cocok'),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  ),
-                ),
-              Semantics(
-                label: _autoScroll ? 'Gulir otomatis aktif' : 'Gulir otomatis nonaktif',
-                child: IconButton(
-                  tooltip: _autoScroll ? 'Auto-scroll aktif' : 'Auto-scroll mati',
-                  icon: Icon(
-                    _autoScroll ? Icons.vertical_align_bottom : Icons.pause_circle_outline,
-                    color: _autoScroll ? Theme.of(context).colorScheme.primary : null,
-                  ),
-                  onPressed: () => setState(() => _autoScroll = !_autoScroll),
-                ),
+              Text(
+                '${widget.segments.length} segmen',
+                style: TextStyle(color: colors.textSecondary, fontSize: 12),
               ),
-              Semantics(
-                label: 'Salin seluruh transkrip',
-                child: IconButton(
-                  tooltip: 'Salin Seluruh Transkrip',
-                  icon: const Icon(Icons.copy_outlined),
-                  onPressed: () => _copyAllToClipboard(context),
+              IconButton(
+                tooltip: _autoScroll ? 'Auto-scroll aktif' : 'Auto-scroll mati',
+                icon: Icon(
+                  _autoScroll ? Icons.vertical_align_bottom : Icons.pause_circle_outline,
+                  size: 18,
+                  color: _autoScroll ? colors.primary : colors.textTertiary,
                 ),
+                onPressed: () => setState(() => _autoScroll = !_autoScroll),
+              ),
+              IconButton(
+                tooltip: 'Salin semua',
+                icon: Icon(Icons.copy_outlined, size: 18, color: colors.textSecondary),
+                onPressed: () => _copyAllToClipboard(context),
               ),
             ],
           ),
         ),
-        const Divider(height: 1),
+
+        // Transcript list
         Expanded(
-          child: filtered.isEmpty
-              ? Semantics(
-                  label: 'Tidak ada segmen yang cocok dengan pencarian.',
-                  child: const Center(child: Text('Tidak ada segmen yang cocok.')),
-                )
-              : ListView.builder(
-                  controller: _scrollController,
-                  itemCount: filtered.length,
-                  itemExtent: 64,
-                  itemBuilder: (context, index) {
-                    final seg = filtered[index];
-                    final originalIndex = widget.segments.indexOf(seg);
-                    return _SegmentTile(
-                      segment: seg,
-                      onEdit: widget.onEdit == null
-                          ? null
-                          : (newText) => widget.onEdit!(originalIndex, newText),
-                    );
-                  },
-                ),
+          child: Builder(
+            builder: (context) {
+              final query = _searchQuery.trim().toLowerCase();
+              final filtered = query.isEmpty
+                  ? widget.segments
+                  : widget.segments
+                      .where((s) => s.text.toLowerCase().contains(query) || s.speaker.toLowerCase().contains(query))
+                      .toList();
+
+              if (filtered.isEmpty) {
+                return Center(
+                  child: Text(
+                    query.isNotEmpty ? 'Tidak ada segmen cocok' : 'Belum ada transkrip',
+                    style: TextStyle(color: colors.textSecondary),
+                  ),
+                );
+              }
+
+              return ListView.builder(
+                controller: _scrollController,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                itemCount: filtered.length,
+                itemBuilder: (context, index) {
+                  final seg = filtered[index];
+                  final originalIndex = widget.segments.indexOf(seg);
+                  return _SegmentTile(
+                    segment: seg,
+                    onEdit: widget.onEdit == null
+                        ? null
+                        : (newText) => widget.onEdit!(originalIndex, newText),
+                  );
+                },
+              );
+            },
+          ),
         ),
       ],
     );
@@ -197,79 +216,78 @@ class _SegmentTile extends StatelessWidget {
 
   const _SegmentTile({required this.segment, this.onEdit});
 
-  Future<void> _openEditDialog(BuildContext context) async {
-    final controller = TextEditingController(text: segment.text);
-    final newText = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Semantics(
-          label: 'Edit transkrip',
-          child: const Text('Edit Transkrip'),
-        ),
-        content: Semantics(
-          label: 'Ketik teks baru',
-          child: TextField(
-            controller: controller,
-            autofocus: true,
-            maxLines: null,
-            decoration: const InputDecoration(border: OutlineInputBorder()),
-          ),
-        ),
-        actions: [
-          Semantics(
-            label: 'Batalkan perubahan',
-            child: TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Batal'),
-            ),
-          ),
-          Semantics(
-            label: 'Simpan perubahan',
-            child: FilledButton(
-              onPressed: () => Navigator.of(context).pop(controller.text),
-              child: const Text('Simpan'),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (newText != null && newText.trim().isNotEmpty && newText != segment.text) {
-      onEdit?.call(newText);
-    }
+  String _formatTime(double secs) {
+    final m = (secs / 60).floor();
+    final s = (secs % 60).floor();
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final accent = segment.source == 'mic' ? AppColors.micAccent : AppColors.spkAccent;
-    final editable = onEdit != null;
-    final semanticLabel = '${segment.speaker} pada ${_formatTimestamp(segment.timestamp)}: ${segment.text}';
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final isMic = segment.source == 'mic';
+
     return Semantics(
-      label: semanticLabel,
+      label: '${segment.speaker} pada ${_formatTime(segment.timestamp)}: ${segment.text}',
       child: InkWell(
-        onTap: editable ? () => _openEditDialog(context) : null,
+        onTap: onEdit != null ? () => _openEditDialog(context) : null,
+        borderRadius: BorderRadius.circular(8),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ExcludeSemantics(
-                child: Container(width: 4, height: 40, color: accent),
+              // Speaker label
+              Container(
+                width: 40,
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(
+                  segment.speaker,
+                  style: TextStyle(
+                    color: colors.primary,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
+              // Content
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${segment.speaker} · ${_formatTimestamp(segment.timestamp)}',
-                      style: Theme.of(context).textTheme.labelSmall,
+                      segment.text,
+                      style: TextStyle(color: colors.text, fontSize: 14, height: 1.4),
                     ),
-                    Text(segment.text),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Text(
+                          _formatTime(segment.timestamp),
+                          style: TextStyle(color: colors.textTertiary, fontSize: 11),
+                        ),
+                        if (segment.language.isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: colors.chipBackground,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              segment.language.toUpperCase(),
+                              style: TextStyle(color: colors.textTertiary, fontSize: 10),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
                   ],
                 ),
               ),
-              if (editable)
-                Icon(Icons.edit_outlined, size: 16, color: Theme.of(context).disabledColor),
+              if (onEdit != null)
+                Icon(Icons.edit_outlined, size: 14, color: colors.textTertiary),
             ],
           ),
         ),
@@ -277,9 +295,40 @@ class _SegmentTile extends StatelessWidget {
     );
   }
 
-  String _formatTimestamp(double secs) {
-    final m = (secs / 60).floor();
-    final s = (secs % 60).floor();
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  void _openEditDialog(BuildContext context) {
+    final controller = TextEditingController(text: segment.text);
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: colors.surface,
+        title: Text('Edit Transkrip', style: TextStyle(color: colors.text)),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLines: null,
+          style: TextStyle(color: colors.text),
+          decoration: InputDecoration(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            filled: true,
+            fillColor: colors.chipBackground,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Batal', style: TextStyle(color: colors.textSecondary)),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    ).then((newText) {
+      if (newText != null && newText.trim().isNotEmpty && newText != segment.text) {
+        onEdit?.call(newText);
+      }
+    });
   }
 }

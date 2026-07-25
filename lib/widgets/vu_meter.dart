@@ -14,45 +14,83 @@ class VuMeter extends ConsumerWidget {
     final session = ref.watch(sessionProvider);
     final micEnabled = session.config.micEnabled;
     final speakerEnabled = session.config.speakerEnabled;
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
 
-    // Zero out levels for disabled sources
     final mic = micEnabled ? (vu.valueOrNull?.micLevel ?? 0.0) : 0.0;
     final speaker = speakerEnabled ? (vu.valueOrNull?.speakerLevel ?? 0.0) : 0.0;
 
     return Row(
       children: [
-        Expanded(
-          child: Semantics(
-            label: micEnabled ? 'Level mikrofon' : 'Mikrofon nonaktif',
-            value: micEnabled ? '${(mic * 100).round()} persen' : 'nonaktif',
-            child: _bar(mic, AppColors.micAccent, dimmed: !micEnabled),
-          ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Semantics(
-            label: speakerEnabled ? 'Level pengeras suara' : 'Pengeras suara nonaktif',
-            value: speakerEnabled ? '${(speaker * 100).round()} persen' : 'nonaktif',
-            child: _bar(speaker, AppColors.spkAccent, dimmed: !speakerEnabled),
-          ),
-        ),
+        Expanded(child: _AudioBar(
+          icon: Icons.mic,
+          label: 'MIC',
+          level: mic,
+          enabled: micEnabled,
+          color: colors.primary,
+        )),
+        const SizedBox(width: 12),
+        Expanded(child: _AudioBar(
+          icon: Icons.speaker,
+          label: 'SPK',
+          level: speaker,
+          enabled: speakerEnabled,
+          color: colors.primary,
+        )),
       ],
     );
   }
+}
 
-  Widget _bar(double level, Color color, {bool dimmed = false}) {
-    return ExcludeSemantics(
-      child: Opacity(
-        opacity: dimmed ? 0.3 : 1.0,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(4),
-          child: LinearProgressIndicator(
-            value: level.clamp(0.0, 1.0),
-            minHeight: 6,
-            color: color,
-            backgroundColor: color.withValues(alpha: 0.15),
+class _AudioBar extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final double level;
+  final bool enabled;
+  final Color color;
+
+  const _AudioBar({
+    required this.icon,
+    required this.label,
+    required this.level,
+    required this.enabled,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: enabled ? colors.chipBackground : colors.chipBackground.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colors.border),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 14, color: enabled ? color : colors.textTertiary),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              color: enabled ? color : colors.textTertiary,
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+            ),
           ),
-        ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(2),
+              child: LinearProgressIndicator(
+                value: level.clamp(0.0, 1.0),
+                minHeight: 6,
+                color: enabled ? color : colors.border,
+                backgroundColor: colors.border.withValues(alpha: 0.3),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

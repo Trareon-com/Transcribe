@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/update_checker.dart';
 import '../state/models.dart';
 import '../state/settings_model.dart';
+import '../theme/app_colors.dart';
 import 'privacy_report_screen.dart';
 import 'usage_dashboard_screen.dart';
 
@@ -14,232 +15,139 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final notifier = ref.read(settingsProvider.notifier);
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Pengaturan')),
+      backgroundColor: colors.background,
+      appBar: AppBar(
+        backgroundColor: colors.headerBackground,
+        foregroundColor: colors.text,
+        title: const Text('Pengaturan', style: TextStyle(fontWeight: FontWeight.w600)),
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, size: 20),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+      ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Semantics(
-            label: 'Pengaturan tema',
-            child: ListTile(
-              title: const Text('Tema'),
-              subtitle: Text(_themeLabel(settings.theme)),
-              trailing: Semantics(
-                label: 'Pilih tema',
-                button: true,
-                child: DropdownButton<AppThemeMode>(
+          _SettingsSection(
+            title: 'Tampilan',
+            children: [
+              _SettingsTile(
+                icon: Icons.palette_outlined,
+                label: 'Tema',
+                trailing: _CompactDropdown<AppThemeMode>(
                   value: settings.theme,
-                  items: AppThemeMode.values
-                      .map((m) => DropdownMenuItem(
-                            value: m,
-                            child: Semantics(
-                              label: _themeLabel(m),
-                              child: Text(_themeLabel(m)),
-                            ),
-                          ))
-                      .toList(),
-                  onChanged: (theme) {
-                    if (theme != null) notifier.setTheme(theme);
-                  },
+                  items: AppThemeMode.values,
+                  labelBuilder: _themeLabel,
+                  onChanged: notifier.setTheme,
                 ),
               ),
-            ),
+            ],
           ),
-          const Divider(),
-          Semantics(
-            label: 'Pengaturan model default',
-            child: ListTile(
-              title: const Text('Model default'),
-              subtitle: Text(settings.defaultModel),
-              trailing: Semantics(
-                label: 'Pilih model default, saat ini ${settings.defaultModel}',
-                button: true,
-                child: DropdownButton<String>(
+          const SizedBox(height: 16),
+          _SettingsSection(
+            title: 'Model & Mode',
+            children: [
+              _SettingsTile(
+                icon: Icons.psychology_outlined,
+                label: 'Model default',
+                trailing: _CompactDropdown<String>(
                   value: settings.defaultModel,
-                  items: const [
-                    DropdownMenuItem(value: 'tiny', child: Text('tiny')),
-                    DropdownMenuItem(value: 'base', child: Text('base')),
-                    DropdownMenuItem(value: 'small', child: Text('small')),
-                    DropdownMenuItem(value: 'medium', child: Text('medium')),
-                    DropdownMenuItem(value: 'large-v3-turbo', child: Text('large-v3-turbo')),
-                  ],
-                  onChanged: (model) {
-                    if (model != null) notifier.setDefaultModel(model);
-                  },
+                  items: const ['tiny', 'base', 'small', 'medium', 'large-v3-turbo'],
+                  labelBuilder: (s) => s,
+                  onChanged: notifier.setDefaultModel,
                 ),
               ),
-            ),
-          ),
-          const Divider(),
-          Semantics(
-            label: 'Pengaturan mode default',
-            child: ListTile(
-              title: const Text('Mode default'),
-              subtitle: Text(settings.defaultMode.label),
-              trailing: Semantics(
-                label: 'Pilih mode default, saat ini ${settings.defaultMode.label}',
-                button: true,
-                child: DropdownButton<SessionMode>(
+              _SettingsTile(
+                icon: Icons.meeting_room_outlined,
+                label: 'Mode default',
+                trailing: _CompactDropdown<SessionMode>(
                   value: settings.defaultMode,
-                  items: SessionMode.values
-                      .map((m) => DropdownMenuItem(
-                            value: m,
-                            child: Semantics(
-                              label: m.label,
-                              child: Text(m.label),
-                            ),
-                          ))
-                      .toList(),
-                  onChanged: (mode) {
-                    if (mode != null) notifier.setDefaultMode(mode);
-                  },
+                  items: SessionMode.values,
+                  labelBuilder: (m) => m.label,
+                  onChanged: notifier.setDefaultMode,
                 ),
               ),
-            ),
-          ),
-          const Divider(),
-          Semantics(
-            label: 'Pengaturan lokasi library',
-            child: ListTile(
-              title: const Text('Lokasi library'),
-              subtitle: Text(settings.libraryPath),
-              trailing: SizedBox(
-                width: 240,
-                child: Semantics(
-                  textField: true,
-                  label: 'Path lokasi library, saat ini ${settings.libraryPath}',
-                  child: TextFormField(
-                    initialValue: settings.libraryPath,
-                    decoration: const InputDecoration(
-                      hintText: '/Users/user/Documents/Trascribe',
-                      isDense: true,
-                    ),
-                    onFieldSubmitted: notifier.setLibraryPath,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          Semantics(
-            label: 'VAD deteksi suara, ${settings.vadEnabled ? 'aktif' : 'nonaktif'}',
-            child: SwitchListTile(
-              title: const Text('VAD (deteksi suara)'),
-              value: settings.vadEnabled,
-              onChanged: (value) => notifier.setVadEnabled(value),
-            ),
-          ),
-          Semantics(
-            label: 'Echo dedupe, ${settings.echoDedupeEnabled ? 'aktif' : 'nonaktif'}',
-            child: SwitchListTile(
-              title: const Text('Echo-dedupe'),
-              value: settings.echoDedupeEnabled,
-              onChanged: (value) => notifier.setEchoDedupeEnabled(value),
-            ),
-          ),
-          SwitchListTile(
-            title: const Text('Auto-stop saat diam'),
-            subtitle: Text(
-              settings.autoStopMinutes != null
-                  ? 'Berhenti otomatis setelah ${settings.autoStopMinutes} menit tanpa deteksi suara'
-                  : 'Nonaktif',
-            ),
-            value: settings.autoStopMinutes != null,
-            onChanged: (enabled) {
-              notifier.setAutoStopMinutes(enabled ? 5 : null);
-            },
-          ),
-          if (settings.autoStopMinutes != null)
-            ListTile(
-              title: const Text('Batas waktu diam'),
-              subtitle: Text('${settings.autoStopMinutes} menit'),
-              trailing: SizedBox(
-                width: 120,
-                child: Slider(
-                  min: 1,
-                  max: 30,
-                  divisions: 29,
-                  value: settings.autoStopMinutes!.toDouble().clamp(1, 30),
-                  label: '${settings.autoStopMinutes} menit',
-                  onChanged: (v) => notifier.setAutoStopMinutes(v.round()),
-                ),
-              ),
-            ),
-          Semantics(
-            label: 'Pengaturan bahasa',
-            child: ListTile(
-              title: const Text('Bahasa'),
-              subtitle: Text(settings.language ?? 'Auto-detect'),
-              trailing: Semantics(
-                label: 'Pilih bahasa, saat ini ${settings.language ?? 'Auto-detect'}',
-                button: true,
-                child: DropdownButton<String?>(
+              _SettingsTile(
+                icon: Icons.language_outlined,
+                label: 'Bahasa',
+                trailing: _CompactDropdown<String?>(
                   value: settings.language,
-                  items: const [
-                    DropdownMenuItem<String?>(value: null, child: Text('Auto-detect')),
-                    DropdownMenuItem<String?>(value: 'id', child: Text('Bahasa Indonesia')),
-                    DropdownMenuItem<String?>(value: 'en', child: Text('English')),
-                  ],
-                  onChanged: (language) {
-                    notifier.setLanguage(language);
-                  },
+                  items: const [null, 'id', 'en'],
+                  labelBuilder: (s) => s == null ? 'Auto-detect' : (s == 'id' ? 'Indonesia' : 'English'),
+                  onChanged: notifier.setLanguage,
                 ),
               ),
-            ),
+            ],
           ),
-          Semantics(
-            label: 'Pengaturan keyboard global',
-            child: ListTile(
-              title: const Text('⌨️ Pintasan Global'),
-              subtitle: const Text(
-                'Ctrl+Shift+R: Mulai/Berhenti merekam\n'
-                'Ctrl+Shift+P: Jeda/Lanjutkan',
+          const SizedBox(height: 16),
+          _SettingsSection(
+            title: 'Audio',
+            children: [
+              _SettingsSwitch(
+                icon: Icons.graphic_eq_outlined,
+                label: 'VAD (deteksi suara)',
+                subtitle: 'Filter noise sekitar',
+                value: settings.vadEnabled,
+                onChanged: notifier.setVadEnabled,
               ),
-              trailing: Semantics(
-                label: 'Memerlukan izin Aksesibilitas di macOS',
-                child: Tooltip(
-                  message: 'Memerlukan izin Aksesibilitas di macOS — '
-                      'System Settings → Privacy & Security → Accessibility',
-                  child: Icon(Icons.info_outline, color: Theme.of(context).colorScheme.primary),
+              _SettingsSwitch(
+                icon: Icons.spatial_audio_outlined,
+                label: 'Echo-dedupe',
+                subtitle: 'Hapus duplikasi suara di mode Rapat Online',
+                value: settings.echoDedupeEnabled,
+                onChanged: notifier.setEchoDedupeEnabled,
+              ),
+              _SettingsSwitch(
+                icon: Icons.timer_outlined,
+                label: 'Auto-stop saat diam',
+                subtitle: settings.autoStopMinutes != null
+                    ? 'Berhenti setelah ${settings.autoStopMinutes} menit'
+                    : 'Nonaktif',
+                value: settings.autoStopMinutes != null,
+                onChanged: (v) => notifier.setAutoStopMinutes(v ? 5 : null),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _SettingsSection(
+            title: 'Informasi',
+            children: [
+              _SettingsTile(
+                icon: Icons.keyboard_outlined,
+                label: 'Pintasan Global',
+                subtitle: 'Ctrl+Shift+R: Mulai/Berhenti\nCtrl+Shift+P: Jeda/Lanjutkan',
+                trailing: Icon(Icons.info_outline, color: colors.textTertiary, size: 18),
+              ),
+              _SettingsTile(
+                icon: Icons.shield_outlined,
+                label: 'Privacy Report',
+                subtitle: 'Lihat aktivitas jaringan',
+                trailing: Icon(Icons.chevron_right, color: colors.textTertiary),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const PrivacyReportScreen()),
                 ),
               ),
-            ),
-          ),
-          const Divider(),
-          Semantics(
-            label: 'Privacy Report - Lihat aktivitas jaringan sejak app dibuka',
-            button: true,
-            child: ListTile(
-              title: const Text('Privacy Report'),
-              subtitle: const Text('Lihat aktivitas jaringan sejak app dibuka'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const PrivacyReportScreen()),
+              _SettingsTile(
+                icon: Icons.analytics_outlined,
+                label: 'Statistik Penggunaan',
+                subtitle: 'Total sesi dan jam ditranskrip',
+                trailing: Icon(Icons.chevron_right, color: colors.textTertiary),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const UsageDashboardScreen()),
+                ),
               ),
-            ),
-          ),
-          Semantics(
-            label: 'Statistik Penggunaan - Total sesi, jam ditranskrip, dan mode yang paling sering dipakai',
-            button: true,
-            child: ListTile(
-              title: const Text('Statistik Penggunaan'),
-              subtitle: const Text('Total sesi, jam ditranskrip, dan mode yang paling sering dipakai'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => const UsageDashboardScreen()),
+              _SettingsTile(
+                icon: Icons.system_update_outlined,
+                label: 'Periksa Pembaruan',
+                subtitle: 'Cek versi terbaru Trascribe',
+                trailing: Icon(Icons.download_outlined, color: colors.textTertiary, size: 18),
+                onTap: () => _checkForUpdates(context),
               ),
-            ),
-          ),
-          const Divider(),
-          Semantics(
-            label: 'Periksa pembaruan aplikasi',
-            button: true,
-            child: ListTile(
-              title: const Text('Periksa Pembaruan'),
-              subtitle: const Text('Cek versi terbaru Trascribe'),
-              trailing: const Icon(Icons.system_update_outlined),
-              onTap: () => _checkForUpdates(context),
-            ),
+            ],
           ),
         ],
       ),
@@ -247,10 +155,10 @@ class SettingsScreen extends ConsumerWidget {
   }
 
   String _themeLabel(AppThemeMode theme) => switch (theme) {
-        AppThemeMode.light => 'Terang',
-        AppThemeMode.dark => 'Gelap',
-        AppThemeMode.system => 'Ikuti Sistem',
-      };
+    AppThemeMode.light => 'Terang',
+    AppThemeMode.dark => 'Gelap',
+    AppThemeMode.system => 'Sistem',
+  };
 
   Future<void> _checkForUpdates(BuildContext context) async {
     showDialog(
@@ -258,80 +166,201 @@ class SettingsScreen extends ConsumerWidget {
       barrierDismissible: false,
       builder: (_) => const Center(child: CircularProgressIndicator()),
     );
-
     try {
       final checker = UpdateChecker();
       final info = await checker.checkForUpdate();
-
       if (!context.mounted) return;
-
-      Navigator.of(context).pop(); // dismiss loading
-
+      Navigator.of(context).pop();
       if (info.isUpdateAvailable) {
         await showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
             title: const Text('Pembaruan Tersedia'),
-            content: Text(
-              'Versi terbaru ${info.latestVersion} tersedia.\n'
-              'Versi saat ini: ${info.currentVersion}\n\n'
-              'Kunjungi halaman rilis untuk mengunduh.',
-            ),
+            content: Text('Versi ${info.latestVersion} tersedia.\nVersi saat ini: ${info.currentVersion}'),
             actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('Nanti'),
-              ),
-              FilledButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  // Open the download URL externally
-                  // The user can copy or tap — no url_launcher dependency
-                },
-                child: const Text('Buka Halaman Rilis'),
-              ),
+              TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Nanti')),
+              FilledButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK')),
             ],
           ),
         );
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Anda sudah menggunakan versi terbaru.')),
+          const SnackBar(content: Text('Versi terbaru sudah terinstall.')),
         );
       }
-    } on UpdateCheckException catch (e) {
-      if (!context.mounted) return;
-      Navigator.of(context).pop(); // dismiss loading
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Gagal Memeriksa Pembaruan'),
-          content: Text(e.message),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Tutup'),
-            ),
-          ],
-        ),
-      );
     } catch (e) {
       if (!context.mounted) return;
-      Navigator.of(context).pop(); // dismiss loading
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: const Text('Gagal Memeriksa Pembaruan'),
-          content: const Text(
-            'Terjadi kesalahan yang tidak terduga. Coba lagi nanti.',
+      Navigator.of(context).pop();
+    }
+  }
+}
+
+class _SettingsSection extends StatelessWidget {
+  final String title;
+  final List<Widget> children;
+
+  const _SettingsSection({required this.title, required this.children});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: TextStyle(
+            color: colors.textSecondary,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.5,
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('Tutup'),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: colors.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: colors.border),
+          ),
+          child: Column(children: children),
+        ),
+      ],
+    );
+  }
+}
+
+class _SettingsTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? subtitle;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  const _SettingsTile({
+    required this.icon,
+    required this.label,
+    this.subtitle,
+    this.trailing,
+    this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, color: colors.textSecondary, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label, style: TextStyle(color: colors.text, fontSize: 14)),
+                  if (subtitle != null) ...[
+                    const SizedBox(height: 2),
+                    Text(subtitle!, style: TextStyle(color: colors.textTertiary, fontSize: 12)),
+                  ],
+                ],
+              ),
             ),
+            if (trailing != null) trailing!,
           ],
         ),
-      );
-    }
+      ),
+    );
+  }
+}
+
+class _SettingsSwitch extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  const _SettingsSwitch({
+    required this.icon,
+    required this.label,
+    this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Icon(icon, color: colors.textSecondary, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: TextStyle(color: colors.text, fontSize: 14)),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 2),
+                  Text(subtitle!, style: TextStyle(color: colors.textTertiary, fontSize: 12)),
+                ],
+              ],
+            ),
+          ),
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeColor: colors.primary,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompactDropdown<T> extends StatelessWidget {
+  final T value;
+  final List<T> items;
+  final String Function(T) labelBuilder;
+  final ValueChanged<T> onChanged;
+
+  const _CompactDropdown({
+    required this.value,
+    required this.items,
+    required this.labelBuilder,
+    required this.onChanged,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: colors.chipBackground,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: colors.border),
+      ),
+      child: DropdownButton<T>(
+        value: value,
+        isDense: true,
+        underline: const SizedBox(),
+        dropdownColor: colors.surface,
+        style: TextStyle(color: colors.text, fontSize: 13),
+        items: items.map((item) => DropdownMenuItem(
+          value: item,
+          child: Text(labelBuilder(item)),
+        )).toList(),
+        onChanged: (item) {
+          if (item != null) onChanged(item);
+        },
+      ),
+    );
   }
 }
