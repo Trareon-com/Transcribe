@@ -11,7 +11,7 @@ use crate::audio::{AudioDeviceInfo, SessionConfig, SessionMode};
 use crate::error::TrascribeError;
 use crate::export::{ExportFormat, ExportedFile, Segment};
 use crate::model::ModelInfo;
-use crate::session::SessionStatus;
+use crate::session::{SessionEvent, SessionStatus};
 use crate::settings::AppSettings;
 
 pub fn engine_version() -> String {
@@ -56,6 +56,10 @@ pub fn set_session_mode(session_id: String, mode: SessionMode) -> Result<(), Tra
 
 pub fn get_session_status(session_id: String) -> Result<SessionStatus, TrascribeError> {
     crate::session::get_status(&session_id)
+}
+
+pub fn poll_session_events(session_id: String) -> Result<Vec<SessionEvent>, TrascribeError> {
+    crate::session::poll_events(&session_id)
 }
 
 // --- Model management -----------------------------------------------------

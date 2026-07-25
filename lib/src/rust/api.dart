@@ -55,6 +55,9 @@ Future<void> setSessionMode({
 Future<SessionStatus> getSessionStatus({required String sessionId}) =>
     RustLib.instance.api.crateApiGetSessionStatus(sessionId: sessionId);
 
+Future<List<SessionEvent>> pollSessionEvents({required String sessionId}) =>
+    RustLib.instance.api.crateApiPollSessionEvents(sessionId: sessionId);
+
 Future<List<ModelInfo>> listAvailableModels({required String modelsDir}) =>
     RustLib.instance.api.crateApiListAvailableModels(modelsDir: modelsDir);
 

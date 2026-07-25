@@ -3,6 +3,8 @@ import 'dart:math';
 
 import '../src/rust/api.dart' as rust_api;
 import '../src/rust/audio.dart' as rust_audio;
+import '../src/rust/export.dart' as rust_export;
+import '../src/rust/session.dart' as rust_session;
 import '../src/rust/settings.dart' as rust_settings;
 import '../state/models.dart';
 
@@ -95,19 +97,29 @@ class RustBridgeMock implements RustBridge {
 /// `main()`). Converts between the hand-written Dart models in
 /// `state/models.dart` and the generated types 1:1.
 ///
-/// `transcriptStream`/`vuMeterStream` are not yet backed by real-time
-/// data — `rust_core::api` doesn't expose a stream surface yet (the live
-/// audio capture thread wiring itself is still hardware-dependent future
-/// work, see ARCHITECTURE.md). They return empty streams so the UI degrades
-/// gracefully rather than crashing.
 class RustEngineBridge implements RustBridge {
+  final Map<String, StreamController<TranscriptSegment>> _transcriptControllers = {};
+  final Map<String, StreamController<VuLevel>> _vuControllers = {};
+  final Map<String, Timer> _pollTimers = {};
+  final Set<String> _polling = {};
+
   @override
-  Future<String> startSession(SessionConfig config) {
-    return rust_api.startSession(config: _toRustSessionConfig(config));
+  Future<String> startSession(SessionConfig config) async {
+    final id = await rust_api.startSession(config: _toRustSessionConfig(config));
+    _transcriptControllers[id] = StreamController<TranscriptSegment>.broadcast();
+    _vuControllers[id] = StreamController<VuLevel>.broadcast();
+    _pollTimers[id] = Timer.periodic(const Duration(milliseconds: 100), (_) => _poll(id));
+    return id;
   }
 
   @override
-  Future<void> stopSession(String sessionId) => rust_api.stopSession(sessionId: sessionId);
+  Future<void> stopSession(String sessionId) async {
+    _pollTimers.remove(sessionId)?.cancel();
+    _polling.remove(sessionId);
+    await rust_api.stopSession(sessionId: sessionId);
+    await _transcriptControllers.remove(sessionId)?.close();
+    await _vuControllers.remove(sessionId)?.close();
+  }
 
   @override
   Future<void> toggleMic(String sessionId, bool enabled) =>
@@ -118,10 +130,61 @@ class RustEngineBridge implements RustBridge {
       rust_api.toggleSpeaker(sessionId: sessionId, enabled: enabled);
 
   @override
-  Stream<TranscriptSegment> transcriptStream(String sessionId) => const Stream.empty();
+  Stream<TranscriptSegment> transcriptStream(String sessionId) {
+    return _transcriptControllers[sessionId]?.stream ?? const Stream.empty();
+  }
 
   @override
-  Stream<VuLevel> vuMeterStream(String sessionId) => const Stream.empty();
+  Stream<VuLevel> vuMeterStream(String sessionId) {
+    return _vuControllers[sessionId]?.stream ?? const Stream.empty();
+  }
+
+  Future<void> _poll(String sessionId) async {
+    if (!_polling.add(sessionId)) return;
+    try {
+      final events = await rust_session.pollEvents(sessionId: sessionId);
+      var micLevel = 0.0;
+      var speakerLevel = 0.0;
+      var hasVu = false;
+      for (final event in events) {
+        event.when(
+          transcript: (segment) {
+            _transcriptControllers[sessionId]?.add(_fromRustSegment(segment));
+          },
+          vu: (source, level) {
+            hasVu = true;
+            if (source == 'mic') {
+              micLevel = level;
+            } else if (source == 'spk') {
+              speakerLevel = level;
+            }
+          },
+        );
+      }
+      if (hasVu) {
+        _vuControllers[sessionId]?.add(
+          VuLevel(micLevel: micLevel, speakerLevel: speakerLevel),
+        );
+      }
+    } on Object catch (_) {
+      // Session shutdown races with the 100ms poll timer are expected.
+    } finally {
+      _polling.remove(sessionId);
+    }
+  }
+
+  TranscriptSegment _fromRustSegment(rust_export.Segment segment) {
+    return TranscriptSegment(
+      source: segment.source,
+      speaker: segment.speaker,
+      text: segment.text,
+      timestamp: segment.timestamp,
+      duration: segment.duration,
+      language: segment.language,
+      confidence: segment.confidence,
+      isPartial: segment.isPartial,
+    );
+  }
 
   @override
   Future<AppSettings> loadSettings() async {

@@ -12,6 +12,7 @@ use uuid::Uuid;
 
 use crate::audio::{AudioCapture, SessionConfig, SessionMode};
 use crate::error::TrascribeError;
+use crate::export::Segment;
 use crate::memory;
 use crate::pipeline::{LiveEvent, LiveWorker};
 
@@ -34,6 +35,12 @@ pub struct SessionStatus {
     pub model_loaded: bool,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub enum SessionEvent {
+    Transcript(Segment),
+    Vu { source: String, level: f32 },
+}
+
 struct SessionState {
     config: SessionConfig,
     started_at: std::time::Instant,
@@ -41,6 +48,7 @@ struct SessionState {
     segments_count: u32,
     mic_capture: Option<CaptureChannel>,
     speaker_capture: Option<CaptureChannel>,
+    pending_events: Vec<SessionEvent>,
 }
 
 struct CaptureChannel {
@@ -88,6 +96,7 @@ pub fn start_session(config: SessionConfig) -> Result<String, TrascribeError> {
         segments_count: 0,
         mic_capture,
         speaker_capture,
+        pending_events: Vec::new(),
     };
     registry()
         .lock()
@@ -189,6 +198,17 @@ pub fn get_status(session_id: &str) -> Result<SessionStatus, TrascribeError> {
     })
 }
 
+pub fn poll_events(session_id: &str) -> Result<Vec<SessionEvent>, TrascribeError> {
+    let mut reg = registry()
+        .lock()
+        .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
+    let state = reg
+        .get_mut(session_id)
+        .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))?;
+    state.collect_worker_events();
+    Ok(std::mem::take(&mut state.pending_events))
+}
+
 impl SessionState {
     fn collect_worker_events(&mut self) {
         for capture in [&self.mic_capture, &self.speaker_capture]
@@ -196,9 +216,14 @@ impl SessionState {
             .flatten()
         {
             while let Ok(event) = capture.events_rx.try_recv() {
-                if matches!(event, LiveEvent::Segment(_)) {
-                    self.segments_count = self.segments_count.saturating_add(1);
-                }
+                let event = match event {
+                    LiveEvent::Segment(segment) => {
+                        self.segments_count = self.segments_count.saturating_add(1);
+                        SessionEvent::Transcript(segment)
+                    }
+                    LiveEvent::Vu { source, level } => SessionEvent::Vu { source, level },
+                };
+                self.pending_events.push(event);
             }
         }
     }

@@ -51,6 +51,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   AutoSplitReason dco_decode_box_autoadd_auto_split_reason(dynamic raw);
 
   @protected
+  Segment dco_decode_box_autoadd_segment(dynamic raw);
+
+  @protected
   SessionConfig dco_decode_box_autoadd_session_config(dynamic raw);
 
   @protected
@@ -93,6 +96,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<Segment> dco_decode_list_segment(dynamic raw);
 
   @protected
+  List<SessionEvent> dco_decode_list_session_event(dynamic raw);
+
+  @protected
   ModelInfo dco_decode_model_info(dynamic raw);
 
   @protected
@@ -109,6 +115,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   SessionConfig dco_decode_session_config(dynamic raw);
+
+  @protected
+  SessionEvent dco_decode_session_event(dynamic raw);
 
   @protected
   SessionMode dco_decode_session_mode(dynamic raw);
@@ -164,6 +173,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  Segment sse_decode_box_autoadd_segment(SseDeserializer deserializer);
+
+  @protected
   SessionConfig sse_decode_box_autoadd_session_config(
     SseDeserializer deserializer,
   );
@@ -214,6 +226,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<Segment> sse_decode_list_segment(SseDeserializer deserializer);
 
   @protected
+  List<SessionEvent> sse_decode_list_session_event(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   ModelInfo sse_decode_model_info(SseDeserializer deserializer);
 
   @protected
@@ -232,6 +249,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   SessionConfig sse_decode_session_config(SseDeserializer deserializer);
+
+  @protected
+  SessionEvent sse_decode_session_event(SseDeserializer deserializer);
 
   @protected
   SessionMode sse_decode_session_mode(SseDeserializer deserializer);
@@ -295,6 +315,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     AutoSplitReason self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_box_autoadd_segment(Segment self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_session_config(
@@ -363,6 +386,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_list_segment(List<Segment> self, SseSerializer serializer);
 
   @protected
+  void sse_encode_list_session_event(
+    List<SessionEvent> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_model_info(ModelInfo self, SseSerializer serializer);
 
   @protected
@@ -382,6 +411,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_session_config(SessionConfig self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_session_event(SessionEvent self, SseSerializer serializer);
 
   @protected
   void sse_encode_session_mode(SessionMode self, SseSerializer serializer);
