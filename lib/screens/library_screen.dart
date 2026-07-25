@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../widgets/file_upload_zone.dart';
 import 'transcript_player_screen.dart';
@@ -172,8 +173,13 @@ class _SessionCard extends StatelessWidget {
           children: [
             IconButton(
               tooltip: 'Export',
-              icon: const Icon(Icons.ios_share),
+              icon: const Icon(Icons.file_download_outlined),
               onPressed: () => showExportDialog(context, session),
+            ),
+            IconButton(
+              tooltip: 'Share',
+              icon: const Icon(Icons.ios_share),
+              onPressed: () => shareSessionSummary(session),
             ),
             IconButton(
               tooltip: 'Hapus',
@@ -185,6 +191,20 @@ class _SessionCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Shares a text summary via the OS-native share sheet. Sharing the actual
+/// exported files (once export writes real bytes via the Rust bridge) is
+/// a drop-in extension: `SharePlus.instance.share(ShareParams(files: ...))`.
+Future<void> shareSessionSummary(SessionSummary session) {
+  final minutes = (session.durationSeconds / 60).floor();
+  return SharePlus.instance.share(
+    ShareParams(
+      subject: session.title,
+      text: '${session.title}\n${session.date} · $minutes menit · '
+          '${session.segmentsCount} segmen\n\nDitranskrip dengan Trascribe.',
+    ),
+  );
 }
 
 Future<void> showExportDialog(BuildContext context, SessionSummary session) {
