@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:trascribe/services/bridge_service.dart';
+import 'package:trascribe/src/rust/export.dart' as rust_export;
 import 'package:trascribe/src/rust/audio/device.dart' as rust_device;
 import 'package:trascribe/src/rust/session.dart' as rust_session;
 import 'package:trascribe/src/rust/stt/file.dart' as rust_stt_file;
@@ -88,15 +89,24 @@ void main() {
       final notifier = BatchUploadNotifier();
       notifier.addFiles(['/a/test.mp3']);
       final bridge = _TestBridge();
-      await notifier.processBatch(bridge, '/model/path');
+      await notifier.processBatch(
+        bridge,
+        '/model/path',
+        outputDir: '~/Documents/Trascribe',
+      );
       expect(notifier.state.single.status, BatchFileStatus.done);
+      expect(bridge.exportedTitles, ['test']);
     });
 
     test('processBatch marks files as error on exception', () async {
       final notifier = BatchUploadNotifier();
       notifier.addFiles(['/a/crash.mp3']);
       final bridge = _ErrorBridge();
-      await notifier.processBatch(bridge, '/model/path');
+      await notifier.processBatch(
+        bridge,
+        '/model/path',
+        outputDir: '~/Documents/Trascribe',
+      );
       expect(notifier.state.single.status, BatchFileStatus.error);
     });
   });
@@ -148,6 +158,8 @@ class _NoopBridge implements RustBridge {
 }
 
 class _TestBridge extends _NoopBridge {
+  final List<String> exportedTitles = [];
+
   @override
   Future<List<rust_stt_file.TranscribeFileResult>> batchTranscribeFiles({
     required String modelPath,
@@ -158,10 +170,30 @@ class _TestBridge extends _NoopBridge {
       rust_stt_file.TranscribeFileResult(
         filename: 'test.mp3',
         durationSecs: 1.0,
-        segments: [],
+        segments: [
+          rust_export.Segment(
+            source: 'mic',
+            speaker: 'MIC',
+            text: 'Halo semua',
+            timestamp: 0,
+            duration: 1.0,
+            language: 'id',
+            confidence: 0.9,
+            isPartial: false,
+          ),
+        ],
         language: 'id',
       ),
     ];
+  }
+
+  @override
+  Future<void> exportSession({
+    required List<TranscriptSegment> segments,
+    required String outputDir,
+    required String title,
+  }) async {
+    exportedTitles.add(title);
   }
 }
 

@@ -241,7 +241,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 isActive: isActive,
                 isPaused: isPaused,
                 onLibrary: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const LibraryScreen()),
+                  MaterialPageRoute(
+                    builder: (_) {
+                      final lp = ref.read(settingsProvider).libraryPath;
+                      return LibraryScreen(libraryPath: resolveTilde(lp));
+                    },
+                  ),
                 ),
                 onSettings: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const SettingsScreen()),

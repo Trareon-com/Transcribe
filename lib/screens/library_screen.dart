@@ -16,6 +16,7 @@ class SessionSummary {
   final double durationSeconds;
   final int segmentsCount;
   final List<TranscriptSegment> segments;
+  final String? audioPath;
 
   const SessionSummary({
     required this.id,
@@ -24,6 +25,7 @@ class SessionSummary {
     required this.segmentsCount,
     this.segments = const [],
     this.durationSeconds = 0,
+    this.audioPath,
   });
 }
 
@@ -73,14 +75,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
     try {
       for (final entry in dir.listSync()) {
         if (entry is! Directory) continue;
-        final sessionDir = entry;
-        final jsonFile = sessionDir
-            .listSync()
-            .whereType<File>()
-            .where((f) => f.path.endsWith('.json'))
-            .firstOrNull;
-        if (jsonFile == null) continue;
         try {
+          final sessionDir = entry;
+          final files = sessionDir.listSync().whereType<File>().toList();
+          final jsonFile = files.where((f) => f.path.endsWith('.json')).firstOrNull;
+          if (jsonFile == null) continue;
           final raw = await jsonFile.readAsString();
           final list = jsonDecode(raw) as List<dynamic>;
           final segments = list.map((e) {
@@ -100,6 +99,11 @@ class _LibraryScreenState extends State<LibraryScreen> {
           final stat = await sessionDir.stat();
           final duration = segments.isEmpty ? 0.0
               : (segments.last.timestamp + segments.last.duration);
+          final audioFile = files.firstWhere(
+            (f) => const {'wav', 'mp3', 'm4a', 'aac', 'ogg', 'flac', 'opus', 'mp4', 'mov', 'mkv'}
+                .contains(f.path.split('.').last.toLowerCase()),
+            orElse: () => File(''),
+          );
           sessions.add(SessionSummary(
             id: sessionDir.path,
             title: title,
@@ -107,6 +111,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
             segmentsCount: segments.length,
             segments: segments,
             durationSeconds: duration,
+            audioPath: audioFile.path.isEmpty ? null : audioFile.path,
           ));
         } catch (_) {
           continue;
@@ -248,6 +253,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                                             title: session.title,
                                             durationSeconds: session.durationSeconds,
                                             segments: session.segments,
+                                            audioPath: session.audioPath,
                                           ),
                                         ),
                                       ),
@@ -259,9 +265,9 @@ class _LibraryScreenState extends State<LibraryScreen> {
             ),
 
             // Upload tab
-            const Padding(
+            Padding(
               padding: EdgeInsets.all(12),
-              child: FileUploadZone(),
+              child: FileUploadZone(onProcessed: _loadFromDisk),
             ),
           ],
         ),

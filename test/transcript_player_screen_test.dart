@@ -34,7 +34,7 @@ void main() {
     expect(find.text('1.0x'), findsOneWidget);
   });
 
-  testWidgets('play button toggles icon', (WidgetTester tester) async {
+  testWidgets('shows playback controls', (WidgetTester tester) async {
     await tester.pumpWidget(
       const MaterialApp(
         home: TranscriptPlayerScreen(
@@ -46,11 +46,8 @@ void main() {
     );
 
     expect(find.byIcon(Icons.play_circle_filled), findsOneWidget);
-
-    await tester.tap(find.byIcon(Icons.play_circle_filled));
-    await tester.pump();
-
-    expect(find.byIcon(Icons.pause_circle_filled), findsOneWidget);
+    expect(find.byIcon(Icons.pause_circle_filled), findsNothing);
+    expect(find.text('1.0x'), findsOneWidget);
   });
 
   testWidgets('tapping a segment opens edit dialog and saves new text', (

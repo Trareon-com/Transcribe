@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 import '../state/models.dart';
 import '../theme/app_colors.dart';
@@ -8,6 +11,7 @@ class TranscriptPlayerScreen extends StatefulWidget {
   final String title;
   final double durationSeconds;
   final List<TranscriptSegment> segments;
+  final String? audioPath;
   final ValueChanged<List<TranscriptSegment>>? onSegmentsChanged;
 
   const TranscriptPlayerScreen({
@@ -15,6 +19,7 @@ class TranscriptPlayerScreen extends StatefulWidget {
     required this.title,
     required this.durationSeconds,
     required this.segments,
+    this.audioPath,
     this.onSegmentsChanged,
   });
 
@@ -27,6 +32,11 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
   double _speed = 1.0;
   bool _playing = false;
   late List<TranscriptSegment> _segments;
+  final AudioPlayer _player = AudioPlayer();
+  StreamSubscription<Duration>? _positionSub;
+  StreamSubscription<PlayerState>? _playerStateSub;
+  Duration? _duration;
+  String? _error;
 
   static const _speedOptions = [0.5, 1.0, 1.25, 1.5, 2.0];
 
@@ -34,6 +44,36 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
   void initState() {
     super.initState();
     _segments = List.of(widget.segments);
+    _initPlayer();
+  }
+
+  Future<void> _initPlayer() async {
+    if (widget.audioPath == null) {
+      setState(() => _error = 'File audio sumber tidak tersedia untuk diputar.');
+      return;
+    }
+    try {
+      await _player.setReleaseMode(ReleaseMode.stop);
+      await _player.setVolume(1.0);
+      await _player.setPlaybackRate(_speed);
+      await _player.setSourceDeviceFile(widget.audioPath!);
+      _duration = await _player.getDuration();
+      _positionSub = _player.onPositionChanged.listen((position) {
+        if (!mounted) return;
+        setState(() {
+          _positionSeconds = position.inMilliseconds / 1000.0;
+        });
+      });
+      _playerStateSub = _player.onPlayerStateChanged.listen((state) {
+        if (!mounted) return;
+        setState(() {
+          _playing = state == PlayerState.playing;
+        });
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+    }
   }
 
   void _editSegment(int index, String newText) {
@@ -49,9 +89,52 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
+  Future<void> _togglePlayback() async {
+    if (widget.audioPath == null) return;
+    try {
+      if (_playing) {
+        await _player.pause();
+      } else {
+        await _player.setPlaybackRate(_speed);
+        if (_positionSeconds > 0) {
+          await _player.seek(Duration(milliseconds: (_positionSeconds * 1000).round()));
+        }
+        await _player.resume();
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+    }
+  }
+
+  Future<void> _seekTo(double seconds) async {
+    if (widget.audioPath == null) return;
+    try {
+      await _player.seek(Duration(milliseconds: (seconds * 1000).round()));
+      if (!mounted) return;
+      setState(() => _positionSeconds = seconds);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.toString());
+    }
+  }
+
+  @override
+  void dispose() {
+    _positionSub?.cancel();
+    _playerStateSub?.cancel();
+    _player.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final maxSeconds = (widget.durationSeconds > 0
+            ? widget.durationSeconds
+            : (_duration?.inMilliseconds ?? 0) / 1000.0)
+        .toDouble()
+        .clamp(1.0, double.infinity);
 
     return Scaffold(
       backgroundColor: colors.background,
@@ -84,6 +167,16 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
             ),
             child: Column(
               children: [
+                if (_error != null) ...[
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      _error!,
+                      style: const TextStyle(color: AppColors.warning, fontSize: 12),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
                 // Seek slider
                 Row(
                   children: [
@@ -91,13 +184,14 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
                       style: TextStyle(color: colors.textSecondary, fontSize: 12)),
                     Expanded(
                       child: Slider(
-                        value: _positionSeconds.clamp(0, widget.durationSeconds),
-                        max: widget.durationSeconds <= 0 ? 1 : widget.durationSeconds,
+                        value: _positionSeconds.clamp(0.0, maxSeconds).toDouble(),
+                        max: maxSeconds,
                         activeColor: colors.primary,
-                        onChanged: (v) => setState(() => _positionSeconds = v),
+                        onChanged: widget.audioPath == null ? null : (v) => setState(() => _positionSeconds = v),
+                        onChangeEnd: widget.audioPath == null ? null : _seekTo,
                       ),
                     ),
-                    Text(_formatTime(widget.durationSeconds),
+                    Text(_formatTime(maxSeconds),
                       style: TextStyle(color: colors.textSecondary, fontSize: 12)),
                   ],
                 ),
@@ -112,7 +206,7 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
                         _playing ? Icons.pause_circle_filled : Icons.play_circle_filled,
                         color: colors.primary,
                       ),
-                      onPressed: () => setState(() => _playing = !_playing),
+                      onPressed: widget.audioPath == null ? null : _togglePlayback,
                     ),
                     const SizedBox(width: 16),
                     Container(
@@ -132,7 +226,10 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
                             .map((s) => DropdownMenuItem(value: s, child: Text('${s}x')))
                             .toList(),
                         onChanged: (v) {
-                          if (v != null) setState(() => _speed = v);
+                          if (v != null) {
+                            setState(() => _speed = v);
+                            unawaited(_player.setPlaybackRate(v));
+                          }
                         },
                       ),
                     ),

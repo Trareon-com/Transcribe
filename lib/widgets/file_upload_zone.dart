@@ -4,10 +4,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/batch_upload_model.dart';
+import '../state/models.dart';
+import '../state/settings_model.dart';
 import '../theme/app_colors.dart';
 
 class FileUploadZone extends ConsumerStatefulWidget {
-  const FileUploadZone({super.key});
+  final Future<void> Function()? onProcessed;
+
+  const FileUploadZone({super.key, this.onProcessed});
 
   @override
   ConsumerState<FileUploadZone> createState() => _FileUploadZoneState();
@@ -26,17 +30,29 @@ class _FileUploadZoneState extends ConsumerState<FileUploadZone> {
     );
     if (result == null) return;
     final paths = result.files.map((f) => f.path).whereType<String>().toList();
-    _addFiles(paths);
+    await _addFiles(paths);
   }
 
-  void _addFiles(List<String> paths) {
-    final rejected = ref.read(batchUploadProvider.notifier).addFiles(paths);
+  Future<void> _addFiles(List<String> paths) async {
+    final batch = ref.read(batchUploadProvider.notifier);
+    final rejected = batch.addFiles(paths);
     if (rejected.isNotEmpty && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('${rejected.length} file dengan format tidak didukung dilewati.'),
         ),
       );
+    }
+
+    final settings = ref.read(settingsProvider);
+    await batch.processBatch(
+      ref.read(rustBridgeProvider),
+      modelPathForId(settings.defaultModel, libraryPath: settings.libraryPath),
+      outputDir: settings.libraryPath,
+      language: settings.language,
+    );
+    if (mounted) {
+      await widget.onProcessed?.call();
     }
   }
 

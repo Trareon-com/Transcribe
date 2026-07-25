@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:io';
 
 import '../services/bridge_service.dart';
+import 'models.dart';
 
 enum BatchFileStatus { queued, decoding, transcribing, done, error }
 
@@ -73,8 +75,15 @@ class BatchUploadNotifier extends StateNotifier<List<BatchFileEntry>> {
     state = state.where((e) => e.status != BatchFileStatus.done).toList();
   }
 
-  /// Process all queued files through the Rust engine sequentially.
-  Future<void> processBatch(RustBridge bridge, String modelPath, {String? language}) async {
+  /// Process all queued files through the Rust engine sequentially and,
+  /// when transcription succeeds, export the segments into the library
+  /// directory so the result becomes visible in the Sesi tab.
+  Future<void> processBatch(
+    RustBridge bridge,
+    String modelPath, {
+    required String outputDir,
+    String? language,
+  }) async {
     final paths = state
         .where((e) => e.status == BatchFileStatus.queued)
         .map((e) => e.path)
@@ -92,7 +101,36 @@ class BatchUploadNotifier extends StateNotifier<List<BatchFileEntry>> {
           language: language,
         );
         if (results.isNotEmpty) {
+          final result = results.first;
           updateStatus(path, BatchFileStatus.done);
+          if (result.segments.isNotEmpty) {
+            final title = result.filename.replaceFirst(RegExp(r'\.[^.]+$'), '');
+            final sessionDir = Directory('${resolveTilde(outputDir)}/$title');
+            await bridge.exportSession(
+              segments: result.segments.map((segment) {
+                return TranscriptSegment(
+                  source: segment.source,
+                  speaker: segment.speaker,
+                  text: segment.text,
+                  timestamp: segment.timestamp,
+                  duration: segment.duration,
+                  language: segment.language,
+                  confidence: segment.confidence,
+                  isPartial: segment.isPartial,
+                );
+              }).toList(),
+              outputDir: resolveTilde(outputDir),
+              title: title.isEmpty ? result.filename : title,
+            );
+            try {
+              await sessionDir.create(recursive: true);
+              final sourceAudio = File(path);
+              if (await sourceAudio.exists()) {
+                final ext = path.contains('.') ? '.${path.split('.').last}' : '.wav';
+                await sourceAudio.copy('${sessionDir.path}/${title.isEmpty ? result.filename : title}$ext');
+              }
+            } catch (_) {}
+          }
         } else {
           updateStatus(path, BatchFileStatus.error, error: 'No speech detected');
         }

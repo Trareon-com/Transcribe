@@ -13,7 +13,33 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   }
 
   Future<void> _load() async {
-    state = await _bridge.loadSettings();
+    final loaded = await _bridge.loadSettings();
+    if (state != AppSettings.defaults()) {
+      return;
+    }
+    final sanitized = _sanitizeDefaultModel(loaded);
+    state = sanitized;
+    if (sanitized != loaded) {
+      await _bridge.saveSettings(sanitized);
+    }
+  }
+
+  AppSettings _sanitizeDefaultModel(AppSettings settings) {
+    if (isModelAvailable(settings.defaultModel, libraryPath: settings.libraryPath)) {
+      return settings;
+    }
+    const fallback = 'tiny';
+    if (settings.defaultModel == fallback) return settings;
+    return AppSettings(
+      theme: settings.theme,
+      defaultModel: fallback,
+      defaultMode: settings.defaultMode,
+      libraryPath: settings.libraryPath,
+      vadEnabled: settings.vadEnabled,
+      echoDedupeEnabled: settings.echoDedupeEnabled,
+      language: settings.language,
+      autoStopMinutes: settings.autoStopMinutes,
+    );
   }
 
   Future<void> setTheme(AppThemeMode theme) async {

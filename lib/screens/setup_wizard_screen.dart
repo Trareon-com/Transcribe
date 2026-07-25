@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/bridge_service.dart';
 import '../src/rust/audio/device.dart';
 import '../state/privacy_report_model.dart';
+import '../state/models.dart';
 import '../state/settings_model.dart';
 import '../theme/app_colors.dart';
 
@@ -52,6 +53,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   }
 
   Future<void> _detectSpecs() async {
+    final initialSelection = _selectedModel;
     final cores = Platform.numberOfProcessors;
     // Try to read RAM via sysctl on macOS, fallback to estimate
     int? ramMb;
@@ -69,17 +71,22 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     ramMb ??= _estimateRamMb(cores);
 
     // Suggest model based on RAM
-    final suggested = _suggestModel(ramMb);
+    final suggested = _availableModel(_suggestModel(ramMb));
 
     if (mounted) {
+      final shouldAutoApply = _selectedModel == initialSelection;
       setState(() {
         _cpuCores = cores;
         _ramMb = ramMb;
         _suggestedModel = suggested;
-        _selectedModel = suggested;
+        if (shouldAutoApply) {
+          _selectedModel = suggested;
+        }
         _specDetected = true;
       });
-      ref.read(settingsProvider.notifier).setDefaultModel(suggested);
+      if (shouldAutoApply) {
+        ref.read(settingsProvider.notifier).setDefaultModel(suggested);
+      }
     }
   }
 
@@ -97,6 +104,17 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     if (ramMb >= 8192) return 'medium';          // 8GB+
     if (ramMb >= 4096) return 'small';           // 4GB+
     return 'base';                                // < 4GB
+  }
+
+  String _availableModel(String preferred) {
+    final libraryPath = ref.read(settingsProvider).libraryPath;
+    if (isModelAvailable(preferred, libraryPath: libraryPath)) return preferred;
+    for (final candidate in ['tiny', 'base', 'small', 'medium', 'large-v3-turbo']) {
+      if (isModelAvailable(candidate, libraryPath: libraryPath)) {
+        return candidate;
+      }
+    }
+    return 'tiny';
   }
 
   void _next() {
