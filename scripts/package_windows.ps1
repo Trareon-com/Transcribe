@@ -26,20 +26,40 @@ if ([string]::IsNullOrEmpty($Version)) {
 }
 
 $AppName = "trascribe"
+$RustDir = "rust_core"
 $BuildDir = "build\windows\x64\runner\Release"
 $DistDir = "dist"
-$ZipPath = "$DistDir\$AppName-$Version-windows.zip"
+$DllName = "rust_core.dll"
+$ZipPath = Join-Path $DistDir "$AppName-$Version-windows.zip"
 
 Write-Host "==> Building rust_core (release)"
-Push-Location rust_core
+Push-Location $RustDir
 cargo build --release --lib
 Pop-Location
+
+$RustDllSource = Join-Path $RustDir "target\release\$DllName"
+if (-not (Test-Path $RustDllSource)) {
+    Write-Error "rust_core DLL not found at $RustDllSource — cargo build may have failed or changed the output path"
+    exit 1
+}
 
 Write-Host "==> Building Flutter Windows release"
 flutter build windows --release
 
 if (-not (Test-Path $BuildDir)) {
     Write-Error "$BuildDir not found after build"
+    exit 1
+}
+
+# Explicitly copy the Rust DLL into the Flutter build output. The CMake
+# install rules should handle this, but copying here is a belt-and-suspenders
+# guarantee that the DLL is present in the packaged zip regardless of which
+# CMake generator is in use (Ninja vs MSBuild) or install-step quirks.
+$DllDest = Join-Path $BuildDir $DllName
+Copy-Item -Path $RustDllSource -Destination $DllDest -Force
+
+if (-not (Test-Path $DllDest)) {
+    Write-Error "$DllName not found in build output at $DllDest after copy"
     exit 1
 }
 

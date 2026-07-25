@@ -226,6 +226,16 @@ impl DualVad {
     }
 
     /// `frame` must be exactly [`FRAME_SAMPLES_10MS`] i16 samples at 16kHz mono.
+    ///
+    /// WebRTC VAD runs inline while the confirmation detector runs in a
+    /// **parallel thread** via [`std::thread::scope`] — both execute
+    /// concurrently on the same frame. Results are voted on:
+    /// - Both agree speech    → `true`
+    /// - Both agree silence   → `false`
+    /// - Disagree             → fallback to WebRTC (the faster of the two paths)
+    ///
+    /// The confirmation detector is [`Send`] so it can go into a scoped thread;
+    /// WebRTC's `Vad` holds a `*mut` C pointer and must stay on the main thread.
     pub fn is_speech(&mut self, frame: &[i16]) -> TrascribeResult<bool> {
         if frame.len() != FRAME_SAMPLES_10MS {
             return Err(TrascribeError::InvalidInput(format!(
@@ -234,16 +244,32 @@ impl DualVad {
             )));
         }
 
-        let gate_passed = self
-            .webrtc
-            .is_voice_segment(frame)
-            .map_err(|_| TrascribeError::InvalidInput("webrtc-vad rejected frame".into()))?;
+        let confirmation = &mut *self.confirmation;
 
-        if !gate_passed {
-            return Ok(false);
-        }
+        std::thread::scope(|s| {
+            // Confirmation detector runs on a parallel thread.
+            let confirmation_handle =
+                s.spawn(|| -> TrascribeResult<bool> { Ok(confirmation.is_speech(frame)) });
 
-        Ok(self.confirmation.is_speech(frame))
+            // WebRTC runs inline on the current thread (Vad is not Send).
+            let webrtc_result = self
+                .webrtc
+                .is_voice_segment(frame)
+                .map_err(|_| TrascribeError::InvalidInput("webrtc-vad rejected frame".into()));
+
+            let confirmation_result = confirmation_handle.join().unwrap();
+
+            // Voting logic:
+            //   both agree speech  → true
+            //   both agree silence → false
+            //   disagree           → fallback to WebRTC (faster path)
+            match (webrtc_result, confirmation_result) {
+                (Ok(true), Ok(true)) => Ok(true),    // both agree speech
+                (Ok(false), Ok(false)) => Ok(false), // both agree silence
+                (Ok(speech), _) => Ok(speech),       // disagree → WebRTC wins
+                (Err(e), _) => Err(e),                // WebRTC error propagates
+            }
+        })
     }
 }
 

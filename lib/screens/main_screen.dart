@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../services/global_hotkey_service.dart';
 import '../state/session_model.dart';
 import '../state/settings_model.dart';
 import '../src/rust/session.dart' as rust_session;
@@ -23,13 +24,24 @@ class MainScreen extends ConsumerStatefulWidget {
 }
 
 class _MainScreenState extends ConsumerState<MainScreen> {
+  final GlobalHotkeyService _globalHotkeys = GlobalHotkeyService();
   List<rust_session.SessionRecoverySnapshot> _recoverableSessions = const [];
   bool _loadingRecoveries = true;
 
   @override
   void initState() {
     super.initState();
+    _globalHotkeys.init(
+      ref.read(sessionProvider.notifier),
+      () => ref.read(sessionProvider).lifecycle,
+    );
     _loadRecoveries();
+  }
+
+  @override
+  void dispose() {
+    _globalHotkeys.dispose();
+    super.dispose();
   }
 
   Future<void> _loadRecoveries() async {
@@ -146,7 +158,11 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         autofocus: true,
         child: Scaffold(
           appBar: AppBar(
-            title: const Text('Trascribe'),
+            title: Text(
+              session.sessionTitle.isNotEmpty
+                  ? session.sessionTitle
+                  : 'Trascribe',
+            ),
             actions: [
               IconButton(
                 tooltip: 'Muat ulang recovery',

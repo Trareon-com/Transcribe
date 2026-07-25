@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io' show Process;
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -27,6 +28,11 @@ abstract class RustBridge {
   Future<void> saveSettings(AppSettings settings);
   Future<void> downloadModel(String modelsDir, String modelId);
   Future<List<rust_device.AudioDeviceInfo>> listAudioDevices();
+
+  /// On macOS, returns the title of the frontmost window (e.g. a browser tab
+  /// or meeting app name) via AppleScript. Falls back to empty string on
+  /// other platforms or if detection fails.
+  Future<String> detectFrontmostWindowTitle();
 }
 
 class RustBridgeMock implements RustBridge {
@@ -141,6 +147,9 @@ class RustBridgeMock implements RustBridge {
           sampleRates: Uint32List.fromList([16000, 44100, 48000]),
         ),
       ];
+
+  @override
+  Future<String> detectFrontmostWindowTitle() async => ''; // Mock: no real window detection
 }
 
 /// Real bridge backed by the flutter_rust_bridge-generated bindings in
@@ -262,6 +271,27 @@ class RustEngineBridge implements RustBridge {
 
   @override
   Future<List<rust_device.AudioDeviceInfo>> listAudioDevices() => rust_api.listAudioDevices();
+
+  /// Detects the frontmost window title on macOS by calling osascript.
+  /// Gracefully returns empty string on failure or non-macOS platforms.
+  @override
+  Future<String> detectFrontmostWindowTitle() async {
+    try {
+      final result = await Process.run(
+        'osascript',
+        [
+          '-e',
+          'tell application "System Events" to get title of first window of (first process whose frontmost is true)',
+        ],
+      );
+      if (result.exitCode == 0) {
+        return (result.stdout as String).trim();
+      }
+    } on Object {
+      // Graceful fallback — window detection is non-critical.
+    }
+    return '';
+  }
 
   rust_audio.SessionConfig _toRustSessionConfig(SessionConfig config) {
     return rust_audio.SessionConfig(

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../services/update_checker.dart';
 import '../state/models.dart';
 import '../state/settings_model.dart';
 import 'privacy_report_screen.dart';
@@ -186,6 +187,24 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
+          Semantics(
+            label: 'Pengaturan keyboard global',
+            child: ListTile(
+              title: const Text('⌨️ Pintasan Global'),
+              subtitle: const Text(
+                'Ctrl+Shift+R: Mulai/Berhenti merekam\n'
+                'Ctrl+Shift+P: Jeda/Lanjutkan',
+              ),
+              trailing: Semantics(
+                label: 'Memerlukan izin Aksesibilitas di macOS',
+                child: Tooltip(
+                  message: 'Memerlukan izin Aksesibilitas di macOS — '
+                      'System Settings → Privacy & Security → Accessibility',
+                  child: Icon(Icons.info_outline, color: Theme.of(context).colorScheme.primary),
+                ),
+              ),
+            ),
+          ),
           const Divider(),
           Semantics(
             label: 'Privacy Report - Lihat aktivitas jaringan sejak app dibuka',
@@ -211,6 +230,17 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
           ),
+          const Divider(),
+          Semantics(
+            label: 'Periksa pembaruan aplikasi',
+            button: true,
+            child: ListTile(
+              title: const Text('Periksa Pembaruan'),
+              subtitle: const Text('Cek versi terbaru Trascribe'),
+              trailing: const Icon(Icons.system_update_outlined),
+              onTap: () => _checkForUpdates(context),
+            ),
+          ),
         ],
       ),
     );
@@ -221,4 +251,87 @@ class SettingsScreen extends ConsumerWidget {
         AppThemeMode.dark => 'Gelap',
         AppThemeMode.system => 'Ikuti Sistem',
       };
+
+  Future<void> _checkForUpdates(BuildContext context) async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      final checker = UpdateChecker();
+      final info = await checker.checkForUpdate();
+
+      if (!context.mounted) return;
+
+      Navigator.of(context).pop(); // dismiss loading
+
+      if (info.isUpdateAvailable) {
+        await showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Pembaruan Tersedia'),
+            content: Text(
+              'Versi terbaru ${info.latestVersion} tersedia.\n'
+              'Versi saat ini: ${info.currentVersion}\n\n'
+              'Kunjungi halaman rilis untuk mengunduh.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('Nanti'),
+              ),
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  // Open the download URL externally
+                  // The user can copy or tap — no url_launcher dependency
+                },
+                child: const Text('Buka Halaman Rilis'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Anda sudah menggunakan versi terbaru.')),
+        );
+      }
+    } on UpdateCheckException catch (e) {
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // dismiss loading
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Gagal Memeriksa Pembaruan'),
+          content: Text(e.message),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      Navigator.of(context).pop(); // dismiss loading
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Gagal Memeriksa Pembaruan'),
+          content: const Text(
+            'Terjadi kesalahan yang tidak terduga. Coba lagi nanti.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Tutup'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
 }

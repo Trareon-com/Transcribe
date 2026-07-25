@@ -15,12 +15,14 @@ class SessionUiState {
   final String? sessionId;
   final SessionConfig config;
   final List<TranscriptSegment> segments;
+  final String sessionTitle;
 
   const SessionUiState({
     required this.lifecycle,
     required this.config,
     this.sessionId,
     this.segments = const [],
+    this.sessionTitle = '',
   });
 
   SessionUiState copyWith({
@@ -28,12 +30,14 @@ class SessionUiState {
     String? sessionId,
     SessionConfig? config,
     List<TranscriptSegment>? segments,
+    String? sessionTitle,
   }) {
     return SessionUiState(
       lifecycle: lifecycle ?? this.lifecycle,
       sessionId: sessionId ?? this.sessionId,
       config: config ?? this.config,
       segments: segments ?? this.segments,
+      sessionTitle: sessionTitle ?? this.sessionTitle,
     );
   }
 }
@@ -102,11 +106,14 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
   }
 
   Future<void> start() async {
+    // Auto-detect frontmost window title as default session name.
+    final detected = await _bridge.detectFrontmostWindowTitle();
     final id = await _bridge.startSession(state.config);
     state = state.copyWith(
       lifecycle: SessionLifecycle.recording,
       sessionId: id,
       segments: [],
+      sessionTitle: detected.isNotEmpty ? detected : state.sessionTitle,
     );
     _transcriptSub = _bridge.transcriptStream(id).listen(_onTranscriptSegment);
     _resetAutoStopTimer();

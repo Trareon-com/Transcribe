@@ -50,6 +50,9 @@ class _RecoveryBridge implements RustBridge {
 
   @override
   Future<List<rust_device.AudioDeviceInfo>> listAudioDevices() async => const [];
+
+  @override
+  Future<String> detectFrontmostWindowTitle() async => '';
 }
 
 void main() {
