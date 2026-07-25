@@ -120,3 +120,6 @@ Future<void> acquireInstanceLock() =>
 
 Future<void> releaseInstanceLock() =>
     RustLib.instance.api.crateApiReleaseInstanceLock();
+
+Future<String> detectFrontmostWindowTitle() =>
+    RustLib.instance.api.crateApiDetectFrontmostWindowTitle();
