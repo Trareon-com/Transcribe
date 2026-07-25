@@ -54,26 +54,42 @@ class _FileUploadZoneState extends ConsumerState<FileUploadZone> {
             setState(() => _dragging = false);
             _addFiles(details.files.map((f) => f.path).toList());
           },
-          child: Container(
-            height: 140,
-            decoration: BoxDecoration(
-              border: Border.all(
-                color: _dragging ? AppColors.micAccent : Theme.of(context).dividerColor,
-                width: _dragging ? 2 : 1,
+          child: Semantics(
+            label: 'Area upload file, tarik dan lepas file audio atau video ke sini',
+            child: Container(
+              height: 140,
+              decoration: BoxDecoration(
+                border: Border.all(
+                  color: _dragging ? AppColors.micAccent : Theme.of(context).dividerColor,
+                  width: _dragging ? 2 : 1,
+                ),
+                borderRadius: BorderRadius.circular(12),
+                color: _dragging ? AppColors.micAccent.withValues(alpha: 0.08) : null,
               ),
-              borderRadius: BorderRadius.circular(12),
-              color: _dragging ? AppColors.micAccent.withValues(alpha: 0.08) : null,
-            ),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.upload_file_outlined, size: 32),
-                  const SizedBox(height: 8),
-                  const Text('Tarik & lepas file audio/video ke sini'),
-                  const SizedBox(height: 8),
-                  OutlinedButton(onPressed: _pickFiles, child: const Text('Pilih File')),
-                ],
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Semantics(
+                      label: 'Ikon upload',
+                      child: const Icon(Icons.upload_file_outlined, size: 32),
+                    ),
+                    const SizedBox(height: 8),
+                    Semantics(
+                      label: 'Instruksi: tarik dan lepas file audio atau video ke sini',
+                      child: Text('Tarik & lepas file audio/video ke sini'),
+                    ),
+                    const SizedBox(height: 8),
+                    Semantics(
+                      label: 'Pilih file untuk diupload',
+                      button: true,
+                      child: OutlinedButton(
+                        onPressed: _pickFiles,
+                        child: const Text('Pilih File'),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -83,18 +99,26 @@ class _FileUploadZoneState extends ConsumerState<FileUploadZone> {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton.icon(
-                onPressed: queue.any((entry) => entry.status == BatchFileStatus.done)
-                    ? () => ref.read(batchUploadProvider.notifier).removeDone()
-                    : null,
-                icon: const Icon(Icons.clear_all),
-                label: const Text('Hapus selesai'),
+              Semantics(
+                label: 'Hapus file yang selesai diproses dari antrian',
+                button: true,
+                child: TextButton.icon(
+                  onPressed: queue.any((entry) => entry.status == BatchFileStatus.done)
+                      ? () => ref.read(batchUploadProvider.notifier).removeDone()
+                      : null,
+                  icon: const Icon(Icons.clear_all),
+                  label: const Text('Hapus selesai'),
+                ),
               ),
               const SizedBox(width: 8),
-              TextButton.icon(
-                onPressed: () => ref.read(batchUploadProvider.notifier).clear(),
-                icon: const Icon(Icons.delete_sweep_outlined),
-                label: const Text('Kosongkan'),
+              Semantics(
+                label: 'Kosongkan seluruh antrian upload',
+                button: true,
+                child: TextButton.icon(
+                  onPressed: () => ref.read(batchUploadProvider.notifier).clear(),
+                  icon: const Icon(Icons.delete_sweep_outlined),
+                  label: const Text('Kosongkan'),
+                ),
               ),
             ],
           ),
@@ -112,12 +136,28 @@ class _QueueTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      dense: true,
-      leading: _statusIcon(entry.status),
-      title: Text(entry.filename, overflow: TextOverflow.ellipsis),
-      subtitle: entry.error != null ? Text(entry.error!) : null,
+    return Semantics(
+      label: '${entry.filename} — ${_statusLabel(entry.status)}${entry.error != null ? ', error: ${entry.error}' : ''}',
+      child: ListTile(
+        dense: true,
+        leading: Semantics(
+          label: _statusLabel(entry.status),
+          child: _statusIcon(entry.status),
+        ),
+        title: Text(entry.filename, overflow: TextOverflow.ellipsis),
+        subtitle: entry.error != null ? Text(entry.error!) : null,
+      ),
     );
+  }
+
+  String _statusLabel(BatchFileStatus status) {
+    return switch (status) {
+      BatchFileStatus.queued => 'Antri',
+      BatchFileStatus.decoding => 'Decoding',
+      BatchFileStatus.transcribing => 'Transkripsi',
+      BatchFileStatus.done => 'Selesai',
+      BatchFileStatus.error => 'Error',
+    };
   }
 
   Widget _statusIcon(BatchFileStatus status) {

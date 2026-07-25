@@ -41,6 +41,8 @@ class SessionUiState {
 class SessionNotifier extends StateNotifier<SessionUiState> {
   final RustBridge _bridge;
   StreamSubscription<TranscriptSegment>? _transcriptSub;
+  Timer? _autoStopTimer;
+  int? _autoStopMinutes;
 
   SessionNotifier(this._bridge, SessionMode initialMode, String initialModelPath)
       : super(
@@ -52,6 +54,25 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
             ),
           ),
         );
+
+  void _resetAutoStopTimer() {
+    _autoStopTimer?.cancel();
+    _autoStopTimer = null;
+    final minutes = _autoStopMinutes;
+    if (minutes == null || minutes <= 0) return;
+    if (state.lifecycle != SessionLifecycle.recording) return;
+    _autoStopTimer = Timer(Duration(minutes: minutes), () {
+      _autoStopTimer = null;
+      if (state.lifecycle == SessionLifecycle.recording) {
+        stop();
+      }
+    });
+  }
+
+  void _onTranscriptSegment(TranscriptSegment segment) {
+    state = state.copyWith(segments: [...state.segments, segment]);
+    _resetAutoStopTimer();
+  }
 
   void seedRecovery(rust_session.SessionRecoverySnapshot snapshot) {
     final recovered = SessionConfig(
@@ -76,9 +97,8 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
       sessionId: id,
       segments: [],
     );
-    _transcriptSub = _bridge.transcriptStream(id).listen((segment) {
-      state = state.copyWith(segments: [...state.segments, segment]);
-    });
+    _transcriptSub = _bridge.transcriptStream(id).listen(_onTranscriptSegment);
+    _resetAutoStopTimer();
   }
 
   Future<void> start() async {
@@ -88,12 +108,13 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
       sessionId: id,
       segments: [],
     );
-    _transcriptSub = _bridge.transcriptStream(id).listen((segment) {
-      state = state.copyWith(segments: [...state.segments, segment]);
-    });
+    _transcriptSub = _bridge.transcriptStream(id).listen(_onTranscriptSegment);
+    _resetAutoStopTimer();
   }
 
   Future<void> stop() async {
+    _autoStopTimer?.cancel();
+    _autoStopTimer = null;
     final id = state.sessionId;
     if (id == null) return;
     _transcriptSub?.cancel();
@@ -109,6 +130,8 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
   /// so lifecycle must flip synchronously rather than after an async gap.
   void pause() {
     if (state.lifecycle != SessionLifecycle.recording) return;
+    _autoStopTimer?.cancel();
+    _autoStopTimer = null;
     _transcriptSub?.cancel();
     _transcriptSub = null;
     state = state.copyWith(lifecycle: SessionLifecycle.paused);
@@ -117,9 +140,8 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
   void resume() {
     final id = state.sessionId;
     if (id == null || state.lifecycle != SessionLifecycle.paused) return;
-    _transcriptSub = _bridge.transcriptStream(id).listen((segment) {
-      state = state.copyWith(segments: [...state.segments, segment]);
-    });
+    _transcriptSub = _bridge.transcriptStream(id).listen(_onTranscriptSegment);
+    _resetAutoStopTimer();
     state = state.copyWith(lifecycle: SessionLifecycle.recording);
   }
 
@@ -151,6 +173,7 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
         state.lifecycle == SessionLifecycle.paused) {
       return;
     }
+    _autoStopMinutes = settings.autoStopMinutes;
     state = state.copyWith(
       config: SessionConfig.forMode(
         settings.defaultMode,
@@ -159,8 +182,17 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     );
   }
 
+  void updateAutoStopMinutes(int? minutes) {
+    _autoStopMinutes = minutes;
+    if (state.lifecycle == SessionLifecycle.recording) {
+      _resetAutoStopTimer();
+    }
+  }
+
   @override
   void dispose() {
+    _autoStopTimer?.cancel();
+    _autoStopTimer = null;
     _transcriptSub?.cancel();
     super.dispose();
   }
@@ -173,8 +205,12 @@ final sessionProvider = StateNotifierProvider<SessionNotifier, SessionUiState>((
     settings.defaultMode,
     modelPathForId(settings.defaultModel),
   );
+  notifier.syncDefaultSettings(settings);
   ref.listen<AppSettings>(settingsProvider, (previous, next) {
     notifier.syncDefaultSettings(next);
+    if (previous?.autoStopMinutes != next.autoStopMinutes) {
+      notifier.updateAutoStopMinutes(next.autoStopMinutes);
+    }
   });
   return notifier;
 });

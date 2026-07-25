@@ -35,7 +35,7 @@ class LightColors extends AppColorSet {
   @override
   Color get text => const Color(0xFF1C1C1E);
   @override
-  Color get textSecondary => const Color(0xFF6E6E73);
+  Color get textSecondary => const Color(0xFF626266);
   @override
   Color get divider => const Color(0xFFE5E5EA);
 }
@@ -51,7 +51,7 @@ class DarkColors extends AppColorSet {
   @override
   Color get text => const Color(0xFFF5F5F7);
   @override
-  Color get textSecondary => const Color(0xFF98989D);
+  Color get textSecondary => const Color(0xFFA1A1A6);
   @override
   Color get divider => const Color(0xFF3A3A3C);
 }

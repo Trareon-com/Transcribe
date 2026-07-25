@@ -35,6 +35,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       vadEnabled: state.vadEnabled,
       echoDedupeEnabled: state.echoDedupeEnabled,
       language: state.language,
+      autoStopMinutes: state.autoStopMinutes,
     );
     await _bridge.saveSettings(state);
   }
@@ -48,6 +49,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       vadEnabled: enabled,
       echoDedupeEnabled: state.echoDedupeEnabled,
       language: state.language,
+      autoStopMinutes: state.autoStopMinutes,
     );
     await _bridge.saveSettings(state);
   }
@@ -61,6 +63,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       vadEnabled: state.vadEnabled,
       echoDedupeEnabled: enabled,
       language: state.language,
+      autoStopMinutes: state.autoStopMinutes,
     );
     await _bridge.saveSettings(state);
   }
@@ -74,6 +77,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       vadEnabled: state.vadEnabled,
       echoDedupeEnabled: state.echoDedupeEnabled,
       language: language,
+      autoStopMinutes: state.autoStopMinutes,
     );
     await _bridge.saveSettings(state);
   }
@@ -87,6 +91,21 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       vadEnabled: state.vadEnabled,
       echoDedupeEnabled: state.echoDedupeEnabled,
       language: state.language,
+      autoStopMinutes: state.autoStopMinutes,
+    );
+    await _bridge.saveSettings(state);
+  }
+
+  Future<void> setAutoStopMinutes(int? minutes) async {
+    state = AppSettings(
+      theme: state.theme,
+      defaultModel: state.defaultModel,
+      defaultMode: state.defaultMode,
+      libraryPath: state.libraryPath,
+      vadEnabled: state.vadEnabled,
+      echoDedupeEnabled: state.echoDedupeEnabled,
+      language: state.language,
+      autoStopMinutes: minutes,
     );
     await _bridge.saveSettings(state);
   }

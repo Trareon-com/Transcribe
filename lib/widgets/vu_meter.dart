@@ -17,7 +17,7 @@ class VuMeter extends ConsumerWidget {
       children: [
         Expanded(
           child: Semantics(
-            label: 'Level mic',
+            label: 'Level mikrofon',
             value: '${(mic * 100).round()} persen',
             child: _bar(mic, AppColors.micAccent),
           ),
@@ -25,7 +25,7 @@ class VuMeter extends ConsumerWidget {
         const SizedBox(width: 8),
         Expanded(
           child: Semantics(
-            label: 'Level speaker',
+            label: 'Level pengeras suara',
             value: '${(speaker * 100).round()} persen',
             child: _bar(speaker, AppColors.spkAccent),
           ),

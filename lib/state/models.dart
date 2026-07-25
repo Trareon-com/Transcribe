@@ -120,6 +120,7 @@ class AppSettings {
   final bool vadEnabled;
   final bool echoDedupeEnabled;
   final String? language;
+  final int? autoStopMinutes;
 
   const AppSettings({
     required this.theme,
@@ -129,6 +130,7 @@ class AppSettings {
     required this.vadEnabled,
     required this.echoDedupeEnabled,
     this.language,
+    this.autoStopMinutes,
   });
 
   factory AppSettings.defaults() => const AppSettings(
@@ -140,7 +142,12 @@ class AppSettings {
         echoDedupeEnabled: true,
       );
 
-  AppSettings copyWith({AppThemeMode? theme, SessionMode? defaultMode}) {
+  AppSettings copyWith({
+    AppThemeMode? theme,
+    SessionMode? defaultMode,
+    int? autoStopMinutes,
+    bool clearAutoStop = false,
+  }) {
     return AppSettings(
       theme: theme ?? this.theme,
       defaultModel: defaultModel,
@@ -149,6 +156,7 @@ class AppSettings {
       vadEnabled: vadEnabled,
       echoDedupeEnabled: echoDedupeEnabled,
       language: language,
+      autoStopMinutes: clearAutoStop ? null : (autoStopMinutes ?? this.autoStopMinutes),
     );
   }
 }

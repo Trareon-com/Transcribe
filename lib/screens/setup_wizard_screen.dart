@@ -165,14 +165,17 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  TextButton.icon(
-                    onPressed: _stepIndex == 0 ? null : _back,
-                    icon: const Icon(Icons.arrow_back_ios_new, size: 14),
-                    label: const Text('Kembali'),
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white70,
-                      disabledForegroundColor: Colors.white24,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                  Semantics(
+                    label: 'Kembali ke langkah sebelumnya',
+                    child: TextButton.icon(
+                      onPressed: _stepIndex == 0 ? null : _back,
+                      icon: const Icon(Icons.arrow_back_ios_new, size: 14),
+                      label: const Text('Kembali'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.white70,
+                        disabledForegroundColor: Colors.white24,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                      ),
                     ),
                   ),
                   Container(
@@ -195,12 +198,17 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: Text(
-                        _stepIndex == _steps.length - 1 ? 'Selesai' : 'Lanjut',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
+                      child: Semantics(
+                        label: _stepIndex == _steps.length - 1
+                            ? 'Selesai, selesaikan pengaturan'
+                            : 'Lanjut ke langkah berikutnya',
+                        child: Text(
+                          _stepIndex == _steps.length - 1 ? 'Selesai' : 'Lanjut',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 15,
+                          ),
                         ),
                       ),
                     ),
@@ -281,25 +289,27 @@ class _HeroStepBody extends StatelessWidget {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(
-          width: 80,
-          height: 80,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: const LinearGradient(
-              colors: [Color(0xFF007AFF), Color(0xFF5856D6)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF007AFF).withValues(alpha: 0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
+        ExcludeSemantics(
+          child: Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF007AFF), Color(0xFF5856D6)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF007AFF).withValues(alpha: 0.4),
+                  blurRadius: 20,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Icon(icon, size: 40, color: Colors.white),
           ),
-          child: Icon(icon, size: 40, color: Colors.white),
         ),
         const SizedBox(height: 20),
         Text(
@@ -606,6 +616,7 @@ class _AudioSetupStepState extends ConsumerState<_AudioSetupStep> {
                               ),
                               IconButton(
                                 icon: const Icon(Icons.copy, size: 16, color: Colors.white70),
+                                tooltip: 'Salin perintah ke clipboard',
                                 onPressed: () {
                                   Clipboard.setData(const ClipboardData(text: 'brew install blackhole-2ch'));
                                   ScaffoldMessenger.of(context).showSnackBar(

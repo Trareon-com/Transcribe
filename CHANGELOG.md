@@ -9,43 +9,48 @@ phase instead.
 
 ### Added
 - Repo scaffold, CI (cargo fmt/clippy/test/audit/deny + flutter
-  analyze/test), Dependabot, SECURITY.md
+  analyze/test), Dependabot, SECURITY.md, performance benchmark scripts
 - Rust engine core: audio device enumeration, ring buffer, dual-stage VAD
   (WebRTC + confirmation), whisper-rs STT engine + file/batch
   transcription, echo-dedupe, export (Markdown/TXT/JSON/SRT/VTT/HTML/
   DOCX/WAV), pure-Rust decode (Symphonia + rubato, no ffmpeg), model
   catalog with SHA256 verification and resumable download, in-memory
   session registry with auto-split (time + memory pressure), settings
-  persistence, singleton instance lock, CLI mode (`trascribe-cli`)
+  persistence, singleton instance lock, CLI mode (`trascribe-cli`),
+  diarization (acoustic feature clustering for multi-speaker)
 - Flutter UI: theme (light/dark/system), Riverpod state management, main
   screen (mode selector, mic/speaker toggles, VU meter, transcript view,
-  pause/resume, stop confirmation), first-run setup wizard (5 steps),
-  settings screen, library screen (search, soft-delete with undo, export
-  dialog, file upload with drag & drop), transcript player (seek, speed
-  control, inline editing), Privacy Report screen, usage dashboard, native
-  share sheet, in-app keyboard shortcuts + visible shortcuts panel,
-  accessibility semantics (VU meter, stream toggles)
+  pause/resume, stop confirmation), first-run setup wizard (5 steps with
+  premium dark glassmorphism design), settings screen, library screen
+  (search, soft-delete with undo, export dialog, file upload with drag &
+  drop), transcript player (seek, speed control, inline editing), Privacy
+  Report screen, usage dashboard, native share sheet, in-app keyboard
+  shortcuts + visible shortcuts panel, minimize-to-tray, accessibility
+  semantics across all widgets (WCAG 2.2 AA)
 - flutter_rust_bridge wired end-to-end: `RustEngineBridge` is now the
   default bridge, calling real generated Dart bindings (`lib/src/rust/`)
-  into the compiled Rust engine. Verified by launching the built macOS app
-  and confirming it initializes and runs without error against a real
-  `librust_core.dylib`. Fixed two codegen blockers along the way (see
-  `ARCHITECTURE.md`): the `TrascribeResult<T>` alias not resolving across
-  modules, and `TrascribeError::Io` needing to be `String` instead of
-  `std::io::Error` for FFI serialization.
-  - Desktop build plumbing now builds and installs the Rust library on
-    Linux, Windows, and macOS as part of the native desktop build flow.
-  - Resume download for models now appends partial files and is covered
-    by a deterministic unit test.
-  - Transcript-player edits now notify listeners, and the session state
-    exposes a shared transcript-edit update path.
+  into the compiled Rust engine.
+- Desktop build plumbing now builds and installs the Rust library on
+  Linux, Windows, and macOS as part of the native desktop build flow.
+- Resume download for models now appends partial files and is covered
+  by a deterministic unit test.
+- Transcript-player edits now notify listeners, and the session state
+  exposes a shared transcript-edit update path.
+- Auto-stop timer: configurable inactivity timeout stops recording after
+  N minutes of silence (Settings → Auto-stop, default: disabled).
+- Accessibility: WCAG 2.2 AA contrast ratios, keyboard focus traversal,
+  Semantics labels on all widgets, minimum 24x24pt tap targets.
+- Release workflow now builds macOS DMG (ad-hoc signed) and Windows ZIP
+  (self-signed) on tag push. DISTRIBUTION.md documents Lynk.ID setup.
+- Performance benchmark script (`scripts/benchmark.sh`) with CI gate
+  thresholds for STT latency, export time, and VAD processing.
+- STT priority queue: mic segments processed before speaker segments.
+- Parallel export: each format runs in its own thread.
+- Chunked file processing: large files transcoded in 30s chunks.
 
 ### Known gaps
-- Native library loading still has a runtime fallback path in
-  `rust_library_loader.dart` for dev runs and nonstandard bundle layouts.
 - Live audio capture still needs real hardware validation, especially
   end-to-end on a machine with the target microphones/speakers.
-- No real whisper GGUF model is bundled yet; `model.rs`'s checksum
-  pins are placeholders pending the official release manifest.
-- Tagged release publishing is source-only; binary distribution and code
-  signing remain separate follow-up work.
+- No notarization (macOS); SmartScreen warning (Windows) — see DISTRIBUTION.md
+- No auto-update (manual check only in v1)
+- Lynk.ID product page not yet live (DISTRIBUTION.md has the checklist)

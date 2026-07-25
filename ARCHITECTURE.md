@@ -111,10 +111,29 @@ packaged layouts that differ from the standard bundle.
 
 CI now runs the Rust quality gate on Linux and adds desktop build
 matrices for Rust and Flutter across macOS, Windows, and Linux. Tagged
-pushes (`v*`) trigger `.github/workflows/release.yml`, which publishes a
-source-only archive plus SHA256 checksum to GitHub Releases. Binary
-installers remain outside GitHub Releases to match the distribution
-policy documented in the blueprint.
+pushes (`v*`) trigger `.github/workflows/release.yml`, which publishes:
+
+- **Source archive** (GitHub Releases) — for transparency, no binaries
+- **macOS `.dmg`** — ad-hoc signed (`codesign --sign -`), whisper `tiny` bundled
+- **Windows `.zip`** — self-signed, whisper `tiny` bundled
+
+Binary installers are distributed through **Lynk.ID** ($5, MIT source + binary)
+with **Gumroad** as backup channel — see [`DISTRIBUTION.md`](DISTRIBUTION.md)
+for full details. Signing, pricing rationale, and the hotfix protocol are also
+documented there.
+
+**To build a distributable package locally:**
+
+```bash
+# macOS
+bash scripts/package_macos.sh "1.0.0"
+
+# Windows (PowerShell)
+.\scripts\package_windows.ps1 -Version "1.0.0"
+```
+
+Both scripts: build Rust release → build Flutter release → sign → package →
+generate SHA256 checksum → output to `dist/`.
 
 **To run the app locally right now:**
 

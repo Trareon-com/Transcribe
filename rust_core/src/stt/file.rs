@@ -8,10 +8,13 @@ use std::path::Path;
 
 use serde::Serialize;
 
-use crate::decode::decode_audio_file;
+use crate::decode::{decode_audio_file, TARGET_SAMPLE_RATE};
 use crate::error::TrascribeResult;
 use crate::export::Segment;
 use crate::stt::WhisperEngine;
+
+/// Chunk duration for large-file transcription: 30 seconds of audio at 16 kHz.
+const CHUNK_DURATION_SECS: f64 = 30.0;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct TranscribeFileResult {
@@ -27,7 +30,26 @@ pub fn transcribe_file(
     language: Option<&str>,
 ) -> TrascribeResult<TranscribeFileResult> {
     let audio = decode_audio_file(path)?;
-    let segments = engine.transcribe_chunk(&audio.samples, "file", 0.0, language)?;
+
+    // ADR-10 CHUNKED PROCESSING: for large audio files (>30s), split into
+    // 30-second chunks and transcribe each independently. This bounds peak
+    // memory usage (whisper.cpp holds the full chunk's spectrogram + mel
+    // filterbank during inference) and lets the engine free each chunk's
+    // resources before decoding the next.
+    let chunk_samples = (TARGET_SAMPLE_RATE as f64 * CHUNK_DURATION_SECS) as usize;
+    let mut all_segments = Vec::new();
+
+    if audio.samples.len() <= chunk_samples {
+        // Small file — single shot is the fast path.
+        let segments = engine.transcribe_chunk(&audio.samples, "file", 0.0, language)?;
+        all_segments = segments;
+    } else {
+        for (chunk_idx, chunk) in audio.samples.chunks(chunk_samples).enumerate() {
+            let chunk_start = chunk_idx as f64 * CHUNK_DURATION_SECS;
+            let segments = engine.transcribe_chunk(chunk, "file", chunk_start, language)?;
+            all_segments.extend(segments);
+        }
+    }
 
     Ok(TranscribeFileResult {
         filename: path
@@ -35,7 +57,7 @@ pub fn transcribe_file(
             .map(|n| n.to_string_lossy().to_string())
             .unwrap_or_default(),
         duration_secs: audio.duration_secs,
-        segments,
+        segments: all_segments,
         language: language.unwrap_or("auto").to_string(),
     })
 }

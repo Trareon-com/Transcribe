@@ -361,18 +361,35 @@ impl SessionState {
     fn collect_worker_events(&mut self) {
         let dedupe_enabled = self.config.mode.echo_dedupe_enabled();
 
-        for capture in [&self.mic_capture, &self.speaker_capture]
-            .into_iter()
-            .flatten()
-        {
+        // PRIORITY QUEUE: drain ALL mic events entirely before touching
+        // speaker events. This ensures mic segments (direct user speech)
+        // are dispatched and visible to the UI before any loopback-captured
+        // speaker segments, giving the user a snappier live-transcript feel.
+        //
+        // Inlined (not extracted to a helper) so the borrow checker sees
+        // per-field borrows — calling a `&mut self` method while holding a
+        // reference into one of its fields would be rejected.
+        if let Some(capture) = self.mic_capture.as_ref() {
             while let Ok(event) = capture.events_rx.try_recv() {
                 match event {
                     LiveEvent::Segment(segment) => {
-                        // Cross-source echo-dedupe: each LivePipeline only
-                        // ever sees its own source, so this is the first
-                        // point where mic and speaker segments actually
-                        // converge and can be compared (see pipeline.rs
-                        // module doc comment).
+                        if let Some(segment) =
+                            accept_or_drop_echo(segment, &mut self.recent_emitted, dedupe_enabled)
+                        {
+                            self.segments_count = self.segments_count.saturating_add(1);
+                            self.pending_events.push(SessionEvent::Transcript(segment));
+                        }
+                    }
+                    LiveEvent::Vu { source, level } => {
+                        self.pending_events.push(SessionEvent::Vu { source, level });
+                    }
+                }
+            }
+        }
+        if let Some(capture) = self.speaker_capture.as_ref() {
+            while let Ok(event) = capture.events_rx.try_recv() {
+                match event {
+                    LiveEvent::Segment(segment) => {
                         if let Some(segment) =
                             accept_or_drop_echo(segment, &mut self.recent_emitted, dedupe_enabled)
                         {

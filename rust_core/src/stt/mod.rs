@@ -16,12 +16,24 @@ pub mod file;
 pub struct WhisperEngine {
     context: Mutex<WhisperContext>,
     model_path: String,
+    use_gpu: bool,
 }
 
 impl WhisperEngine {
     /// Load a GGML/GGUF model from disk. Returns an error (never panics)
     /// if the file is missing, unreadable, or not a valid whisper model.
     pub fn load(model_path: &Path) -> TrascribeResult<Self> {
+        Self::load_with_gpu(model_path, false, 0)
+    }
+
+    /// Load a GGML/GGUF model with optional GPU acceleration.
+    /// `use_gpu`: enable GPU inference (Metal on macOS, CUDA on Windows/Linux).
+    /// `gpu_device`: GPU device index (0 = default).
+    pub fn load_with_gpu(
+        model_path: &Path,
+        use_gpu: bool,
+        gpu_device: i32,
+    ) -> TrascribeResult<Self> {
         if !model_path.exists() {
             return Err(TrascribeError::Model(format!(
                 "model file not found: {}",
@@ -33,18 +45,28 @@ impl WhisperEngine {
             .to_str()
             .ok_or_else(|| TrascribeError::Model("model path is not valid UTF-8".into()))?;
 
-        let context =
-            WhisperContext::new_with_params(path_str, WhisperContextParameters::default())
-                .map_err(|e| TrascribeError::Model(format!("failed to load model: {e}")))?;
+        let mut params = WhisperContextParameters::new();
+        params.use_gpu(use_gpu).gpu_device(gpu_device);
+
+        let context = WhisperContext::new_with_params(path_str, params)
+            .map_err(|e| TrascribeError::Model(format!("failed to load model: {e}")))?;
 
         Ok(Self {
             context: Mutex::new(context),
             model_path: path_str.to_string(),
+            use_gpu,
         })
     }
 
     pub fn model_path(&self) -> &str {
         &self.model_path
+    }
+
+    /// Whether this engine was loaded with GPU acceleration requested
+    /// (Metal on macOS, CUDA on Windows/Linux) — surfaced for
+    /// diagnostics/settings UI, not read internally after construction.
+    pub fn gpu_enabled(&self) -> bool {
+        self.use_gpu
     }
 
     /// Transcribe a chunk of 16kHz mono f32 PCM. `language` is `None` for

@@ -70,7 +70,10 @@ class _TranscriptViewState extends State<TranscriptView> {
   @override
   Widget build(BuildContext context) {
     if (widget.segments.isEmpty) {
-      return const Center(child: Text('Belum ada transkrip. Mulai sesi untuk memulai.'));
+      return Semantics(
+        label: 'Belum ada transkrip. Mulai sesi untuk memulai.',
+        child: const Center(child: Text('Belum ada transkrip. Mulai sesi untuk memulai.')),
+      );
     }
 
     final query = _searchQuery.trim().toLowerCase();
@@ -92,14 +95,17 @@ class _TranscriptViewState extends State<TranscriptView> {
               Expanded(
                 child: SizedBox(
                   height: 36,
-                  child: TextField(
-                    onChanged: (val) => setState(() => _searchQuery = val),
-                    decoration: InputDecoration(
-                      hintText: 'Cari dalam transkrip...',
-                      prefixIcon: const Icon(Icons.search, size: 18),
-                      contentPadding: EdgeInsets.zero,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(18),
+                  child: Semantics(
+                    label: 'Cari dalam transkrip',
+                    child: TextField(
+                      onChanged: (val) => setState(() => _searchQuery = val),
+                      decoration: InputDecoration(
+                        hintText: 'Cari dalam transkrip...',
+                        prefixIcon: const Icon(Icons.search, size: 18),
+                        contentPadding: EdgeInsets.zero,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(18),
+                        ),
                       ),
                     ),
                   ),
@@ -109,23 +115,32 @@ class _TranscriptViewState extends State<TranscriptView> {
               if (query.isNotEmpty)
                 Padding(
                   padding: const EdgeInsets.only(right: 8),
-                  child: Chip(
-                    label: Text('${filtered.length} cocok'),
-                    visualDensity: VisualDensity.compact,
+                  child: Semantics(
+                    label: '${filtered.length} hasil cocok',
+                    child: Chip(
+                      label: Text('${filtered.length} cocok'),
+                      visualDensity: VisualDensity.compact,
+                    ),
                   ),
                 ),
-              IconButton(
-                tooltip: _autoScroll ? 'Auto-scroll aktif' : 'Auto-scroll mati',
-                icon: Icon(
-                  _autoScroll ? Icons.vertical_align_bottom : Icons.pause_circle_outline,
-                  color: _autoScroll ? Theme.of(context).colorScheme.primary : null,
+              Semantics(
+                label: _autoScroll ? 'Gulir otomatis aktif' : 'Gulir otomatis nonaktif',
+                child: IconButton(
+                  tooltip: _autoScroll ? 'Auto-scroll aktif' : 'Auto-scroll mati',
+                  icon: Icon(
+                    _autoScroll ? Icons.vertical_align_bottom : Icons.pause_circle_outline,
+                    color: _autoScroll ? Theme.of(context).colorScheme.primary : null,
+                  ),
+                  onPressed: () => setState(() => _autoScroll = !_autoScroll),
                 ),
-                onPressed: () => setState(() => _autoScroll = !_autoScroll),
               ),
-              IconButton(
-                tooltip: 'Salin Seluruh Transkrip',
-                icon: const Icon(Icons.copy_outlined),
-                onPressed: () => _copyAllToClipboard(context),
+              Semantics(
+                label: 'Salin seluruh transkrip',
+                child: IconButton(
+                  tooltip: 'Salin Seluruh Transkrip',
+                  icon: const Icon(Icons.copy_outlined),
+                  onPressed: () => _copyAllToClipboard(context),
+                ),
               ),
             ],
           ),
@@ -133,7 +148,10 @@ class _TranscriptViewState extends State<TranscriptView> {
         const Divider(height: 1),
         Expanded(
           child: filtered.isEmpty
-              ? const Center(child: Text('Tidak ada segmen yang cocok.'))
+              ? Semantics(
+                  label: 'Tidak ada segmen yang cocok dengan pencarian.',
+                  child: const Center(child: Text('Tidak ada segmen yang cocok.')),
+                )
               : ListView.builder(
                   controller: _scrollController,
                   itemCount: filtered.length,
@@ -166,21 +184,33 @@ class _SegmentTile extends StatelessWidget {
     final newText = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Edit Transkrip'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLines: null,
-          decoration: const InputDecoration(border: OutlineInputBorder()),
+        title: Semantics(
+          label: 'Edit transkrip',
+          child: const Text('Edit Transkrip'),
+        ),
+        content: Semantics(
+          label: 'Ketik teks baru',
+          child: TextField(
+            controller: controller,
+            autofocus: true,
+            maxLines: null,
+            decoration: const InputDecoration(border: OutlineInputBorder()),
+          ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Batal'),
+          Semantics(
+            label: 'Batalkan perubahan',
+            child: TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Batal'),
+            ),
           ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(controller.text),
-            child: const Text('Simpan'),
+          Semantics(
+            label: 'Simpan perubahan',
+            child: FilledButton(
+              onPressed: () => Navigator.of(context).pop(controller.text),
+              child: const Text('Simpan'),
+            ),
           ),
         ],
       ),
@@ -194,30 +224,36 @@ class _SegmentTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = segment.source == 'mic' ? AppColors.micAccent : AppColors.spkAccent;
     final editable = onEdit != null;
-    return InkWell(
-      onTap: editable ? () => _openEditDialog(context) : null,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(width: 4, height: 40, color: accent),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '${segment.speaker} · ${_formatTimestamp(segment.timestamp)}',
-                    style: Theme.of(context).textTheme.labelSmall,
-                  ),
-                  Text(segment.text),
-                ],
+    final semanticLabel = '${segment.speaker} pada ${_formatTimestamp(segment.timestamp)}: ${segment.text}';
+    return Semantics(
+      label: semanticLabel,
+      child: InkWell(
+        onTap: editable ? () => _openEditDialog(context) : null,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ExcludeSemantics(
+                child: Container(width: 4, height: 40, color: accent),
               ),
-            ),
-            if (editable)
-              Icon(Icons.edit_outlined, size: 16, color: Theme.of(context).disabledColor),
-          ],
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${segment.speaker} · ${_formatTimestamp(segment.timestamp)}',
+                      style: Theme.of(context).textTheme.labelSmall,
+                    ),
+                    Text(segment.text),
+                  ],
+                ),
+              ),
+              if (editable)
+                Icon(Icons.edit_outlined, size: 16, color: Theme.of(context).disabledColor),
+            ],
+          ),
         ),
       ),
     );

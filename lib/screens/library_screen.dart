@@ -117,10 +117,10 @@ class _LibraryScreenState extends State<LibraryScreen> {
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Library'),
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(text: 'Sesi'),
-              Tab(text: 'Upload File'),
+              Semantics(label: 'Tab sesi tersimpan', child: const Tab(text: 'Sesi')),
+              Semantics(label: 'Tab upload file', child: const Tab(text: 'Upload File')),
             ],
           ),
         ),
@@ -130,31 +130,45 @@ class _LibraryScreenState extends State<LibraryScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.all(12),
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Cari sesi berdasarkan judul…',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: _query.isEmpty
-                          ? null
-                          : IconButton(
-                              icon: const Icon(Icons.clear),
-                              onPressed: () {
-                                _searchController.clear();
-                                setState(() => _query = '');
-                              },
-                            ),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                      isDense: true,
+                  child: Semantics(
+                    textField: true,
+                    label: 'Cari sesi berdasarkan judul',
+                    child: TextField(
+                      controller: _searchController,
+                      decoration: InputDecoration(
+                        hintText: 'Cari sesi berdasarkan judul…',
+                        prefixIcon: const Icon(Icons.search),
+                        suffixIcon: _query.isEmpty
+                            ? null
+                            : Semantics(
+                                button: true,
+                                label: 'Hapus pencarian',
+                                child: IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() => _query = '');
+                                  },
+                                ),
+                              ),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        isDense: true,
+                      ),
+                      onChanged: (value) => setState(() => _query = value),
                     ),
-                    onChanged: (value) => setState(() => _query = value),
                   ),
                 ),
                 Expanded(
                   child: _sessions.isEmpty
-                      ? const Center(child: Text('Belum ada sesi tersimpan.'))
+                      ? Semantics(
+                          label: 'Belum ada sesi tersimpan',
+                          child: const Center(child: Text('Belum ada sesi tersimpan.')),
+                        )
                       : filtered.isEmpty
-                          ? const Center(child: Text('Tidak ada sesi yang cocok.'))
+                          ? Semantics(
+                              label: 'Tidak ada sesi yang cocok dengan pencarian',
+                              child: const Center(child: Text('Tidak ada sesi yang cocok.')),
+                            )
                           : ListView.separated(
                               padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
                               itemCount: filtered.length,
@@ -194,39 +208,43 @@ class _SessionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final minutes = (session.durationSeconds / 60).floor();
-    return Card(
-      child: ListTile(
-        title: Text(session.title),
-        subtitle: Text('${session.date} · $minutes menit · ${session.segmentsCount} segmen'),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => TranscriptPlayerScreen(
-              title: session.title,
-              durationSeconds: session.durationSeconds,
-              segments: session.segments,
-              onSegmentsChanged: onSegmentsChanged,
+    return Semantics(
+      label: '${session.title}, ${session.date}, $minutes menit, ${session.segmentsCount} segmen',
+      button: true,
+      child: Card(
+        child: ListTile(
+          title: Text(session.title),
+          subtitle: Text('${session.date} · $minutes menit · ${session.segmentsCount} segmen'),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => TranscriptPlayerScreen(
+                title: session.title,
+                durationSeconds: session.durationSeconds,
+                segments: session.segments,
+                onSegmentsChanged: onSegmentsChanged,
+              ),
             ),
           ),
-        ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              tooltip: 'Export',
-              icon: const Icon(Icons.file_download_outlined),
-              onPressed: () => showExportDialog(context, session),
-            ),
-            IconButton(
-              tooltip: 'Share',
-              icon: const Icon(Icons.ios_share),
-              onPressed: () => shareSessionSummary(session),
-            ),
-            IconButton(
-              tooltip: 'Hapus',
-              icon: const Icon(Icons.delete_outline),
-              onPressed: onDelete,
-            ),
-          ],
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                tooltip: 'Export',
+                icon: const Icon(Icons.file_download_outlined),
+                onPressed: () => showExportDialog(context, session),
+              ),
+              IconButton(
+                tooltip: 'Share',
+                icon: const Icon(Icons.ios_share),
+                onPressed: () => shareSessionSummary(session),
+              ),
+              IconButton(
+                tooltip: 'Hapus',
+                icon: const Icon(Icons.delete_outline),
+                onPressed: onDelete,
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -277,31 +295,42 @@ Future<void> showExportDialog(BuildContext context, SessionSummary session) {
                   ('docx', 'DOCX (Word)'),
                   ('wav', 'WAV (audio)'),
                 ])
-                  CheckboxListTile(
-                    title: Text(format.$2),
-                    value: selected.contains(format.$1),
-                    onChanged: (checked) {
-                      setState(() {
-                        if (checked == true) {
-                          selected.add(format.$1);
-                        } else {
-                          selected.remove(format.$1);
-                        }
-                      });
-                    },
+                  Semantics(
+                    label: 'Format ${format.$2}, ${selected.contains(format.$1) ? 'terpilih' : 'tidak terpilih'}',
+                    child: CheckboxListTile(
+                      title: Text(format.$2),
+                      value: selected.contains(format.$1),
+                      onChanged: (checked) {
+                        setState(() {
+                          if (checked == true) {
+                            selected.add(format.$1);
+                          } else {
+                            selected.remove(format.$1);
+                          }
+                        });
+                      },
+                    ),
                   ),
               ],
             ),
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Batal'),
+          Semantics(
+            label: 'Batal export',
+            button: true,
+            child: TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Batal'),
+            ),
           ),
-          FilledButton(
-            onPressed: selected.isEmpty ? null : () => Navigator.of(context).pop(),
-            child: const Text('Export'),
+          Semantics(
+            label: 'Konfirmasi export',
+            button: true,
+            child: FilledButton(
+              onPressed: selected.isEmpty ? null : () => Navigator.of(context).pop(),
+              child: const Text('Export'),
+            ),
           ),
         ],
       ),

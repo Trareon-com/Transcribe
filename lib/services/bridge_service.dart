@@ -300,6 +300,8 @@ class RustEngineBridge implements RustBridge {
       vadEnabled: settings.vadEnabled,
       echoDedupeEnabled: settings.echoDedupeEnabled,
       language: settings.language,
+      // autoStopMinutes is Dart-only; defaults to null (disabled) on load
+      autoStopMinutes: null,
     );
   }
 

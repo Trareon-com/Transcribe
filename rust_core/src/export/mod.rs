@@ -3,6 +3,7 @@
 use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
@@ -69,42 +70,71 @@ pub fn export_segments(
     let session_dir = output_dir.join(&safe_title);
     fs::create_dir_all(&session_dir).map_err(TrascribeError::from)?;
 
-    let mut results = Vec::new();
+    // PARALLEL EXPORT: spawn a thread per format so that e.g. Markdown
+    // generation doesn't block DOCX (which involves expensive ZIP packing)
+    // or JSON serialisation. Each format writes to its own file — there is
+    // no shared mutable state.
+    let segments = Arc::from(segments.to_vec());
+    let mut handles = Vec::with_capacity(formats.len());
+
     for format in formats {
-        let (filename, content): (String, Vec<u8>) = match format {
-            ExportFormat::Markdown => (
-                format!("{safe_title}.md"),
-                to_markdown(segments, title).into_bytes(),
-            ),
-            ExportFormat::Txt => (format!("{safe_title}.txt"), to_txt(segments).into_bytes()),
-            ExportFormat::Json => (
-                format!("{safe_title}.json"),
-                serde_json::to_string_pretty(segments)
-                    .map_err(|e| TrascribeError::Export(e.to_string()))?
-                    .into_bytes(),
-            ),
-            ExportFormat::Srt => (format!("{safe_title}.srt"), to_srt(segments).into_bytes()),
-            ExportFormat::Vtt => (format!("{safe_title}.vtt"), to_vtt(segments).into_bytes()),
-            ExportFormat::Html => (
-                format!("{safe_title}.html"),
-                to_html(segments, title).into_bytes(),
-            ),
-            ExportFormat::Docx => (
-                format!("{safe_title}.docx"),
-                to_docx_bytes(segments, title)?,
-            ),
-        };
+        let segments = Arc::clone(&segments);
+        let session_dir = session_dir.clone();
+        let safe_title = safe_title.clone();
+        let title = title.to_string();
+        let format = *format;
 
-        let path: PathBuf = session_dir.join(&filename);
-        let mut file = fs::File::create(&path).map_err(TrascribeError::from)?;
-        file.write_all(&content).map_err(TrascribeError::from)?;
+        handles.push(std::thread::spawn(move || {
+            let (filename, content): (String, Vec<u8>) = match format {
+                ExportFormat::Markdown => (
+                    format!("{safe_title}.md"),
+                    to_markdown(&*segments, &title).into_bytes(),
+                ),
+                ExportFormat::Txt => (format!("{safe_title}.txt"), to_txt(&*segments).into_bytes()),
+                ExportFormat::Json => (
+                    format!("{safe_title}.json"),
+                    serde_json::to_string_pretty(&*segments)
+                        .map_err(|e| TrascribeError::Export(e.to_string()))?
+                        .into_bytes(),
+                ),
+                ExportFormat::Srt => (format!("{safe_title}.srt"), to_srt(&*segments).into_bytes()),
+                ExportFormat::Vtt => (format!("{safe_title}.vtt"), to_vtt(&*segments).into_bytes()),
+                ExportFormat::Html => (
+                    format!("{safe_title}.html"),
+                    to_html(&*segments, &title).into_bytes(),
+                ),
+                ExportFormat::Docx => (
+                    format!("{safe_title}.docx"),
+                    to_docx_bytes(&*segments, &title)?,
+                ),
+            };
 
-        let size_bytes = fs::metadata(&path).map_err(TrascribeError::from)?.len();
-        results.push(ExportedFile {
-            filename,
-            path: path.to_string_lossy().to_string(),
-            size_bytes,
-        });
+            let path: PathBuf = session_dir.join(&filename);
+            let mut file = fs::File::create(&path).map_err(TrascribeError::from)?;
+            file.write_all(&content).map_err(TrascribeError::from)?;
+
+            let size_bytes = fs::metadata(&path).map_err(TrascribeError::from)?.len();
+            Ok::<ExportedFile, TrascribeError>(ExportedFile {
+                filename,
+                path: path.to_string_lossy().to_string(),
+                size_bytes,
+            })
+        }));
+    }
+
+    // Join all threads and collect results / errors.
+    let mut results = Vec::with_capacity(formats.len());
+    for handle in handles {
+        match handle.join() {
+            Ok(Ok(file)) => results.push(file),
+            Ok(Err(e)) => return Err(e),
+            Err(e) => {
+                return Err(TrascribeError::Export(format!(
+                    "export thread panicked: {:?}",
+                    e
+                )));
+            }
+        }
     }
 
     Ok(results)

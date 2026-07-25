@@ -18,7 +18,18 @@ class StreamToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MergeSemantics(
+    // Indonesian semantic label per toggle type
+    String semanticLabel;
+    if (label == 'Mic') {
+      semanticLabel = enabled ? 'Mikrofon aktif' : 'Mikrofon nonaktif';
+    } else if (label == 'Speaker') {
+      semanticLabel = enabled ? 'Pengeras suara aktif' : 'Pengeras suara nonaktif';
+    } else {
+      semanticLabel = '$label ${enabled ? 'aktif' : 'nonaktif'}';
+    }
+
+    return Semantics(
+      label: semanticLabel,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [

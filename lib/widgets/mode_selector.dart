@@ -10,12 +10,25 @@ class ModeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SegmentedButton<SessionMode>(
-      segments: SessionMode.values
-          .map((m) => ButtonSegment(value: m, label: Text(m.label)))
-          .toList(),
-      selected: {selected},
-      onSelectionChanged: (set) => onChanged(set.first),
+    return Semantics(
+      label: 'Pilih mode sesi. Mode saat ini: ${selected.label}',
+      child: SegmentedButton<SessionMode>(
+        segments: SessionMode.values
+            .map((m) => ButtonSegment(
+                  value: m,
+                  label: Semantics(
+                    label: m == SessionMode.webinar
+                        ? 'Mode webinar: hanya pengeras suara'
+                        : m == SessionMode.online
+                            ? 'Mode rapat online: mikrofon dan pengeras suara'
+                            : 'Mode rapat offline: hanya mikrofon',
+                    child: Text(m.label),
+                  ),
+                ))
+            .toList(),
+        selected: {selected},
+        onSelectionChanged: (set) => onChanged(set.first),
+      ),
     );
   }
 }
