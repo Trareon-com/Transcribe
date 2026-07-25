@@ -133,7 +133,13 @@ fn start_capture(
     }
 
     let (samples_tx, samples_rx) = mpsc::channel();
-    let capture = AudioCapture::start(device_name, samples_tx)?;
+    // Speaker (loopback) uses platform-specific capture (WASAPI / CoreAudio
+    // Process Tap / PulseAudio monitor). Mic uses the standard cpal input path.
+    let capture = if source == "spk" {
+        crate::audio::loopback::start_loopback(device_name, samples_tx)?
+    } else {
+        AudioCapture::start(device_name, samples_tx)?
+    };
     let (events_tx, events_rx) = mpsc::channel();
     let worker = LiveWorker::spawn(model_path, source, None, samples_rx, events_tx)?;
     Ok(Some(CaptureChannel {

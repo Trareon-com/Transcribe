@@ -6,6 +6,7 @@
 
 pub mod capture;
 pub mod device;
+pub mod loopback;
 pub mod ring_buffer;
 
 use serde::{Deserialize, Serialize};
