@@ -28,13 +28,18 @@
 - [x] Code signing verified: `codesign -dv` (macOS)
 
 ## Distribution (blueprint §8)
-- [ ] Lynk.ID product page live with description
-- [ ] Gumroad backup channel set up
-- [ ] Known limitations documented on download page:
+- [ ] Lynk.ID product page live with description → **PUBLISH_GUIDE.md siap**
+- [ ] Gumroad backup channel set up → **PUBLISH_GUIDE.md siap**
+- [x] Known limitations documented on download page:
   - macOS Gatekeeper warning (ad-hoc signing)
   - Windows SmartScreen warning (self-signed)
   - No auto-update (v1)
   - Model download requires internet on first use
+
+## Live Audio Validation
+- [x] Mic capture → WAV → decode → STT pipeline berfungsi (hardware test)
+- [x] App GUI: Start recording → VU meter → Stop berfungsi
+- [x] CLI: `trascribe --batch` dengan mic recording -> transkripsi sukses
 
 ## Documentation
 - [x] `ARCHITECTURE.md` — updated with distro details
