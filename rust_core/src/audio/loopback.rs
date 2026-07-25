@@ -239,10 +239,11 @@ mod windows {
             }
             let mut ptr: *mut u8 = std::ptr::null_mut();
             let mut frames: u32 = 0;
+            let mut flags: u32 = 0;
             let hr = (*cc).GetBuffer(
                 &mut ptr,
                 &mut frames,
-                &mut 0,
+                &mut flags,
                 std::ptr::null_mut(),
                 std::ptr::null_mut(),
             );
