@@ -148,17 +148,18 @@ mod windows {
     use crate::decode::resample_to_target;
     use crate::error::TrascribeError;
     use std::sync::mpsc;
-    use windows_sys::core::GUID;
-    use windows_sys::Win32::Media::Audio::*;
-    use windows_sys::Win32::System::Com::*;
-
-    // windows-sys only generates a GUID constant for the MMDeviceEnumerator
-    // CLSID (used below via its own name); it doesn't generate IID_* constants
-    // for interfaces the way the higher-level `windows` crate does, so these
-    // well-known, publicly documented Win32 interface IIDs are declared here.
-    const IID_IMMDEVICEENUMERATOR: GUID = GUID::from_u128(0xa95664d2_9614_4f35_a746_de8db63617e6);
-    const IID_IAUDIOCLIENT: GUID = GUID::from_u128(0x1cb9ad4c_dbfa_4c32_b178_c2f568a703b2);
-    const IID_IAUDIOCAPTURECLIENT: GUID = GUID::from_u128(0xc8adbd64_e71e_48a0_a4de_185c395cd317);
+    // The `windows` crate (not `windows-sys`) is used here specifically because
+    // it generates ergonomic method-call bindings for COM interfaces
+    // (`client.Start()`, etc). `windows-sys` only gives raw `*mut c_void`
+    // pointers with no vtable dispatch and no per-interface IID constants, so
+    // none of the interface method calls below would compile against it.
+    use windows::Win32::Media::Audio::{
+        eConsole, eRender, IAudioCaptureClient, IAudioClient, IMMDeviceEnumerator,
+        MMDeviceEnumerator, AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK,
+    };
+    use windows::Win32::System::Com::{
+        CoCreateInstance, CoInitializeEx, CoTaskMemFree, CLSCTX_ALL, COINIT_APARTMENTTHREADED,
+    };
 
     pub fn capture_loopback(
         _device_hint: Option<String>,
@@ -168,7 +169,7 @@ mod windows {
         let (ready_tx, ready_rx) = mpsc::channel::<Result<(), TrascribeError>>();
 
         let thread = std::thread::spawn(move || {
-            let result = run_wasapi_loopback(&samples_tx, &stop_rx, &ready_tx);
+            let result = unsafe { run_wasapi_loopback(&samples_tx, &stop_rx, &ready_tx) };
             let _ = ready_tx.send(result);
         });
 
@@ -184,55 +185,45 @@ mod windows {
         stop_rx: &mpsc::Receiver<()>,
         ready_tx: &mpsc::Sender<Result<(), TrascribeError>>,
     ) -> Result<(), TrascribeError> {
-        CoInitializeEx(std::ptr::null_mut(), COINIT_APARTMENTTHREADED);
+        let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
 
-        let mut enumerator: *mut IMMDeviceEnumerator = std::ptr::null_mut();
-        let hr = CoCreateInstance(
-            &MMDeviceEnumerator,
-            std::ptr::null_mut(),
-            CLSCTX_ALL,
-            &IID_IMMDEVICEENUMERATOR,
-            &mut enumerator as *mut *mut IMMDeviceEnumerator as *mut *mut _,
-        );
-        if hr != 0 {
-            return Err(TrascribeError::AudioDevice(format!(
-                "CoCreateInstance: {hr:#x}"
-            )));
-        }
+        let enumerator: IMMDeviceEnumerator =
+            CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL)
+                .map_err(|e| TrascribeError::AudioDevice(format!("CoCreateInstance: {e}")))?;
 
-        let mut device: *mut IMMDevice = std::ptr::null_mut();
-        (*enumerator).GetDefaultAudioEndpoint(eRender, eConsole, &mut device);
+        let device = enumerator
+            .GetDefaultAudioEndpoint(eRender, eConsole)
+            .map_err(|e| TrascribeError::AudioDevice(format!("GetDefaultAudioEndpoint: {e}")))?;
 
-        let mut client: *mut IAudioClient = std::ptr::null_mut();
-        (*device).Activate(
-            &IID_IAUDIOCLIENT,
-            CLSCTX_ALL,
-            std::ptr::null_mut(),
-            &mut client as *mut *mut IAudioClient as *mut *mut _,
-        );
+        let client: IAudioClient = device
+            .Activate(CLSCTX_ALL, None)
+            .map_err(|e| TrascribeError::AudioDevice(format!("Activate: {e}")))?;
 
-        let mut fmt: *mut WAVEFORMATEX = std::ptr::null_mut();
-        (*client).GetMixFormat(&mut fmt);
+        let fmt = client
+            .GetMixFormat()
+            .map_err(|e| TrascribeError::AudioDevice(format!("GetMixFormat: {e}")))?;
         let sr = (*fmt).nSamplesPerSec;
         let ch = (*fmt).nChannels as usize;
 
-        (*client).Initialize(
-            AUDCLNT_SHAREMODE_SHARED,
-            AUDCLNT_STREAMFLAGS_LOOPBACK,
-            0,
-            std::ptr::null_mut(),
-            fmt,
-            std::ptr::null(),
-        );
-        CoTaskMemFree(fmt as *mut _);
+        client
+            .Initialize(
+                AUDCLNT_SHAREMODE_SHARED,
+                AUDCLNT_STREAMFLAGS_LOOPBACK,
+                0,
+                0,
+                fmt,
+                None,
+            )
+            .map_err(|e| TrascribeError::AudioDevice(format!("Initialize: {e}")))?;
+        CoTaskMemFree(Some(fmt.cast()));
 
-        let mut cc: *mut IAudioCaptureClient = std::ptr::null_mut();
-        (*client).GetService(
-            &IID_IAUDIOCAPTURECLIENT,
-            &mut cc as *mut *mut IAudioCaptureClient as *mut *mut _,
-        );
+        let cc: IAudioCaptureClient = client
+            .GetService()
+            .map_err(|e| TrascribeError::AudioDevice(format!("GetService: {e}")))?;
 
-        (*client).Start();
+        client
+            .Start()
+            .map_err(|e| TrascribeError::AudioDevice(format!("Start: {e}")))?;
         let _ = ready_tx.send(Ok(()));
 
         let batch = (sr / 10) as u32;
@@ -242,23 +233,21 @@ mod windows {
             if stop_rx.try_recv().is_ok() {
                 break;
             }
-            let mut sz: u32 = 0;
-            if (*cc).GetNextPacketSize(&mut sz) != 0 || sz == 0 {
+            let sz = cc.GetNextPacketSize().unwrap_or(0);
+            if sz == 0 {
                 std::thread::sleep(std::time::Duration::from_millis(5));
                 continue;
             }
             let mut ptr: *mut u8 = std::ptr::null_mut();
             let mut frames: u32 = 0;
             let mut flags: u32 = 0;
-            let hr = (*cc).GetBuffer(
-                &mut ptr,
-                &mut frames,
-                &mut flags,
-                std::ptr::null_mut(),
-                std::ptr::null_mut(),
-            );
-            if hr != 0 || ptr.is_null() || frames == 0 {
-                (*cc).ReleaseBuffer(frames);
+            if cc
+                .GetBuffer(&mut ptr, &mut frames, &mut flags, None, None)
+                .is_err()
+                || ptr.is_null()
+                || frames == 0
+            {
+                let _ = cc.ReleaseBuffer(frames);
                 continue;
             }
 
@@ -268,7 +257,7 @@ mod windows {
                 .map(|f| f.iter().sum::<f32>() / ch as f32)
                 .collect();
             accum.extend(mono);
-            (*cc).ReleaseBuffer(frames);
+            let _ = cc.ReleaseBuffer(frames);
 
             if accum.len() >= batch as usize {
                 if let Ok(r) = resample_to_target(&accum, sr) {
@@ -277,7 +266,7 @@ mod windows {
                 accum.clear();
             }
         }
-        (*client).Stop();
+        let _ = client.Stop();
         Ok(())
     }
 }

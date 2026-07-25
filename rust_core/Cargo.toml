@@ -73,6 +73,16 @@ windows-sys = { version = "0.52", features = [
     "Win32_Devices_Properties",
     "Win32_System_Com",
 ]}
+# Used only by audio/loopback.rs's WASAPI capture: unlike windows-sys, this
+# generates ergonomic method-call bindings for COM interfaces (needed for
+# client.Start(), cc.GetBuffer(), etc. — windows-sys only exposes raw
+# *mut c_void pointers with no vtable dispatch).
+windows = { version = "0.62", features = [
+    "Win32_Media_Audio",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_Foundation",
+]}
 
 [dev-dependencies]
 

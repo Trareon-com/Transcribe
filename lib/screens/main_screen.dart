@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/global_hotkey_service.dart';
+import '../state/audio_stream_model.dart';
 import '../state/models.dart';
 import '../state/session_model.dart';
 import '../state/settings_model.dart';
@@ -125,6 +126,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         lifecycle == SessionLifecycle.recording || lifecycle == SessionLifecycle.paused;
     final isPaused = lifecycle == SessionLifecycle.paused;
     final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final vuLevel = ref.watch(vuLevelProvider).valueOrNull;
 
     return CallbackShortcuts(
       bindings: {
@@ -207,6 +209,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 session: session,
                 notifier: notifier,
                 isActive: isActive,
+                vuMicLevel: vuLevel?.micLevel ?? 0.0,
+                vuSpeakerLevel: vuLevel?.speakerLevel ?? 0.0,
                 titleController: _titleController,
                 onStartStop: () => _toggleStartStop(context, ref),
                 onExport: () => Navigator.of(context).push(
@@ -383,6 +387,8 @@ class _ControlBar extends StatelessWidget {
   final SessionUiState session;
   final SessionNotifier notifier;
   final bool isActive;
+  final double vuMicLevel;
+  final double vuSpeakerLevel;
   final TextEditingController titleController;
   final VoidCallback onStartStop;
   final VoidCallback onExport;
@@ -391,6 +397,8 @@ class _ControlBar extends StatelessWidget {
     required this.session,
     required this.notifier,
     required this.isActive,
+    required this.vuMicLevel,
+    required this.vuSpeakerLevel,
     required this.titleController,
     required this.onStartStop,
     required this.onExport,
@@ -453,7 +461,7 @@ class _ControlBar extends StatelessWidget {
             icon: Icons.mic,
             label: 'MIC',
             enabled: session.config.micEnabled,
-            level: session.micLevel,
+            level: vuMicLevel,
           ),
           const SizedBox(width: 8),
 
@@ -462,7 +470,7 @@ class _ControlBar extends StatelessWidget {
             icon: Icons.speaker,
             label: 'SPK',
             enabled: session.config.speakerEnabled,
-            level: session.speakerLevel,
+            level: vuSpeakerLevel,
           ),
           const SizedBox(width: 12),
 

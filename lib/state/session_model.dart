@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,8 +16,6 @@ class SessionUiState {
   final SessionConfig config;
   final List<TranscriptSegment> segments;
   final String sessionTitle;
-  final double micLevel;
-  final double speakerLevel;
 
   const SessionUiState({
     required this.lifecycle,
@@ -26,8 +23,6 @@ class SessionUiState {
     this.sessionId,
     this.segments = const [],
     this.sessionTitle = '',
-    this.micLevel = 0.0,
-    this.speakerLevel = 0.0,
   });
 
   /// Average confidence across current segments, or null if there are none
@@ -44,8 +39,6 @@ class SessionUiState {
     SessionConfig? config,
     List<TranscriptSegment>? segments,
     String? sessionTitle,
-    double? micLevel,
-    double? speakerLevel,
   }) {
     return SessionUiState(
       lifecycle: lifecycle ?? this.lifecycle,
@@ -53,8 +46,6 @@ class SessionUiState {
       config: config ?? this.config,
       segments: segments ?? this.segments,
       sessionTitle: sessionTitle ?? this.sessionTitle,
-      micLevel: micLevel ?? this.micLevel,
-      speakerLevel: speakerLevel ?? this.speakerLevel,
     );
   }
 }
@@ -62,7 +53,6 @@ class SessionUiState {
 class SessionNotifier extends StateNotifier<SessionUiState> {
   final RustBridge _bridge;
   StreamSubscription<TranscriptSegment>? _transcriptSub;
-  StreamSubscription<VuLevel>? _vuSub;
   Timer? _autoStopTimer;
   int? _autoStopMinutes;
 
@@ -96,20 +86,13 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     _resetAutoStopTimer();
   }
 
-  void _onVuLevel(VuLevel level) {
-    state = state.copyWith(micLevel: level.micLevel, speakerLevel: level.speakerLevel);
-  }
-
   void _subscribeToLiveStreams(String sessionId) {
     _transcriptSub = _bridge.transcriptStream(sessionId).listen(_onTranscriptSegment);
-    _vuSub = _bridge.vuMeterStream(sessionId).listen(_onVuLevel);
   }
 
   void _cancelLiveStreams() {
     _transcriptSub?.cancel();
     _transcriptSub = null;
-    _vuSub?.cancel();
-    _vuSub = null;
   }
 
   void seedRecovery(rust_session.SessionRecoverySnapshot snapshot) {
@@ -143,18 +126,13 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     // Guard against double-start: if already recording/paused, ignore.
     if (state.lifecycle == SessionLifecycle.recording ||
         state.lifecycle == SessionLifecycle.paused) { return; }
-    // Fail with a clear, catchable error rather than letting the FRB call
-    // throw a raw "model file not found" exception with no UI handling —
-    // this previously crashed session start unhandled whenever the
-    // configured default model (e.g. from stale persisted settings) wasn't
-    // actually downloaded. Only applies to the real bridge: RustBridgeMock
-    // (used in tests/dev-without-a-build) never touches the filesystem.
-    if (_bridge is RustEngineBridge && !File(state.config.modelPath).existsSync()) {
-      throw StateError(
-        'Model tidak ditemukan di ${state.config.modelPath}. '
-        'Unduh model lewat Setup Wizard terlebih dahulu.',
-      );
-    }
+    // Model existence is checked by the Rust side's own resolve_model_path(),
+    // which handles tilde expansion, sandbox paths, and multiple search
+    // locations. The old File.existsSync() check here was unreliable because
+    // modelPath can be a relative path (fallback from modelPathForId) that
+    // doesn't resolve against the Flutter app bundle's CWD, or contain an
+    // unexpanded '~' in the library path — producing false-positive "model
+    // tidak ditemukan" errors even when the model file exists.
     // Auto-detect frontmost window title as default session name.
     final detected = await _bridge.detectFrontmostWindowTitle();
     // start_capture() on the Rust side treats a null device id as "setup not
@@ -184,7 +162,7 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     if (micDeviceId == null && config.micEnabled) {
       final inputs = await _bridge.listAudioDevices();
       if (inputs.isNotEmpty) {
-        micDeviceId = inputs.firstWhere((d) => d.isDefault, orElse: () => inputs.first).name;
+        micDeviceId = inputs.first.name;
       }
     }
     if (speakerDeviceId == null && config.speakerEnabled) {
@@ -194,9 +172,22 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
             .firstWhere(
               (d) => d.name.toLowerCase().contains('blackhole') ||
                   d.name.toLowerCase().contains('loopback'),
-              orElse: () => outputs.firstWhere((d) => d.isDefault, orElse: () => outputs.first),
+              orElse: () => outputs.first,
             )
             .name;
+      }
+      // Fallback: search listAudioDevices() for BlackHole/loopback too
+      if (speakerDeviceId == null) {
+        final inputs = await _bridge.listAudioDevices();
+        if (inputs.isNotEmpty) {
+          speakerDeviceId = inputs
+              .firstWhere(
+                (d) => d.name.toLowerCase().contains('blackhole') ||
+                    d.name.toLowerCase().contains('loopback'),
+                orElse: () => inputs.first,
+              )
+              .name;
+        }
       }
     }
     return config.copyWith(micDeviceId: micDeviceId, speakerDeviceId: speakerDeviceId);
@@ -211,8 +202,6 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     await _bridge.stopSession(id);
     state = state.copyWith(
       lifecycle: SessionLifecycle.stopped,
-      micLevel: 0.0,
-      speakerLevel: 0.0,
     );
   }
 
@@ -226,7 +215,7 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     _autoStopTimer?.cancel();
     _autoStopTimer = null;
     _cancelLiveStreams();
-    state = state.copyWith(lifecycle: SessionLifecycle.paused, micLevel: 0.0, speakerLevel: 0.0);
+    state = state.copyWith(lifecycle: SessionLifecycle.paused);
   }
 
   void resume() {
