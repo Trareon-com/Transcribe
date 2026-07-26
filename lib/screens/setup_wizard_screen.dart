@@ -24,12 +24,11 @@ class SetupWizardScreen extends ConsumerStatefulWidget {
   ConsumerState<SetupWizardScreen> createState() => _SetupWizardScreenState();
 }
 
-enum _WizardStep { specDetect, modelChoice, modelDownload, toneTest }
+enum _WizardStep { specDetect, modelChoice, toneTest }
 
 class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   _WizardStep _step = _WizardStep.specDetect;
-  String _selectedModel = 'tiny';
-  final bool _downloadRecorded = false;
+  String _selectedModel = 'base';
 
   // Spec detection results
   int? _cpuCores;
@@ -39,16 +38,6 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
 
   static const _steps = _WizardStep.values;
   int get _stepIndex => _steps.indexOf(_step);
-
-  // Model sizes in MB for progress estimation
-  static const Map<String, int> _modelSizesMb = {
-    'tiny': 75,
-    'base': 150,
-    'small': 500,
-    'medium': 1500,
-    'large-v3-turbo': 1600,
-    'large-v3-turbo-q5': 548,
-  };
 
   @override
   void initState() {
@@ -104,21 +93,19 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   }
 
   String _suggestModel(int ramMb) {
-    if (ramMb >= 16384) return 'large-v3-turbo-q5'; // 16GB+
-    if (ramMb >= 8192) return 'large-v3-turbo-q5';  // 8GB+
-    if (ramMb >= 4096) return 'small';               // 4GB+
-    return 'base';                                    // < 4GB
+    if (ramMb >= 8192) return 'large-v3-turbo-q5'; // 8GB+
+    return 'base';                                   // < 8GB
   }
 
   String _availableModel(String preferred) {
     final libraryPath = ref.read(settingsProvider).libraryPath;
     if (isModelAvailable(preferred, libraryPath: libraryPath)) return preferred;
-    for (final candidate in ['tiny', 'base', 'small', 'medium', 'large-v3-turbo-q5', 'large-v3-turbo']) {
+    for (final candidate in ['base', 'large-v3-turbo-q5']) {
       if (isModelAvailable(candidate, libraryPath: libraryPath)) {
         return candidate;
       }
     }
-    return 'tiny';
+    return 'base';
   }
 
   void _next() {
@@ -182,18 +169,6 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
           onChanged: (id) {
             setState(() => _selectedModel = id);
             ref.read(settingsProvider.notifier).setDefaultModel(id);
-          },
-        );
-      case _WizardStep.modelDownload:
-        return _DownloadStep(
-          modelId: _selectedModel,
-          modelSizeMb: _modelSizesMb[_selectedModel] ?? 75,
-          downloaded: _downloadRecorded,
-          bridge: ref.read(rustBridgeProvider),
-          libraryPath: ref.read(settingsProvider).libraryPath,
-          onRecordDownload: () {
-            ref.read(privacyReportProvider.notifier).recordModelDownload(_selectedModel);
-            if (mounted) _next();
           },
         );
       case _WizardStep.toneTest:
@@ -485,12 +460,8 @@ class _ModelChoiceStep extends StatelessWidget {
   const _ModelChoiceStep({required this.selected, required this.onChanged});
 
   static const _models = [
-    ('tiny', 'tiny (~75 MB)', '75 MB · ⚡ ID: 3s / EN: 2s · RAM ~260 MB · Akurasi rendah\nCocok: real-time cepat, spek rendah'),
-    ('base', 'base (~142 MB)', '142 MB · ⚡ ID: 10s / EN: 3s · RAM ~400 MB · Akurasi sedang\nCocok: transkrip cepat EN, spek minimal'),
-    ('small', 'small (~466 MB)', '466 MB · 🟡 ID: 21s / EN: 12s · RAM ~900 MB · Akurasi baik\nCocok: daily use, EN sempurna ✅'),
-    ('medium', 'medium (~1.5 GB)', '1.5 GB · 🔴 ID: 35s / EN: 36s · RAM ~2.8 GB · Akurasi sangat baik\nCocok: hasil presisi tinggi, tidak buru-buru'),
-    ('large-v3-turbo-q5', 'large-v3-turbo Q5 (~548 MB)', '548 MB · 🔴 RAM ~1.2 GB · 🏆 Terbaik! Size -65%, RAM -62%\n⭐ Akurasi > medium, jauh lebih ringan dari F16'),
-    ('large-v3-turbo', 'large-v3-turbo (~1.6 GB)', '1.6 GB · 🔴 ID: 56s / EN: 56s · RAM ~3.2 GB · Akurasi terbaik\nCocok: kualitas maksimal, GPU disarankan'),
+    ('base', 'base — ⚡ Cepat', '142 MB · ✅ Termasuk di aplikasi\n🇮🇩 ID: Sempurna (WER 0%) · 🇬🇧 EN: 90%\nCocok: transkrip cepat, akurasi ID maksimal'),
+    ('large-v3-turbo-q5', 'large-v3-turbo-q5 — 🎯 Akurat', '548 MB · ✅ Termasuk di aplikasi\n🇮🇩 ID: 96% · 🇬🇧 EN: 97%\n🏆 Akurasi global terbaik — rekomendasi!'),
   ];
 
   @override
@@ -751,165 +722,6 @@ class _AudioDropdown extends StatelessWidget {
   }
 }
 
-/// Step 4 — Model download with real progress
-class _DownloadStep extends ConsumerStatefulWidget {
-  final String modelId;
-  final int modelSizeMb;
-  final bool downloaded;
-  final RustBridge bridge;
-  final String libraryPath;
-  final VoidCallback onRecordDownload;
-
-  const _DownloadStep({
-    required this.modelId,
-    required this.modelSizeMb,
-    required this.downloaded,
-    required this.bridge,
-    required this.libraryPath,
-    required this.onRecordDownload,
-  });
-
-  @override
-  ConsumerState<_DownloadStep> createState() => _DownloadStepState();
-}
-
-class _DownloadStepState extends ConsumerState<_DownloadStep> {
-  bool _isDownloading = false;
-  String? _error;
-  double _progress = 0.0;
-  StreamSubscription<double>? _progressSub;
-
-  @override
-  void dispose() {
-    _progressSub?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _startDownload() async {
-    if (widget.downloaded) return;
-    setState(() {
-      _isDownloading = true;
-      _progress = 0.0;
-      _error = null;
-    });
-
-    try {
-      await widget.bridge.downloadModel(widget.libraryPath, widget.modelId);
-
-      // Subscribe to real progress stream
-      _progressSub?.cancel();
-      _progressSub = widget.bridge.downloadProgress().listen((ratio) {
-        if (!mounted) return;
-        setState(() => _progress = ratio);
-        if (ratio >= 1.0) {
-          _progressSub?.cancel();
-          _progressSub = null;
-          widget.onRecordDownload();
-          setState(() => _isDownloading = false);
-        }
-      });
-    } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-    final isBundled = widget.modelId == 'tiny';
-
-    return _StepContent(
-      icon: isBundled ? Icons.check_circle_outline : Icons.download_outlined,
-      title: '4. Unduh Model',
-      description: isBundled
-          ? 'Model ${widget.modelId} sudah tersedia di aplikasi.'
-          : 'Model ${widget.modelId} (${widget.modelSizeMb} MB) akan diunduh.',
-      child: isBundled
-          ? Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppColors.statusActive.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.statusActive.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.check_circle, color: AppColors.statusActive, size: 24),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Model tiny (75 MB) sudah termasuk dalam aplikasi. Tidak perlu unduh.',
-                      style: TextStyle(color: AppColors.statusActive, fontSize: 13),
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : _isDownloading
-              ? Column(
-                  children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(6),
-                      child: LinearProgressIndicator(
-                        value: _progress.clamp(0.0, 1.0),
-                        minHeight: 12,
-                        backgroundColor: colors.border.withValues(alpha: 0.3),
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      '${(_progress * 100).round()}%',
-                      style: TextStyle(color: colors.textSecondary, fontSize: 13),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Mengunduh ${widget.modelSizeMb} MB...',
-                      style: TextStyle(color: colors.textTertiary, fontSize: 12),
-                    ),
-                  ],
-                )
-              : _error != null
-                  ? Column(
-                      children: [
-                        Icon(Icons.error_outline, color: Colors.red, size: 40),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Gagal mengunduh',
-                          style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 4),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            _error!,
-                            style: TextStyle(color: colors.textSecondary, fontSize: 12),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        FilledButton.icon(
-                          onPressed: () => _startDownload(),
-                          icon: const Icon(Icons.refresh),
-                          label: const Text('Coba Lagi'),
-                        ),
-                      ],
-                    )
-                  : FilledButton.icon(
-                      onPressed: widget.downloaded
-                          ? null
-                          : () => _startDownload(),
-                      icon: Icon(widget.downloaded
-                          ? Icons.check_circle
-                          : Icons.cloud_download_outlined),
-                      label: Text(widget.downloaded ? 'Selesai' : 'Unduh model'),
-                      style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                      ),
-                    ),
-    );
-  }
-}
-
 /// Step 5 — Tone test
 class _ToneTestStep extends StatefulWidget {
   const _ToneTestStep();
@@ -1016,7 +828,7 @@ class _ToneTestStepState extends State<_ToneTestStep> {
     final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
     return _StepContent(
       icon: Icons.graphic_eq,
-      title: '5. Tone Test',
+      title: '3. Tone Test',
       description: 'Uji nada 440Hz untuk memverifikasi jalur mic & speaker.',
       child: Container(
         padding: const EdgeInsets.all(20),

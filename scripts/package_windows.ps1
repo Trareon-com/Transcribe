@@ -63,12 +63,15 @@ if (-not (Test-Path $DllDest)) {
     exit 1
 }
 
-# Bundle the tiny model next to the exe — lib/state/models.dart's
-# modelPathForId() looks there first so the "bundled, no download needed"
-# tiny model actually resolves in a packaged build.
+# Bundle models next to the exe — lib/state/models.dart's
+# modelPathForId() looks there first so bundled models actually
+# resolve in a packaged build.
 $ModelsDestDir = Join-Path $BuildDir "models"
 New-Item -ItemType Directory -Force -Path $ModelsDestDir | Out-Null
-Copy-Item -Path "models\ggml-tiny.bin" -Destination $ModelsDestDir -Force
+Copy-Item -Path "models\ggml-base.bin" -Destination $ModelsDestDir -Force
+Copy-Item -Path "models\ggml-large-v3-turbo-q5.bin" -Destination $ModelsDestDir -Force
+Write-Host "    → base (142 MB) bundled"
+Write-Host "    → large-v3-turbo-q5 (548 MB) bundled"
 
 $PfxPath = $env:TRASCRIBE_PFX_PATH
 $PfxPassword = $env:TRASCRIBE_PFX_PASSWORD

@@ -52,15 +52,17 @@ FRAMEWORKS="$APP_PATH/Contents/Frameworks"
 echo "==> Copying universal librust_core.dylib into bundle"
 cp rust_core/target/universal/librust_core.dylib "$FRAMEWORKS/"
 
-# ── Bundle the tiny model ──────────────────────────────────────────────
+# ── Bundle models ──────────────────────────────────────────────
 # App Sandbox blocks reading arbitrary paths outside the bundle/container,
-# so the "bundled, no download needed" tiny model must physically live
-# inside Contents/Resources — lib/state/models.dart's modelPathForId()
-# looks there first.
+# so bundled models must physically live inside Contents/Resources —
+# lib/state/models.dart's modelPathForId() looks there first.
 RESOURCES="$APP_PATH/Contents/Resources"
-echo "==> Bundling tiny model into $RESOURCES/models"
+echo "==> Bundling models into $RESOURCES/models"
 mkdir -p "$RESOURCES/models"
-cp models/ggml-tiny.bin "$RESOURCES/models/"
+cp models/ggml-base.bin "$RESOURCES/models/"
+cp models/ggml-large-v3-turbo-q5.bin "$RESOURCES/models/"
+echo "    → base (142 MB) bundled"
+echo "    → large-v3-turbo-q5 (548 MB) bundled"
 
 # ── Ad-hoc signing ────────────────────────────────────────────────────
 echo "==> Ad-hoc signing $APP_PATH"

@@ -5,7 +5,7 @@ library;
 
 import 'dart:io';
 
-enum SessionMode { webinar, online, offline }
+enum SessionMode { online, offline }
 
 /// Resolves a leading `~` in [path] to the user's home directory.
 String resolveTilde(String path) {
@@ -17,11 +17,8 @@ String resolveTilde(String path) {
 }
 
 String _modelFileName(String modelId) => switch (modelId) {
-  'tiny' => 'ggml-tiny.bin',
   'base' => 'ggml-base.bin',
-  'small' => 'ggml-small.bin',
-  'medium' => 'ggml-medium.bin',
-  'large-v3-turbo' => 'ggml-large-v3-turbo.bin',
+  'large-v3-turbo-q5' => 'ggml-large-v3-turbo-q5.bin',
   _ => 'ggml-$modelId.bin',
 };
 

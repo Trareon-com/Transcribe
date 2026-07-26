@@ -144,14 +144,11 @@ Sebagai validasi tambahan, kami melakukan test **Word Error Rate (WER)** menggun
 
 > **Catatan:** Nilai WER di atas berasal dari Python/transformers (float32). Di Rust/GGUF (quantized Q5), akurasi bisa turun ~1-2% tetapi kecepatan **30× lebih cepat** — terutama untuk model besar seperti large-v3-turbo (272s di Python vs ~5-10s di Rust/GGUF).
 
-### ❌ HuggingFace Fine-tune (cahya/whisper-small-id)
+### Fine-tune Model (HuggingFace)
 
-Model fine-tune `cahya/whisper-small-id` sempat diuji untuk meningkatkan akurasi ID:
-- ⚠️ **Gagal total di transformers terbaru** — 100% WER karena konflik generation config
-- ⛔ **Tidak tersedia di format GGUF** — tidak bisa digunakan di whisper.cpp / Rust
-- 🚫 **Tidak direkomendasikan** — dead end untuk implementasi desktop
+Untuk pengguna yang ingin akurasi ID lebih tinggi, model fine-tune seperti `cahya/whisper-small-id` tersedia di HuggingFace. Saat ini model tersebut belum di-convert ke format GGUF — kontribusi dari komunitas sangat diterima! 🙌
 
-Kesimpulan: fine-tune model hanya berguna jika di-convert ke GGUF. Untuk Trascribe, **model original OpenAI (base / large-v3-turbo) sudah cukup akurat untuk ID**.
+Untuk Trascribe, **model original OpenAI (base / large-v3-turbo) sudah cukup akurat untuk ID** dengan WER 0-4%.
 
 ### 🎯 Target 3-5 Detik
 
