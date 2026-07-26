@@ -16,7 +16,7 @@ jobs:
       run:
         working-directory: rust_core
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - name: Install native audio dependencies
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y pkg-config libasound2-dev
       - uses: dtolnay/rust-toolchain@stable
@@ -36,12 +36,12 @@ jobs:
         run: cargo test --lib
 
       - name: Install cargo-audit
-        run: cargo install cargo-audit --locked || true
+        run: cargo install cargo-audit --locked
       - name: cargo audit
         run: cargo audit
 
       - name: Install cargo-deny
-        run: cargo install cargo-deny --locked || true
+        run: cargo install cargo-deny --locked
       - name: cargo deny check
         run: cargo deny check
 
@@ -49,7 +49,7 @@ jobs:
     name: Flutter (analyze, test)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - uses: subosito/flutter-action@v2.23.0
         with:
           channel: stable
@@ -63,7 +63,6 @@ jobs:
   rust-build:
     name: Rust build (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
-    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:
@@ -76,7 +75,7 @@ jobs:
         working-directory: rust_core
         shell: bash
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - name: Install native audio dependencies (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y pkg-config libasound2-dev
@@ -107,7 +106,7 @@ jobs:
       run:
         shell: ${{ matrix.shell }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - name: Install Linux desktop dependencies
         if: matrix.target == 'linux'
         run: |
@@ -130,7 +129,6 @@ jobs:
       - name: flutter build linux
         if: matrix.target == 'linux'
         run: flutter build linux --release
-        continue-on-error: true
       - name: flutter build macos
         if: matrix.target == 'macos'
         run: flutter build macos --release
@@ -143,7 +141,7 @@ jobs:
     runs-on: macos-latest
     if: github.event_name == 'push'
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2.9.1
         with:
@@ -160,9 +158,9 @@ jobs:
       - name: Package macOS (build + ad-hoc sign + dmg)
         run: ./scripts/package_macos.sh
       - name: Upload dmg as CI artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
-          name: trascribe-macos-dmg-unsigned-adhoc
+          name: transcribe-macos-dmg-unsigned-adhoc
           path: dist/*.dmg
           retention-days: 7
 
@@ -171,7 +169,7 @@ jobs:
     runs-on: windows-latest
     if: github.event_name == 'push'
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2.9.1
         with:
@@ -190,9 +188,9 @@ jobs:
         run: ./scripts/package_windows.ps1
         shell: pwsh
       - name: Upload zip as CI artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v4
         with:
-          name: trascribe-windows-zip-unsigned
+          name: transcribe-windows-zip-unsigned
           path: dist/*.zip
           retention-days: 7
 
@@ -201,9 +199,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [rust, flutter]
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - name: Run benchmarks
         run: |
           chmod +x scripts/benchmark.sh
           bash scripts/benchmark.sh
-        continue-on-error: true
