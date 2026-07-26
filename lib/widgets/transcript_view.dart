@@ -242,7 +242,20 @@ class _SegmentTile extends StatelessWidget {
 
     return Semantics(
       label: '${segment.speaker} pada ${_formatTime(segment.timestamp)}: ${segment.text}',
-      child: Container(
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        builder: (context, value, child) {
+          return Opacity(
+            opacity: value,
+            child: Transform.translate(
+              offset: Offset(0, (1 - value) * 12),
+              child: child,
+            ),
+          );
+        },
+        child: Container(
         decoration: isActive
             ? BoxDecoration(
                 color: colors.primary.withValues(alpha: 0.08),

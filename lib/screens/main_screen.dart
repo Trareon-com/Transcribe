@@ -310,142 +310,10 @@ class _MainScreenState extends ConsumerState<MainScreen> {
               _FooterBar(
                 lifecycle: lifecycle,
                 segmentsCount: session.segments.length,
+                elapsedSeconds: session.elapsedSeconds,
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Header bar: logo, status pill, system metrics, nav icons
-class _HeaderBar extends StatelessWidget {
-  final SessionUiState session;
-  final bool isActive;
-  final bool isPaused;
-  final VoidCallback onLibrary;
-  final VoidCallback onSettings;
-  final VoidCallback onShortcuts;
-
-  const _HeaderBar({
-    required this.session,
-    required this.isActive,
-    required this.isPaused,
-    required this.onLibrary,
-    required this.onSettings,
-    required this.onShortcuts,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: colors.headerBackground,
-        border: Border(bottom: BorderSide(color: colors.border, width: 0.5)),
-      ),
-      child: Row(
-        children: [
-          // Logo + Title
-          Image.asset('assets/logo.png', width: 28, height: 28),
-          const SizedBox(width: 8),
-          Text(
-            'Trareon Transcribe',
-            style: TextStyle(
-              color: colors.text,
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(width: 16),
-
-          // Status pill
-          if (isActive)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: colors.chipBackground,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: colors.border),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: AppColors.statusActive,
-                    ),
-                  ),
-                  const SizedBox(width: 6),
-                  Text(
-                    isPaused ? 'Dijeda' : 'Mendengarkan',
-                    style: TextStyle(color: colors.text, fontSize: 13, fontWeight: FontWeight.w500),
-                  ),
-                  if (session.averageConfidence != null) ...[
-                    const SizedBox(width: 8),
-                    Text(
-                      'Conf ${(session.averageConfidence! * 100).round()}%',
-                      style: TextStyle(color: colors.textSecondary, fontSize: 12),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-          const Spacer(),
-
-          // Nav icons
-          _NavIcon(
-            icon: Icons.folder_outlined,
-            label: 'Library',
-            onTap: onLibrary,
-          ),
-          const SizedBox(width: 12),
-          _NavIcon(
-            icon: Icons.settings_outlined,
-            label: 'Pengaturan',
-            onTap: onSettings,
-          ),
-          const SizedBox(width: 12),
-          _NavIcon(
-            icon: Icons.keyboard_outlined,
-            label: 'Shortcuts',
-            onTap: onShortcuts,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _NavIcon extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _NavIcon({required this.icon, required this.label, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: colors.textSecondary, size: 20),
-            const SizedBox(height: 2),
-            Text(label, style: TextStyle(color: colors.textSecondary, fontSize: 10)),
-          ],
         ),
       ),
     );
@@ -711,16 +579,32 @@ class _AudioIndicator extends StatelessWidget {
   }
 }
 
-/// Footer bar: minimize + diarization info
+/// Footer bar: recording timer, minify to tray, diarization info
 class _FooterBar extends StatelessWidget {
   final SessionLifecycle lifecycle;
   final int segmentsCount;
+  final double elapsedSeconds;
 
-  const _FooterBar({required this.lifecycle, required this.segmentsCount});
+  const _FooterBar({
+    required this.lifecycle,
+    required this.segmentsCount,
+    this.elapsedSeconds = 0,
+  });
+
+  String _formatElapsed(double secs) {
+    final h = (secs / 3600).floor();
+    final m = ((secs % 3600) / 60).floor();
+    final s = (secs % 60).floor();
+    if (h > 0) return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final isRecording = lifecycle == SessionLifecycle.recording;
+    final isPaused = lifecycle == SessionLifecycle.paused;
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
@@ -729,6 +613,43 @@ class _FooterBar extends StatelessWidget {
       ),
       child: Row(
         children: [
+          // Recording dot + timer
+          if (isRecording || isPaused) ...[
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isRecording ? AppColors.statusActive : Colors.orange,
+                boxShadow: isRecording
+                    ? [BoxShadow(color: AppColors.statusActive.withValues(alpha: 0.5), blurRadius: 4, spreadRadius: 1)]
+                    : null,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _formatElapsed(elapsedSeconds),
+              style: TextStyle(
+                color: colors.text,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'monospace',
+              ),
+            ),
+            const SizedBox(width: 16),
+          ],
+
+          // Segments
+          if (segmentsCount > 0) ...[
+            Icon(Icons.chat_bubble_outline, size: 14, color: colors.textTertiary),
+            const SizedBox(width: 4),
+            Text(
+              '$segmentsCount',
+              style: TextStyle(color: colors.textTertiary, fontSize: 12, fontFamily: 'monospace'),
+            ),
+            const SizedBox(width: 16),
+          ],
+
           // Minimize to tray
           GestureDetector(
             onTap: () => windowManager.hide(),
