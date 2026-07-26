@@ -52,7 +52,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   @override
   void initState() {
     super.initState();
-    _detectSpecs();
+    Future.microtask(_detectSpecs);
   }
 
   Future<void> _detectSpecs() async {
