@@ -4,6 +4,22 @@ import 'package:flutter/services.dart';
 import '../state/models.dart';
 import '../theme/app_colors.dart';
 
+/// Generate a consistent color for a speaker name.
+Color _speakerColor(String name, AppColorSet colors) {
+  final hash = name.hashCode;
+  final palette = [
+    colors.primary,
+    const Color(0xFFE67E22), // orange
+    const Color(0xFF2ECC71), // green
+    const Color(0xFF9B59B6), // purple
+    const Color(0xFFE74C3C), // red
+    const Color(0xFF1ABC9C), // teal
+    const Color(0xFF3498DB), // blue
+    const Color(0xFFF39C12), // amber
+  ];
+  return palette[hash.abs() % palette.length];
+}
+
 class TranscriptView extends StatefulWidget {
   final List<TranscriptSegment> segments;
   final void Function(int index, String newText)? onEdit;
@@ -75,14 +91,26 @@ class _TranscriptViewState extends State<TranscriptView> {
         .join('\n');
     Clipboard.setData(ClipboardData(text: text));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Transkrip disalin ke clipboard'), duration: Duration(seconds: 2)),
+      const SnackBar(
+        content: Text('Transkrip disalin ke clipboard'),
+        duration: Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
   String _formatTime(double secs) {
-    final m = (secs / 60).floor();
+    final h = (secs / 3600).floor();
+    final m = ((secs % 3600) / 60).floor();
     final s = (secs % 60).floor();
+    if (h > 0) {
+      return '${h}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    }
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
+  void _openFullScreen(BuildContext context) {
+    // Future: full-screen transcript view with larger text
   }
 
   @override
@@ -158,6 +186,7 @@ class _TranscriptViewState extends State<TranscriptView> {
                 '${widget.segments.length} segmen',
                 style: TextStyle(color: colors.textSecondary, fontSize: 12),
               ),
+              const SizedBox(width: 4),
               IconButton(
                 tooltip: _autoScroll ? 'Auto-scroll aktif' : 'Auto-scroll mati',
                 icon: Icon(
@@ -181,8 +210,6 @@ class _TranscriptViewState extends State<TranscriptView> {
           child: Builder(
             builder: (context) {
               final query = _searchQuery.trim().toLowerCase();
-              // Build (originalIndex, segment) pairs — single pass, no O(n)
-              // indexOf per row.
               final items = query.isEmpty
                   ? [for (var i = 0; i < widget.segments.length; i++) (i, widget.segments[i])]
                   : [
@@ -194,9 +221,16 @@ class _TranscriptViewState extends State<TranscriptView> {
 
               if (items.isEmpty) {
                 return Center(
-                  child: Text(
-                    query.isNotEmpty ? 'Tidak ada segmen cocok' : 'Belum ada transkrip',
-                    style: TextStyle(color: colors.textSecondary),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.search_off, size: 36, color: colors.textTertiary),
+                      const SizedBox(height: 8),
+                      Text(
+                        query.isNotEmpty ? 'Tidak ada segmen cocok' : 'Belum ada transkrip',
+                        style: TextStyle(color: colors.textSecondary, fontSize: 13),
+                      ),
+                    ],
                   ),
                 );
               }
@@ -208,10 +242,25 @@ class _TranscriptViewState extends State<TranscriptView> {
                   final (originalIndex, seg) = items[index];
                   return _SegmentTile(
                     segment: seg,
+                    speakerColor: _speakerColor(seg.speaker, colors),
                     isActive: widget.activeSegmentIndex != null && originalIndex == widget.activeSegmentIndex,
+                    searchQuery: query,
                     onEdit: widget.onEdit == null
                         ? null
                         : (newText) => widget.onEdit!(originalIndex, newText),
+                    onCopy: () {
+                      Clipboard.setData(ClipboardData(
+                        text: '[${_formatTime(seg.timestamp)}] ${seg.text}',
+                      ));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Segmen disalin', style: TextStyle(fontSize: 12, color: colors.text)),
+                          duration: Duration(seconds: 1),
+                          backgroundColor: colors.surface,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    },
                   );
                 },
               );
@@ -223,22 +272,69 @@ class _TranscriptViewState extends State<TranscriptView> {
   }
 }
 
+/// Highlight [query] in [text] using the given [style] for matches.
+/// Returns a list of TextSpans.
+List<TextSpan> _highlightText(String text, String query, TextStyle baseStyle, Color highlightColor) {
+  if (query.isEmpty) return [TextSpan(text: text, style: baseStyle)];
+
+  final lower = text.toLowerCase();
+  final results = <TextSpan>[];
+  int start = 0;
+
+  while (true) {
+    final idx = lower.indexOf(query, start);
+    if (idx == -1) {
+      results.add(TextSpan(text: text.substring(start), style: baseStyle));
+      break;
+    }
+    if (idx > start) {
+      results.add(TextSpan(text: text.substring(start, idx), style: baseStyle));
+    }
+    results.add(TextSpan(
+      text: text.substring(idx, idx + query.length),
+      style: baseStyle.copyWith(
+        backgroundColor: highlightColor.withValues(alpha: 0.4),
+        fontWeight: FontWeight.w600,
+      ),
+    ));
+    start = idx + query.length;
+  }
+  return results;
+}
+
 class _SegmentTile extends StatelessWidget {
   final TranscriptSegment segment;
+  final Color speakerColor;
   final bool isActive;
+  final String searchQuery;
   final ValueChanged<String>? onEdit;
+  final VoidCallback? onCopy;
 
-  const _SegmentTile({required this.segment, this.isActive = false, this.onEdit});
+  const _SegmentTile({
+    required this.segment,
+    required this.speakerColor,
+    this.isActive = false,
+    this.searchQuery = '',
+    this.onEdit,
+    this.onCopy,
+  });
 
   String _formatTime(double secs) {
-    final m = (secs / 60).floor();
+    final h = (secs / 3600).floor();
+    final m = ((secs % 3600) / 60).floor();
     final s = (secs % 60).floor();
+    if (h > 0) {
+      return '${h}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    }
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final activeBg = speakerColor.withValues(alpha: isActive ? 0.12 : 0.0);
+    final activeBorder = isActive ? speakerColor : Colors.transparent;
+    final tileBg = colors.chipBackground.withValues(alpha: 0.3);
 
     return Semantics(
       label: '${segment.speaker} pada ${_formatTime(segment.timestamp)}: ${segment.text}',
@@ -255,83 +351,138 @@ class _SegmentTile extends StatelessWidget {
             ),
           );
         },
-        child: Container(
-        decoration: isActive
-            ? BoxDecoration(
-                color: colors.primary.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
-                border: Border(
-                  left: BorderSide(color: colors.primary, width: 3),
-                ),
-              )
-            : null,
-        child: InkWell(
-          onTap: onEdit != null ? () => _openEditDialog(context) : null,
-          borderRadius: BorderRadius.circular(8),
-          child: Padding(
-            padding: EdgeInsets.only(left: isActive ? 12 : 16, right: 4, top: 8, bottom: 8),
-            child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Speaker label
-              Container(
-                width: 40,
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  segment.speaker,
-                  style: TextStyle(
-                    color: colors.primary,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Container(
+            decoration: BoxDecoration(
+              color: activeBg,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: activeBorder.withValues(alpha: isActive ? 0.5 : 0.0),
+                width: isActive ? 1.5 : 0,
               ),
-              const SizedBox(width: 8),
-              // Content
-              Expanded(
-                child: Column(
+            ),
+            child: InkWell(
+              onTap: onEdit != null ? () => _openEditDialog(context) : null,
+              borderRadius: BorderRadius.circular(10),
+              child: Padding(
+                padding: EdgeInsets.only(
+                  left: isActive ? 12 : 16,
+                  right: 8,
+                  top: 10,
+                  bottom: 10,
+                ),
+                child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      segment.text,
-                      style: TextStyle(color: colors.text, fontSize: 14, height: 1.4),
+                    // Timeline strip (garis vertikal kecil)
+                    Container(
+                      width: 3,
+                      height: 16,
+                      margin: const EdgeInsets.only(top: 3, right: 10),
+                      decoration: BoxDecoration(
+                        color: speakerColor.withValues(alpha: 0.6),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Text(
-                          _formatTime(segment.timestamp),
-                          style: TextStyle(color: colors.textTertiary, fontSize: 11),
-                        ),
-                        if (segment.language.isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: colors.chipBackground,
-                              borderRadius: BorderRadius.circular(4),
+                    // Speaker label + time
+                    SizedBox(
+                      width: 72,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            segment.speaker,
+                            style: TextStyle(
+                              color: speakerColor,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: -0.2,
                             ),
-                            child: Text(
-                              segment.language.toUpperCase(),
-                              style: TextStyle(color: colors.textTertiary, fontSize: 10),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _formatTime(segment.timestamp),
+                            style: TextStyle(
+                              color: colors.textTertiary,
+                              fontSize: 10,
+                              fontFeatures: [FontFeature.tabularFigures()],
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Content + metadata
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          RichText(
+                            text: TextSpan(
+                              children: _highlightText(
+                                segment.text,
+                                searchQuery,
+                                TextStyle(
+                                  color: colors.text,
+                                  fontSize: 14,
+                                  height: 1.45,
+                                  letterSpacing: 0.1,
+                                ),
+                                speakerColor,
+                              ),
+                            ),
+                          ),
+                          if (segment.language.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: tileBg,
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: Text(
+                                segment.language.toUpperCase(),
+                                style: TextStyle(color: colors.textTertiary, fontSize: 9, letterSpacing: 0.5),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                    // Action buttons
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (onCopy != null)
+                          IconButton(
+                            icon: Icon(Icons.copy_outlined, size: 14, color: colors.textTertiary),
+                            onPressed: onCopy,
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                            tooltip: 'Salin segmen',
+                          ),
+                        if (onEdit != null)
+                          IconButton(
+                            icon: Icon(Icons.edit_outlined, size: 14, color: colors.textTertiary),
+                            onPressed: () => _openEditDialog(context),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                            tooltip: 'Edit',
+                          ),
                       ],
                     ),
                   ],
                 ),
               ),
-              if (onEdit != null)
-                Icon(Icons.edit_outlined, size: 14, color: colors.textTertiary),
-            ],
+            ),
           ),
         ),
       ),
-    ),
-  ),
-);
-}
+    );
+  }
 
   void _openEditDialog(BuildContext context) {
     final controller = TextEditingController(text: segment.text);
@@ -340,16 +491,32 @@ class _SegmentTile extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         backgroundColor: colors.surface,
-        title: Text('Edit Transkrip', style: TextStyle(color: colors.text)),
+        title: Row(
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: speakerColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text('Edit Transkrip', style: TextStyle(color: colors.text, fontSize: 16)),
+          ],
+        ),
         content: TextField(
           controller: controller,
           autofocus: true,
           maxLines: null,
-          style: TextStyle(color: colors.text),
+          minLines: 3,
+          style: TextStyle(color: colors.text, fontSize: 14, height: 1.4),
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             filled: true,
             fillColor: colors.chipBackground,
+            hintText: 'Ketik koreksi transkrip...',
+            hintStyle: TextStyle(color: colors.textTertiary, fontSize: 13),
           ),
         ),
         actions: [

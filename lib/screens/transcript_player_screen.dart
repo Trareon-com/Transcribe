@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 import '../services/bridge_service.dart';
 import '../state/models.dart';
+import '../state/settings_model.dart';
 import '../theme/app_colors.dart';
 import '../widgets/export_dialog.dart';
 import '../widgets/transcript_view.dart';
@@ -209,6 +212,17 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
+                    // Skip back 10s
+                    IconButton(
+                      iconSize: 24,
+                      icon: const Icon(Icons.replay_10),
+                      color: colors.textSecondary,
+                      onPressed: widget.audioPath == null
+                          ? null
+                          : () => _seekTo((_positionSeconds - 10).clamp(0, maxSeconds)),
+                      tooltip: 'Mundur 10 detik',
+                    ),
+                    const SizedBox(width: 8),
                     IconButton(
                       iconSize: 40,
                       icon: Icon(
@@ -216,6 +230,17 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
                         color: colors.primary,
                       ),
                       onPressed: widget.audioPath == null ? null : _togglePlayback,
+                    ),
+                    const SizedBox(width: 8),
+                    // Skip forward 10s
+                    IconButton(
+                      iconSize: 24,
+                      icon: const Icon(Icons.forward_10),
+                      color: colors.textSecondary,
+                      onPressed: widget.audioPath == null
+                          ? null
+                          : () => _seekTo((_positionSeconds + 10).clamp(0, maxSeconds)),
+                      tooltip: 'Maju 10 detik',
                     ),
                     const SizedBox(width: 16),
                     Container(
@@ -274,8 +299,6 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
   }
 
   Future<void> _exportTranscript(BuildContext context) async {
-    // Bridge calls go through Riverpod providers
-    // Build a temporary SessionSummary from current data
     final summary = SessionSummary(
       id: widget.title,
       title: widget.title,
@@ -284,14 +307,23 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
       segments: _segments,
       durationSeconds: widget.durationSeconds,
     );
-    // Try to find RustBridge from ancestor provider
     if (!context.mounted) return;
-    // Show export dialog using the stored segments
-    final defaultDir = '/Users/\$USER/Documents/TrareonTranscribe';
+
+    // Determine default output dir per platform
+    final home = Platform.environment['HOME']
+        ?? Platform.environment['USERPROFILE']
+        ?? '/tmp';
+    final defaultDir = Platform.isMacOS
+        ? '$home/Documents/TrareonTranscribe'
+        : Platform.isWindows
+            ? '${Platform.environment['USERPROFILE']}\\Documents\\TrareonTranscribe'
+            : '$home/Documents/TrareonTranscribe';
+
+    final bridge = context.read(rustBridgeProvider);
     await showExportDialog(
       context,
       summary,
-      bridge: RustBridgeMock(),
+      bridge: bridge,
       defaultOutputDir: defaultDir,
     );
   }
