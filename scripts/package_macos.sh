@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build a Universal Binary (arm64 + x86_64), ad-hoc sign, and package
-# Trascribe as a .dmg for macOS.
+# Trareon Transcribe as a .dmg for macOS.
 #
 # Per ADR-12: this is deliberately ad-hoc signing (`codesign --sign -`),
 # NOT notarization — it costs $0 and needs no Apple Developer account,
@@ -71,7 +71,7 @@ mkdir -p "$DIST_DIR"
 rm -f "$DMG_PATH"
 
 echo "==> Creating $DMG_PATH"
-hdiutil create -volname "Trascribe" -srcfolder "$APP_PATH" -ov -format UDZO "$DMG_PATH"
+hdiutil create -volname "TrareonTranscribe" -srcfolder "$APP_PATH" -ov -format UDZO "$DMG_PATH"
 
 echo "==> Generating checksum"
 shasum -a 256 "$DMG_PATH" > "$DMG_PATH.sha256"

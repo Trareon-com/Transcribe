@@ -1,6 +1,6 @@
 # Architecture
 
-Trascribe is a Flutter UI over a Rust engine, connected via
+Trareon Transcribe is a Flutter UI over a Rust engine, connected via
 [flutter_rust_bridge](https://cjycode.com/flutter_rust_bridge/) (FRB) V2.
 `RustEngineBridge` (`lib/services/bridge_service.dart`) is the real,
 FRB-generated bridge and is the default; `RustBridgeMock` is a timer-driven

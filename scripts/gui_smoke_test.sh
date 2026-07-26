@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Trascribe GUI Smoke Test — automated via Hermes computer_use
+# Trareon Transcribe GUI Smoke Test — automated via Hermes computer_use
 #
 # This script is designed to be invoked by Hermes agent using the computer_use
 # tool. It does NOT run autonomously — each step requires the agent to:
@@ -9,16 +9,16 @@
 #   4. Verify the result
 #
 # Usage (via Hermes):
-#   hermes chat -q "Jalankan GUI smoke test untuk Trascribe sesuai scripts/gui_smoke_test.sh"
+#   hermes chat -q "Jalankan GUI smoke test untuk Trareon Transcribe sesuai scripts/gui_smoke_test.sh"
 #
 set -euo pipefail
 
-echo "=== Trascribe GUI Smoke Test ==="
+echo "=== Trareon Transcribe GUI Smoke Test ==="
 echo "Date: $(date)"
 echo ""
 
 # Configuration
-APP_NAME="Trascribe"
+APP_NAME="Trareon Transcribe"
 BUILD_DIR="build/macos/Build/Products/Debug"
 
 # Step 1: Verify app is built
@@ -45,7 +45,7 @@ fi
 
 # Step 3: Launch the app
 echo ""
-echo "Step 3: Launching Trascribe..."
+echo "Step 3: Launching Trareon Transcribe..."
 open "$BUILD_DIR/$APP_NAME.app"
 echo "  ✅ App launched. Use computer_use to interact."
 

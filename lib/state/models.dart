@@ -241,7 +241,7 @@ class AppSettings {
         theme: AppThemeMode.light,
         defaultModel: 'tiny',
         defaultMode: SessionMode.online,
-        libraryPath: '~/Documents/Trascribe',
+        libraryPath: '~/Documents/TrareonTranscribe',
         vadEnabled: true,
       );
 

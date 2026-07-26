@@ -1,4 +1,4 @@
-# Trascribe Agent Instructions
+# Trareon Transcribe Agent Instructions
 
 ## Commit Rules
 - NEVER add `Co-Authored-By: Claude` or any AI co-author trailers to commit messages

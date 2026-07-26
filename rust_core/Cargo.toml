@@ -3,7 +3,7 @@ name = "rust_core"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-description = "Trascribe Rust engine — audio capture, VAD, STT, export"
+description = "Trareon Transcribe Rust engine — audio capture, VAD, STT, export"
 autobins = false
 
 [lib]
@@ -15,7 +15,7 @@ name = "gen_fixtures"
 path = "src/bin/gen_fixtures.rs"
 
 [[bin]]
-name = "trascribe"
+name = "trareon-transcribe"
 path = "src/bin/trascribe.rs"
 
 [[bin]]

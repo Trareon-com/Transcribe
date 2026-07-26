@@ -1,9 +1,9 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/Trascribe-100%25-Offline%20Transcriber-00796B?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTIgMWEzIDMgMCAwIDAtMyAzdjhhMyAzIDAgMCAwIDYgMFY0YTMgMyAwIDAgMC0zLTN6Ii8+PHBhdGggZD0iTTE5IDEwdjJhNyA3IDAgMCAxLTE0IDB2LTIiLz48bGluZSB4MT0iMTIiIHkxPSIxOSIgeDI9IjEyIiB5Mj0iMjMiLz48bGluZSB4MT0iOCIgeTE9IjIzIiB4Mj0iMTYiIHkyPSIyMyIvPjwvc3ZnPg=="/>
-  <img alt="Trascribe" src="https://img.shields.io/badge/Trascribe-100%25-Offline%20Transcriber-00796B?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTIgMWEzIDMgMCAwIDAtMyAzdjhhMyAzIDAgMCAwIDYgMFY0YTMgMyAwIDAgMC0zLTN6Ii8+PHBhdGggZD0iTTE5IDEwdjJhNyA3IDAgMCAxLTE0IDB2LTIiLz48bGluZSB4MT0iMTIiIHkxPSIxOSIgeDI9IjEyIiB5Mj0iMjMiLz48bGluZSB4MT0iOCIgeTE9IjIzIiB4Mj0iMTYiIHkyPSIyMyIvPjwvc3ZnPg=="/>
+  <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/TrareonTranscribe-100%25-Offline%20Transcriber-00796B?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTIgMWEzIDMgMCAwIDAtMyAzdjhhMyAzIDAgMCAwIDYgMFY0YTMgMyAwIDAgMC0zLTN6Ii8+PHBhdGggZD0iTTE5IDEwdjJhNyA3IDAgMCAxLTE0IDB2LTIiLz48bGluZSB4MT0iMTIiIHkxPSIxOSIgeDI9IjEyIiB5Mj0iMjMiLz48bGluZSB4MT0iOCIgeTE9IjIzIiB4Mj0iMTYiIHkyPSIyMyIvPjwvc3ZnPg=="/>
+  <img alt="Trareon Transcribe" src="https://img.shields.io/badge/TrareonTranscribe-100%25-Offline%20Transcriber-00796B?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTIgMWEzIDMgMCAwIDAtMyAzdjhhMyAzIDAgMCAwIDYgMFY0YTMgMyAwIDAgMC0zLTN6Ii8+PHBhdGggZD0iTTE5IDEwdjJhNyA3IDAgMCAxLTE0IDB2LTIiLz48bGluZSB4MT0iMTIiIHkxPSIxOSIgeDI9IjEyIiB5Mj0iMjMiLz48bGluZSB4MT0iOCIgeTE9IjIzIiB4Mj0iMTYiIHkyPSIyMyIvPjwvc3ZnPg=="/>
 </picture>
 
-<h1 align="center">Trascribe</h1>
+<h1 align="center">Trareon Transcribe</h1>
 
 <p align="center">
   <strong>100% offline microphone + speaker transcription for macOS, Windows, and Linux.</strong><br/>
@@ -35,7 +35,7 @@
 
 ---
 
-Trascribe is a desktop application that transcribes meetings, lectures, interviews, and any other audio source — 100% offline. It captures both microphone input and system speaker output simultaneously, runs speech-to-text locally via Whisper, and exports transcripts in multiple formats. No cloud services, no telemetry, no network calls during transcription.
+Trareon Transcribe is a desktop application that transcribes meetings, lectures, interviews, and any other audio source — 100% offline. It captures both microphone input and system speaker output simultaneously, runs speech-to-text locally via Whisper, and exports transcripts in multiple formats. No cloud services, no telemetry, no network calls during transcription.
 
 ---
 
@@ -236,9 +236,9 @@ cargo run --bin trascribe -- \
 
 ## FAQ
 
-### Does Trascribe send my audio to the cloud?
+### Does Trareon Transcribe send my audio to the cloud?
 
-**No.** Trascribe is 100% offline. During transcription — both live capture and file transcription — the application makes zero network calls. The only network activity is downloading an optional Whisper model (HTTPS, SHA256-verified).
+**No.** Trareon Transcribe is 100% offline. During transcription — both live capture and file transcription — the application makes zero network calls. The only network activity is downloading an optional Whisper model (HTTPS, SHA256-verified).
 
 ### What models are supported?
 
@@ -269,7 +269,7 @@ v1: manual check via Help → Check for Updates. Auto-update with Ed25519 binary
 
 ## Project Status
 
-Trascribe is in **pre-1.0 development**. The engine, UI, and CI pipeline are functional and tested, but the application has not yet undergone a public beta. Key milestones remaining before 1.0:
+Trareon Transcribe is in **pre-1.0 development**. The engine, UI, and CI pipeline are functional and tested, but the application has not yet undergone a public beta. Key milestones remaining before 1.0:
 
 - [ ] Live audio capture E2E validation across target hardware
 - [ ] Screenshots for README

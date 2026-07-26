@@ -92,7 +92,7 @@ void main() {
       await notifier.processBatch(
         bridge,
         '/model/path',
-        outputDir: '~/Documents/Trascribe',
+        outputDir: '~/Documents/Trareon Transcribe',
       );
       expect(notifier.state.single.status, BatchFileStatus.done);
       expect(bridge.exportedTitles, ['test']);
@@ -105,7 +105,7 @@ void main() {
       await notifier.processBatch(
         bridge,
         '/model/path',
-        outputDir: '~/Documents/Trascribe',
+        outputDir: '~/Documents/Trareon Transcribe',
       );
       expect(notifier.state.single.status, BatchFileStatus.error);
     });

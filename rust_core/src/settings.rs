@@ -46,14 +46,14 @@ impl Default for AppSettings {
 
 pub fn default_library_path() -> String {
     dirs::document_dir()
-        .map(|d| d.join("Trascribe").to_string_lossy().to_string())
-        .unwrap_or_else(|| "./Trascribe".to_string())
+        .map(|d| d.join("TrareonTranscribe").to_string_lossy().to_string())
+        .unwrap_or_else(|| "./TrareonTranscribe".to_string())
 }
 
 fn settings_path() -> Result<PathBuf, TrascribeError> {
     let dir = dirs::config_dir()
         .ok_or_else(|| TrascribeError::InvalidInput("no config directory available".into()))?
-        .join("Trascribe");
+        .join("TrareonTranscribe");
     Ok(dir.join("settings.json"))
 }
 

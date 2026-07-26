@@ -59,7 +59,7 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
   StreamSubscription<TranscriptSegment>? _transcriptSub;
   Timer? _autoStopTimer;
   int? _autoStopMinutes;
-  String _libraryPath = '~/Documents/Trascribe';
+  String _libraryPath = '~/Documents/TrareonTranscribe';
 
   SessionNotifier(this._bridge, SessionMode initialMode, String initialModelPath)
       : super(

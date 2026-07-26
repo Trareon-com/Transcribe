@@ -1,4 +1,4 @@
-# Handoff — Trascribe
+# Handoff — Trareon Transcribe
 
 Ditulis 2026-07-25. Baca ini sebelum lanjut supaya agent berikutnya tidak
 mengulang discovery dari nol.

@@ -8,7 +8,7 @@
 ## Lynk.ID Product Page
 
 ### Title
-**Trascribe — Offline Meeting Transcriber**
+**Trareon Transcribe — Offline Meeting Transcriber**
 
 ### Price
 **$5** (atau Rp75.000 — sesuaikan kurs)
@@ -22,9 +22,9 @@ Gunakan salah satu dari:
 ### Description (copy-paste)
 
 ```
-# Trascribe — Transkripsi Offline 100%
+# Trareon Transcribe — Transkripsi Offline 100%
 
-Trascribe adalah aplikasi desktop untuk merekam dan mentranskrip
+Trareon Transcribe adalah aplikasi desktop untuk merekam dan mentranskrip
 microphone + system speaker secara SIMULTAN, 100% OFFLINE,
 tanpa cloud, tanpa biaya berlangganan.
 
@@ -88,7 +88,7 @@ Upload dari `~/Desktop/`:
 ## Gumroad Backup Page
 
 ### Title
-**Trascribe — 100% Offline Meeting Transcriber (macOS + Windows)**
+**Trareon Transcribe — 100% Offline Meeting Transcriber (macOS + Windows)**
 
 ### Price
 **$5**

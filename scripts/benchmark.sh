@@ -25,7 +25,7 @@ fi
 
 FAILED=0
 
-echo "=== Trascribe Performance Benchmarks ==="
+echo "=== Trareon Transcribe Performance Benchmarks ==="
 echo ""
 
 # 1. STT latency: time to transcribe a 5s WAV file

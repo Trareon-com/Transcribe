@@ -9,7 +9,7 @@ use crate::error::{TrascribeError, TrascribeResult};
 fn lock_path() -> TrascribeResult<PathBuf> {
     let dir = dirs::config_dir()
         .ok_or_else(|| TrascribeError::InvalidInput("no config directory available".into()))?
-        .join("Trascribe");
+        .join("TrareonTranscribe");
     Ok(dir.join("trascribe.lock"))
 }
 
@@ -39,7 +39,7 @@ pub fn acquire_lock() -> TrascribeResult<()> {
 fn acquire_lock_at(path: &PathBuf) -> TrascribeResult<()> {
     if is_another_instance_running_at(path)? {
         return Err(TrascribeError::InvalidInput(
-            "another instance of Trascribe is already running".into(),
+            "another instance of Trareon Transcribe is already running".into(),
         ));
     }
     if let Some(parent) = path.parent() {

@@ -1,4 +1,4 @@
-# Build and package Trascribe as a .zip for Windows.
+# Build and package Trareon Transcribe as a .zip for Windows.
 #
 # Per ADR-12/ADR-8: signing uses a self-signed certificate (free, no CA),
 # which still triggers a Windows SmartScreen warning on first run — this
@@ -9,7 +9,7 @@
 #
 # To generate a self-signed cert for local testing:
 #   $cert = New-SelfSignedCertificate -Type CodeSigning `
-#     -Subject "CN=Trascribe (self-signed)" -CertStoreLocation Cert:\CurrentUser\My
+#     -Subject "CN="Trareon Transcribe" (self-signed)" -CertStoreLocation Cert:\CurrentUser\My
 #   $pwd = ConvertTo-SecureString -String "changeit" -Force -AsPlainText
 #   Export-PfxCertificate -Cert $cert -FilePath trascribe.pfx -Password $pwd
 

@@ -1,4 +1,4 @@
-# Contributing to Trascribe
+# Contributing to Trareon Transcribe
 
 First off, thank you for considering contributing! We welcome contributions of all kinds — bug fixes, features, documentation improvements, and testing.
 
@@ -191,12 +191,12 @@ bash scripts/benchmark.sh
 
 ### Rust
 
-- **No `unwrap`/`expect`/`panic!` in library code** — every fallible path returns `Result<T, TrascribeError>`. See `rust_core/src/error.rs` for the error type.
+- **No `unwrap`/`expect`/`panic!` in library code** — every fallible path returns `Result<T, Trareon TranscribeError>`. See `rust_core/src/error.rs` for the error type.
 - **No `unsafe` without an inline justification comment** explaining why it's necessary and why a safe alternative isn't viable.
 - **No `println!` in library code** — use the `tracing` crate for structured logging.
 - Format with `cargo fmt` before committing.
 - Run `cargo clippy --all-targets -- -D warnings` — warnings are treated as errors.
-- Prefer explicit `Result<T, TrascribeError>` over type aliases in FRB-exposed signatures (the `TrascribeResult<T>` alias can't be resolved by FRB codegen across modules).
+- Prefer explicit `Result<T, Trareon TranscribeError>` over type aliases in FRB-exposed signatures (the `Trareon TranscribeResult<T>` alias can't be resolved by FRB codegen across modules).
 - Follow the [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/).
 
 ### Dart / Flutter
@@ -364,7 +364,7 @@ rust_core/                 Rust engine (compiled as staticlib/cdylib/lib)
     settings.rs              Settings persistence (OS config dir)
     singleton.rs             Single-instance PID lock
     memory.rs                Memory-pressure detection
-    error.rs                 Central error type (TrascribeError)
+    error.rs                 Central error type (Trareon TranscribeError)
     bin/gen_fixtures.rs      Synthetic WAV fixtures for hardware-free tests
     bin/trascribe.rs         Main CLI for batch transcription
     bin/trascribe_cli.rs     Compatibility alias for the CLI
@@ -422,4 +422,4 @@ Report security vulnerabilities privately via [GitHub Security Advisory](https:/
 
 ---
 
-*Thank you for helping make Trascribe better! 🎤*
+*Thank you for helping make Trareon Transcribe better! 🎤*

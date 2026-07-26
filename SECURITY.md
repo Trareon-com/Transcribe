@@ -1,8 +1,8 @@
-# Security Policy — Trascribe
+# Security Policy — Trareon Transcribe
 
 ## Core Privacy Guarantee
 
-Trascribe performs 100% offline speech-to-text. During any active transcription
+Trareon Transcribe performs 100% offline speech-to-text. During any active transcription
 (live capture or file transcription), the application makes **zero network
 calls**. The only network activity that ever occurs is:
 
@@ -46,7 +46,7 @@ is pre-1.0.
   merge.
 - No `unsafe` Rust without an inline justification comment.
 - No `unwrap`/`expect`/`panic!` in library code — all fallible paths return
-  `Result<T, TrascribeError>`.
+  `Result<T, Trareon TranscribeError>`.
 - Dependencies are kept current via Dependabot (weekly); `Cargo.lock` and
   `pubspec.lock` are committed and never deleted.
 - This policy is reviewed at least every 6 months.

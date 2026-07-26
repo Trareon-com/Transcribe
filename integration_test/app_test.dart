@@ -1,4 +1,4 @@
-//! Trascribe Integration Tests — Full Stack (Dart + Rust via FRB)
+//! Trareon Transcribe Integration Tests — Full Stack (Dart + Rust via FRB)
 //!
 //! These tests exercise the application end-to-end using the real
 //! flutter_rust_bridge bindings (not mock/stub). They require:

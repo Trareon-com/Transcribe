@@ -1,4 +1,4 @@
-# Distribution — Trascribe
+# Distribution — Trareon Transcribe
 
 ## Pricing & Channel
 
@@ -33,7 +33,7 @@ bash scripts/package_macos.sh "1.0.0"
 
 ## CI & Release Workflow
 
-Trascribe's CI pipeline (GitHub Actions) runs on every push and pull request:
+Trareon Transcribe's CI pipeline (GitHub Actions) runs on every push and pull request:
 - **Rust**: `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, `cargo audit`, `cargo deny`
 - **Flutter**: `flutter analyze`, `flutter test`, builds for macOS/Windows/Linux  
 - **Smoke tests**: macOS DMG and Windows ZIP packaging verified on every push
@@ -62,7 +62,7 @@ SmartScreen learns after enough reputation).
 
 ## Lynk.ID Product Page Checklist
 
-- [ ] Title: "Trascribe — Offline Meeting Transcriber"
+- [ ] Title: "Trareon Transcribe — Offline Meeting Transcriber"
 - [ ] Price: $5 (or IDR equivalent)
 - [ ] Description mentions:
   - 100% offline, zero network calls during transcription

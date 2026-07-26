@@ -1,6 +1,6 @@
-# Computer Use untuk Trascribe
+# Computer Use untuk Trareon Transcribe
 
-Dokumen ini menjelaskan cara menggunakan `computer_use` (cua-driver) untuk melakukan GUI testing otomatis pada aplikasi Trascribe — mirip seperti Claude Code melakukan automated browser testing.
+Dokumen ini menjelaskan cara menggunakan `computer_use` (cua-driver) untuk melakukan GUI testing otomatis pada aplikasi Trareon Transcribe — mirip seperti Claude Code melakukan automated browser testing.
 
 ## Prerequisites
 
@@ -19,7 +19,7 @@ cua-driver v0.12.6 sudah terinstall dan terverifikasi:
 ### 1. Screenshot + Element Detection
 
 ```python
-computer_use(action="capture", mode="som", app="Trascribe")
+computer_use(action="capture", mode="som", app="Trareon Transcribe")
 ```
 
 Returns numbered overlays + AX tree. Gunakan nomor element untuk klik.
@@ -63,7 +63,7 @@ computer_use(action="scroll", direction="down", amount=5, element=12)
 
 ```python
 # 1. Launch via shell
-terminal(command="open build/macos/Build/Products/Debug/Trascribe.app")
+terminal(command="open build/macos/Build/Products/Debug/Trareon Transcribe.app")
 # 2. Wait
 computer_use(action="wait", seconds=3)
 # 3. Capture

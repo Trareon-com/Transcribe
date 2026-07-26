@@ -289,7 +289,7 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
     // Try to find RustBridge from ancestor provider
     if (!context.mounted) return;
     // Show export dialog using the stored segments
-    final defaultDir = '/Users/\$USER/Documents/Trascribe';
+    final defaultDir = '/Users/\$USER/Documents/TrareonTranscribe';
     await showExportDialog(
       context,
       summary,
