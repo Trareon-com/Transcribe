@@ -73,7 +73,7 @@ class StreamToggle extends StatelessWidget {
               ),
               const SizedBox(width: 6),
               Text(
-                enabled ? 'ON' : 'OFF',
+                enabled ? 'HIDUP' : 'MATI',
                 style: TextStyle(
                   color: enabled ? accent : colors.textTertiary,
                   fontSize: 10,

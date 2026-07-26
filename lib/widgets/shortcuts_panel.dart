@@ -23,7 +23,7 @@ Future<void> showShortcutsPanel(BuildContext context) {
     builder: (context) => AlertDialog(
       title: Semantics(
         label: 'Pintasan keyboard',
-        child: const Text('Keyboard Shortcuts'),
+        child: const Text('Pintasan Keyboard'),
       ),
       content: SizedBox(
         width: 360,

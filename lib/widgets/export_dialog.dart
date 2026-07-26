@@ -2,13 +2,13 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../services/bridge_service.dart';
-import '../src/rust/export.dart' as rust_export;
+import '../src/rust/ekspor.dart' as rust_ekspor;
 import '../state/models.dart';
 import '../theme/app_colors.dart';
 
-/// Dialog for selecting export formats and output directory.
-/// Returns true if the export was initiated, false if cancelled.
-Future<bool> showExportDialog(
+/// Dialog for selecting ekspor formats and output directory.
+/// Returns true if the ekspor was initiated, false if cancelled.
+Future<bool> showEksporDialog(
   BuildContext context,
   SessionSummary session, {
   required RustBridge bridge,
@@ -29,7 +29,7 @@ Future<bool> showExportDialog(
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  'Export "${session.title}"',
+                  'Ekspor "${session.title}"',
                   style: TextStyle(color: colors.text, fontSize: 16, fontWeight: FontWeight.w600),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -44,7 +44,7 @@ Future<bool> showExportDialog(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Pilih format export:',
+                    'Pilih format ekspor:',
                     style: TextStyle(color: colors.textSecondary, fontSize: 13),
                   ),
                   const SizedBox(height: 8),
@@ -108,7 +108,7 @@ Future<bool> showExportDialog(
   );
   if (outputDir == null || !context.mounted) return false;
 
-  // Tampilkan loading dialog selama export
+  // Tampilkan loading dialog selama ekspor
   if (context.mounted) {
     showDialog(
       context: context,
@@ -129,17 +129,17 @@ Future<bool> showExportDialog(
     );
   }
 
-  final formats = <rust_export.ExportFormat>[
-    if (selected.contains('md')) rust_export.ExportFormat.markdown,
-    if (selected.contains('txt')) rust_export.ExportFormat.txt,
-    if (selected.contains('json')) rust_export.ExportFormat.json,
-    if (selected.contains('srt')) rust_export.ExportFormat.srt,
-    if (selected.contains('vtt')) rust_export.ExportFormat.vtt,
-    if (selected.contains('html')) rust_export.ExportFormat.html,
+  final formats = <rust_ekspor.EksporFormat>[
+    if (selected.contains('md')) rust_ekspor.EksporFormat.markdown,
+    if (selected.contains('txt')) rust_ekspor.EksporFormat.txt,
+    if (selected.contains('json')) rust_ekspor.EksporFormat.json,
+    if (selected.contains('srt')) rust_ekspor.EksporFormat.srt,
+    if (selected.contains('vtt')) rust_ekspor.EksporFormat.vtt,
+    if (selected.contains('html')) rust_ekspor.EksporFormat.html,
   ];
 
   try {
-    await bridge.exportSession(
+    await bridge.eksporSession(
       segments: session.segments,
       outputDir: outputDir,
       title: session.title,
@@ -150,7 +150,7 @@ Future<bool> showExportDialog(
     if (!context.mounted) return false;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Export berhasil ke: $outputDir'),
+        content: Text('Ekspor berhasil ke: $outputDir'),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -161,7 +161,7 @@ Future<bool> showExportDialog(
     Navigator.of(context, rootNavigator: true).pop();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Export gagal: $e'),
+        content: Text('Ekspor gagal: $e'),
         backgroundColor: AppColors.warning,
         behavior: SnackBarBehavior.floating,
       ),

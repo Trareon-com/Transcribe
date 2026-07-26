@@ -415,7 +415,7 @@ class _SegmentTile extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    // Content + metadata
+                    // Content
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -435,20 +435,6 @@ class _SegmentTile extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (segment.language.isNotEmpty) ...[
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: tileBg,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                              child: Text(
-                                segment.language.toUpperCase(),
-                                style: TextStyle(color: colors.textTertiary, fontSize: 9, letterSpacing: 0.5),
-                              ),
-                            ),
-                          ],
                         ],
                       ),
                     ),

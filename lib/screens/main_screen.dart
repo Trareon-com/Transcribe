@@ -1,8 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:window_manager/window_manager.dart';
 
 import '../services/global_hotkey_service.dart';
 import '../state/audio_stream_model.dart';
@@ -74,7 +72,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     );
   }
 
-  Future<void> _handleStopPressed(BuildContext context, WidgetRef ref) async {
+  Future<void> _handleBerhentiPressed(BuildContext context, WidgetRef ref) async {
     final segments = ref.read(sessionProvider).segments;
     if (segments.isNotEmpty) {
       final confirmed = await showDialog<bool>(
@@ -104,12 +102,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     }
   }
 
-  Future<void> _toggleStartStop(BuildContext context, WidgetRef ref) async {
+  Future<void> _toggleStartBerhenti(BuildContext context, WidgetRef ref) async {
     final lifecycle = ref.read(sessionProvider).lifecycle;
     final isActive =
         lifecycle == SessionLifecycle.recording || lifecycle == SessionLifecycle.paused;
     if (isActive) {
-      await _handleStopPressed(context, ref);
+      await _handleBerhentiPressed(context, ref);
       return;
     }
     try {
@@ -120,7 +118,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     }
   }
 
-  Future<void> _onExport(BuildContext context) async {
+  Future<void> _onEkspor(BuildContext context) async {
     final session = ref.read(sessionProvider);
     if (session.segments.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -183,9 +181,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     return CallbackShortcuts(
       bindings: {
         const SingleActivator(LogicalKeyboardKey.keyR, meta: true): () =>
-            _toggleStartStop(context, ref),
+            _toggleStartBerhenti(context, ref),
         const SingleActivator(LogicalKeyboardKey.keyR, control: true): () =>
-            _toggleStartStop(context, ref),
+            _toggleStartBerhenti(context, ref),
         const SingleActivator(LogicalKeyboardKey.keyP, meta: true): () {
           if (isPaused) {
             notifier.resume();
@@ -343,11 +341,11 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 session: session,
                 notifier: notifier,
                 isActive: isActive,
-                vuMicLevel: vuLevel?.micLevel ?? 0.0,
+                vuMikrofonLevel: vuLevel?.micLevel ?? 0.0,
                 vuSpeakerLevel: vuLevel?.speakerLevel ?? 0.0,
                 titleController: _titleController,
-                onStartStop: () => _toggleStartStop(context, ref),
-                onExport: () => _onExport(context),
+                onStartBerhenti: () => _toggleStartBerhenti(context, ref),
+                onEkspor: () => _onEkspor(context),
               ),
 
               // Transcript
@@ -387,21 +385,21 @@ class _ControlBar extends StatelessWidget {
   final SessionUiState session;
   final SessionNotifier notifier;
   final bool isActive;
-  final double vuMicLevel;
+  final double vuMikrofonLevel;
   final double vuSpeakerLevel;
   final TextEditingController titleController;
-  final VoidCallback onStartStop;
-  final VoidCallback onExport;
+  final VoidCallback onStartBerhenti;
+  final VoidCallback onEkspor;
 
   const _ControlBar({
     required this.session,
     required this.notifier,
     required this.isActive,
-    required this.vuMicLevel,
+    required this.vuMikrofonLevel,
     required this.vuSpeakerLevel,
     required this.titleController,
-    required this.onStartStop,
-    required this.onExport,
+    required this.onStartBerhenti,
+    required this.onEkspor,
   });
 
   @override
@@ -485,29 +483,29 @@ class _ControlBar extends StatelessWidget {
 
                   // MIC toggle interaktif
                   StreamToggle(
-                    label: 'Mic',
+                    label: 'Mikrofon',
                     enabled: session.config.micEnabled,
                     accent: colors.primary,
-                    onChanged: (enabled) => notifier.toggleMic(enabled),
+                    onChanged: (enabled) => notifier.toggleMikrofon(enabled),
                   ),
                   const SizedBox(width: 8),
 
                   // SPK toggle interaktif
                   StreamToggle(
-                    label: 'Speaker',
+                    label: 'Pengeras Suara',
                     enabled: session.config.speakerEnabled,
                     accent: colors.primary,
                     onChanged: (enabled) => notifier.toggleSpeaker(enabled),
                   ),
                   const SizedBox(width: 12),
 
-                  // Start/Stop button
+                  // Start/Berhenti button
                   SizedBox(
                     height: 36,
                     child: ElevatedButton.icon(
-                      onPressed: onStartStop,
+                      onPressed: onStartBerhenti,
                       icon: Icon(isActive ? Icons.stop : Icons.play_arrow, size: 18),
-                      label: Text(isActive ? 'Stop' : 'Mulai'),
+                      label: Text(isActive ? 'Berhenti' : 'Mulai'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: isActive ? AppColors.warning : colors.primary,
                         foregroundColor: Colors.white,
@@ -518,13 +516,13 @@ class _ControlBar extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
 
-                  // Export button
+                  // Ekspor button
                   SizedBox(
                     height: 36,
                     child: OutlinedButton.icon(
-                      onPressed: onExport,
+                      onPressed: onEkspor,
                       icon: Icon(Icons.download_outlined, size: 16, color: colors.text),
-                      label: Text('Export', style: TextStyle(color: colors.text)),
+                      label: Text('Ekspor', style: TextStyle(color: colors.text)),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(color: colors.border),
                         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -664,11 +662,11 @@ class _ShortcutsPanel extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          _ShortcutRow(label: 'Mulai / Stop merekam', shortcut: 'Cmd+R'),
+          _ShortcutRow(label: 'Mulai / Berhenti merekam', shortcut: 'Cmd+R'),
           _ShortcutRow(label: 'Jeda / Lanjutkan', shortcut: 'Cmd+P'),
-          _ShortcutRow(label: 'Buka Library', shortcut: 'Cmd+L'),
+          _ShortcutRow(label: 'Buka Perpustakaan', shortcut: 'Cmd+L'),
           _ShortcutRow(label: 'Buka Pengaturan', shortcut: 'Cmd+,'),
-          _ShortcutRow(label: 'Tampilkan panel shortcut', shortcut: 'Cmd+/'),
+          _ShortcutRow(label: 'Tampilkan panel pintasan', shortcut: 'Cmd+/'),
         ],
       ),
     );
