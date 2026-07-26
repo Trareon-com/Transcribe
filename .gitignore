@@ -21,6 +21,8 @@ Cargo.lock.bak
 # Models (large binaries — downloaded, not committed)
 models/*.bin
 models/*.gguf
+rust_core/models/*.bin
+rust_core/models/*.gguf
 !models/.gitkeep
 
 # Generated test fixtures (regenerate via `cargo run --bin gen_fixtures`)
