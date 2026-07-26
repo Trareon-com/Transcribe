@@ -266,7 +266,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 child: Row(
                   children: [
                     Image.asset('assets/logo.png', width: 20, height: 20,
-                        errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                        errorBuilder: (_, _, _) => const SizedBox.shrink()),
                     const SizedBox(width: 8),
                     Text(
                       'Trareon Transcribe',
