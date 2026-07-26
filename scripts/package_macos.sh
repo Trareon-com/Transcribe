@@ -60,9 +60,9 @@ RESOURCES="$APP_PATH/Contents/Resources"
 echo "==> Bundling models into $RESOURCES/models"
 mkdir -p "$RESOURCES/models"
 cp models/ggml-base.bin "$RESOURCES/models/"
-cp models/ggml-large-v3-turbo-q5.bin "$RESOURCES/models/"
+cp models/ggml-large-v3-turbo-q4_k_m.gguf "$RESOURCES/models/"
 echo "    → base (142 MB) bundled"
-echo "    → large-v3-turbo-q5 (548 MB) bundled"
+echo "    → large-v3-turbo-q4_k_m (474 MB) bundled"
 
 # ── Ad-hoc signing ────────────────────────────────────────────────────
 echo "==> Ad-hoc signing $APP_PATH"

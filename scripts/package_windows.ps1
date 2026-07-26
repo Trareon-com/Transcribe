@@ -69,9 +69,9 @@ if (-not (Test-Path $DllDest)) {
 $ModelsDestDir = Join-Path $BuildDir "models"
 New-Item -ItemType Directory -Force -Path $ModelsDestDir | Out-Null
 Copy-Item -Path "models\ggml-base.bin" -Destination $ModelsDestDir -Force
-Copy-Item -Path "models\ggml-large-v3-turbo-q5.bin" -Destination $ModelsDestDir -Force
+Copy-Item -Path "models\ggml-large-v3-turbo-q4_k_m.gguf" -Destination $ModelsDestDir -Force
 Write-Host "    → base (142 MB) bundled"
-Write-Host "    → large-v3-turbo-q5 (548 MB) bundled"
+Write-Host "    → large-v3-turbo-q4_k_m (474 MB) bundled"
 
 $PfxPath = $env:TRASCRIBE_PFX_PATH
 $PfxPassword = $env:TRASCRIBE_PFX_PASSWORD
