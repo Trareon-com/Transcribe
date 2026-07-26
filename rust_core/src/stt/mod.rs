@@ -85,6 +85,9 @@ impl WhisperEngine {
             ));
         }
 
+        // Apply noise reduction preprocessing
+        let processed = crate::preprocess::preprocess(samples);
+
         let ctx = self
             .context
             .lock()
@@ -101,9 +104,10 @@ impl WhisperEngine {
         params.set_print_timestamps(false);
         params.set_language(language.or(Some("auto")));
         params.set_audio_ctx(512);
+        // params.token_timestamps(true);  // disabled until FRB regen
 
         state
-            .full(params, samples)
+            .full(params, &processed)
             .map_err(|e| TranscribeError::Transcription(format!("inference failed: {e}")))?;
 
         let num_segments = state

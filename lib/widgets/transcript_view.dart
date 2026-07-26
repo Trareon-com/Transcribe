@@ -28,11 +28,19 @@ class TranscriptView extends StatefulWidget {
   /// as the "currently playing" segment in the player.
   final int? activeSegmentIndex;
 
+  /// Map of original speaker name → custom label.
+  final Map<String, String> speakerLabels;
+
+  /// Called when user renames a speaker (oldName, newName).
+  final void Function(String oldName, String newName)? onRenameSpeaker;
+
   const TranscriptView({
     super.key,
     required this.segments,
     this.onEdit,
     this.activeSegmentIndex,
+    this.speakerLabels = const {},
+    this.onRenameSpeaker,
   });
 
   @override
@@ -237,8 +245,10 @@ class _TranscriptViewState extends State<TranscriptView> {
                 itemCount: items.length,
                 itemBuilder: (context, index) {
                   final (originalIndex, seg) = items[index];
+                  final displaySpeaker = widget.speakerLabels[seg.speaker] ?? seg.speaker;
                   return _SegmentTile(
                     segment: seg,
+                    displaySpeaker: displaySpeaker,
                     speakerColor: _speakerColor(seg.speaker, colors),
                     isActive: widget.activeSegmentIndex != null && originalIndex == widget.activeSegmentIndex,
                     searchQuery: query,
@@ -258,6 +268,9 @@ class _TranscriptViewState extends State<TranscriptView> {
                         ),
                       );
                     },
+                    onRename: widget.onRenameSpeaker == null
+                        ? null
+                        : (newName) => widget.onRenameSpeaker!(seg.speaker, newName),
                   );
                 },
               );
@@ -301,19 +314,23 @@ List<TextSpan> _highlightText(String text, String query, TextStyle baseStyle, Co
 
 class _SegmentTile extends StatelessWidget {
   final TranscriptSegment segment;
+  final String displaySpeaker;
   final Color speakerColor;
   final bool isActive;
   final String searchQuery;
   final ValueChanged<String>? onEdit;
   final VoidCallback? onCopy;
+  final ValueChanged<String>? onRename;
 
   const _SegmentTile({
     required this.segment,
+    required this.displaySpeaker,
     required this.speakerColor,
     this.isActive = false,
     this.searchQuery = '',
     this.onEdit,
     this.onCopy,
+    this.onRename,
   });
 
   String _formatTime(double secs) {
@@ -384,30 +401,45 @@ class _SegmentTile extends StatelessWidget {
                     // Speaker label + time
                     SizedBox(
                       width: 72,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            segment.speaker,
-                            style: TextStyle(
-                              color: speakerColor,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: -0.2,
+                      child: GestureDetector(
+                        onTap: onRename != null
+                            ? () => _openRenameDialog(context)
+                            : null,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    displaySpeaker,
+                                    style: TextStyle(
+                                      color: speakerColor,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: -0.2,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                if (onRename != null) ...[
+                                  const SizedBox(width: 2),
+                                  Icon(Icons.edit_outlined, size: 10, color: speakerColor.withValues(alpha: 0.5)),
+                                ],
+                              ],
                             ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            _formatTime(segment.timestamp),
-                            style: TextStyle(
-                              color: colors.textTertiary,
-                              fontSize: 10,
-                              fontFeatures: [FontFeature.tabularFigures()],
+                            const SizedBox(height: 2),
+                            Text(
+                              _formatTime(segment.timestamp),
+                              style: TextStyle(
+                                color: colors.textTertiary,
+                                fontSize: 10,
+                                fontFeatures: [FontFeature.tabularFigures()],
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),

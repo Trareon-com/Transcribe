@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -145,23 +146,76 @@ class _FileUploadZoneState extends ConsumerState<FileUploadZone> {
   }
 }
 
-class _QueueTile extends StatelessWidget {
+class _QueueTile extends StatefulWidget {
   final BatchFileEntry entry;
 
   const _QueueTile({required this.entry});
 
   @override
+  State<_QueueTile> createState() => _QueueTileState();
+}
+
+class _QueueTileState extends State<_QueueTile> {
+  final AudioPlayer _player = AudioPlayer();
+  bool _playing = false;
+
+  @override
+  void dispose() {
+    _player.dispose();
+    super.dispose();
+  }
+
+  String get _audioPath => widget.entry.path;
+
+  Future<void> _togglePreview() async {
+    if (_playing) {
+      await _player.stop();
+      setState(() => _playing = false);
+      return;
+    }
+    final path = _audioPath;
+    if (path.isEmpty) return;
+    try {
+      await _player.setSourceDeviceFile(path);
+      await _player.resume();
+      setState(() => _playing = true);
+      _player.onPlayerComplete.first.then((_) {
+        if (mounted) setState(() => _playing = false);
+      });
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Tidak bisa memutar file ini'), duration: Duration(seconds: 2)),
+        );
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final canPreview = widget.entry.status == BatchFileStatus.queued && widget.entry.path.isNotEmpty;
     return Semantics(
-      label: '${entry.filename} — ${_statusLabel(entry.status)}${entry.error != null ? ', error: ${entry.error}' : ''}',
+      label: '${widget.entry.filename} — ${_statusLabel(widget.entry.status)}${widget.entry.error != null ? ', error: ${widget.entry.error}' : ''}',
       child: ListTile(
         dense: true,
         leading: Semantics(
-          label: _statusLabel(entry.status),
-          child: _statusIcon(entry.status),
+          label: _statusLabel(widget.entry.status),
+          child: _statusIcon(widget.entry.status),
         ),
-        title: Text(entry.filename, overflow: TextOverflow.ellipsis),
-        subtitle: entry.error != null ? Text(entry.error!) : null,
+        title: Text(widget.entry.filename, overflow: TextOverflow.ellipsis),
+        subtitle: widget.entry.error != null ? Text(widget.entry.error!) : null,
+        trailing: canPreview
+            ? Semantics(
+                label: _playing ? 'Hentikan pratinjau' : 'Putar pratinjau audio',
+                button: true,
+                child: IconButton(
+                  icon: Icon(_playing ? Icons.stop_circle_outlined : Icons.play_circle_outline,
+                      color: AppColors.micAccent),
+                  onPressed: _togglePreview,
+                  tooltip: 'Pratinjau audio',
+                ),
+              )
+            : null,
       ),
     );
   }

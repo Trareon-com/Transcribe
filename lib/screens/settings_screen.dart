@@ -77,8 +77,9 @@ class SettingsScreen extends ConsumerWidget {
             _SettingsTile(
               icon: Icons.speed_outlined,
               label: 'Progressive Mode',
-              subtitle: 'Hasil cepat tiny (3s) → refine otomatis large-turbo di background',
-              trailing: const _BadgeChip(label: 'Coming Soon'),
+              subtitle: 'Mode ini akan memproses audio dengan base model untuk hasil cepat,\n'
+                  'lalu menyempurnakan dengan q5 di background. Tersedia di v1.1.',
+              trailing: Icon(Icons.construction_outlined, size: 16, color: colors.textTertiary),
             ),
             const _SettingsDivider(),
             _SettingsTile(

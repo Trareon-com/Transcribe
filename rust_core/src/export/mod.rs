@@ -21,6 +21,13 @@ pub struct Segment {
     pub is_partial: bool,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WordTimestamp {
+    pub word: String,
+    pub start: f64,
+    pub end: f64,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ExportFormat {
     Markdown,
