@@ -50,6 +50,12 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _bridge.saveSettings(state);
   }
 
+  /// Toggle between light ↔ dark. If system, treat as light first.
+  Future<void> toggleTheme() async {
+    final next = state.theme == AppThemeMode.dark ? AppThemeMode.light : AppThemeMode.dark;
+    await setTheme(next);
+  }
+
   Future<void> setDefaultMode(SessionMode mode) async {
     _userActed = true;
     state = state.copyWith(defaultMode: mode);

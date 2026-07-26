@@ -94,6 +94,8 @@ class TrascribeApp extends ConsumerWidget {
         AppThemeMode.light => ThemeMode.light,
         AppThemeMode.system => ThemeMode.system,
       },
+      themeAnimationDuration: const Duration(milliseconds: 300),
+      themeAnimationCurve: Curves.easeInOut,
       home: firstRunComplete
           ? const MainScreen()
           : SetupWizardScreen(

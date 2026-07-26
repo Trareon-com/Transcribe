@@ -152,21 +152,29 @@ class _TrafficDot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 12,
-        height: 12,
-        decoration: BoxDecoration(
-          color: color,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.4),
-              blurRadius: 1,
-              spreadRadius: 0.5,
-            ),
-          ],
+    return Semantics(
+      label: color == const Color(0xFFFF5F57)
+          ? 'Tutup'
+          : color == const Color(0xFFFFBD2E)
+              ? 'Minimalkan'
+              : 'Maksimalkan',
+      button: true,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          width: 12,
+          height: 12,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: color.withValues(alpha: 0.4),
+                blurRadius: 1,
+                spreadRadius: 0.5,
+              ),
+            ],
+          ),
         ),
       ),
     );
