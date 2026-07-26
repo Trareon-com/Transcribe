@@ -12,7 +12,7 @@ import '../theme/app_colors.dart';
 import '../widgets/export_dialog.dart';
 import '../widgets/transcript_view.dart';
 
-class TranscriptPlayerScreen extends StatefulWidget {
+class TranscriptPlayerScreen extends ConsumerStatefulWidget {
   final String title;
   final double durationSeconds;
   final List<TranscriptSegment> segments;
@@ -29,10 +29,10 @@ class TranscriptPlayerScreen extends StatefulWidget {
   });
 
   @override
-  State<TranscriptPlayerScreen> createState() => _TranscriptPlayerScreenState();
+  ConsumerState<TranscriptPlayerScreen> createState() => _TranscriptPlayerScreenState();
 }
 
-class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
+class _TranscriptPlayerScreenState extends ConsumerState<TranscriptPlayerScreen> {
   double _positionSeconds = 0;
   double _speed = 1.0;
   bool _playing = false;
@@ -319,8 +319,8 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
             ? '${Platform.environment['USERPROFILE']}\\Documents\\TrareonTranscribe'
             : '$home/Documents/TrareonTranscribe';
 
-    final bridge = context.read(rustBridgeProvider);
-    await showExportDialog(
+    final bridge = ref.read(rustBridgeProvider);
+    await showEksporDialog(
       context,
       summary,
       bridge: bridge,

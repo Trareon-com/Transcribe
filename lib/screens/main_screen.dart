@@ -1,5 +1,6 @@
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/global_hotkey_service.dart';
@@ -180,41 +181,41 @@ class _MainScreenState extends ConsumerState<MainScreen> {
 
     return CallbackShortcuts(
       bindings: {
-        const SingleActivator(LogicalKeyboardKey.keyR, meta: true): () =>
+        SingleActivator(LogicalKeyboardKey.keyR, meta: true): () =>
             _toggleStartBerhenti(context, ref),
-        const SingleActivator(LogicalKeyboardKey.keyR, control: true): () =>
+        SingleActivator(LogicalKeyboardKey.keyR, control: true): () =>
             _toggleStartBerhenti(context, ref),
-        const SingleActivator(LogicalKeyboardKey.keyP, meta: true): () {
+        SingleActivator(LogicalKeyboardKey.keyP, meta: true): () {
           if (isPaused) {
             notifier.resume();
           } else if (lifecycle == SessionLifecycle.recording) {
             notifier.pause();
           }
         },
-        const SingleActivator(LogicalKeyboardKey.keyP, control: true): () {
+        SingleActivator(LogicalKeyboardKey.keyP, control: true): () {
           if (isPaused) {
             notifier.resume();
           } else if (lifecycle == SessionLifecycle.recording) {
             notifier.pause();
           }
         },
-        const SingleActivator(LogicalKeyboardKey.keyL, meta: true): () =>
+        SingleActivator(LogicalKeyboardKey.keyL, meta: true): () =>
             Navigator.of(context).push(MaterialPageRoute(builder: (ctx) {
               final lp = ref.read(settingsProvider).libraryPath;
               return LibraryScreen(libraryPath: resolveTilde(lp));
             })),
-        const SingleActivator(LogicalKeyboardKey.keyL, control: true): () =>
+        SingleActivator(LogicalKeyboardKey.keyL, control: true): () =>
             Navigator.of(context).push(MaterialPageRoute(builder: (ctx) {
               final lp = ref.read(settingsProvider).libraryPath;
               return LibraryScreen(libraryPath: resolveTilde(lp));
             })),
-        const SingleActivator(LogicalKeyboardKey.comma, meta: true): () =>
+        SingleActivator(LogicalKeyboardKey.comma, meta: true): () =>
             Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
-        const SingleActivator(LogicalKeyboardKey.comma, control: true): () =>
+        SingleActivator(LogicalKeyboardKey.comma, control: true): () =>
             Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
-        const SingleActivator(LogicalKeyboardKey.slash, meta: true): () =>
+        SingleActivator(LogicalKeyboardKey.slash, meta: true): () =>
             setState(() => _showShortcuts = !_showShortcuts),
-        const SingleActivator(LogicalKeyboardKey.slash, control: true): () =>
+        SingleActivator(LogicalKeyboardKey.slash, control: true): () =>
             setState(() => _showShortcuts = !_showShortcuts),
       },
       child: Focus(
@@ -486,7 +487,7 @@ class _ControlBar extends StatelessWidget {
                     label: 'Mikrofon',
                     enabled: session.config.micEnabled,
                     accent: colors.primary,
-                    onChanged: (enabled) => notifier.toggleMikrofon(enabled),
+                    onChanged: (enabled) => notifier.toggleMic(enabled),
                   ),
                   const SizedBox(width: 8),
 

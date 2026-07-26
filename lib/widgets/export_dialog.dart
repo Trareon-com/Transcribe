@@ -2,7 +2,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../services/bridge_service.dart';
-import '../src/rust/ekspor.dart' as rust_ekspor;
+import '../src/rust/export.dart' as rust_ekspor;
 import '../state/models.dart';
 import '../theme/app_colors.dart';
 
@@ -129,17 +129,17 @@ Future<bool> showEksporDialog(
     );
   }
 
-  final formats = <rust_ekspor.EksporFormat>[
-    if (selected.contains('md')) rust_ekspor.EksporFormat.markdown,
-    if (selected.contains('txt')) rust_ekspor.EksporFormat.txt,
-    if (selected.contains('json')) rust_ekspor.EksporFormat.json,
-    if (selected.contains('srt')) rust_ekspor.EksporFormat.srt,
-    if (selected.contains('vtt')) rust_ekspor.EksporFormat.vtt,
-    if (selected.contains('html')) rust_ekspor.EksporFormat.html,
+  final formats = <rust_ekspor.ExportFormat>[
+    if (selected.contains('md')) rust_ekspor.ExportFormat.markdown,
+    if (selected.contains('txt')) rust_ekspor.ExportFormat.txt,
+    if (selected.contains('json')) rust_ekspor.ExportFormat.json,
+    if (selected.contains('srt')) rust_ekspor.ExportFormat.srt,
+    if (selected.contains('vtt')) rust_ekspor.ExportFormat.vtt,
+    if (selected.contains('html')) rust_ekspor.ExportFormat.html,
   ];
 
   try {
-    await bridge.eksporSession(
+    await bridge.exportSession(
       segments: session.segments,
       outputDir: outputDir,
       title: session.title,

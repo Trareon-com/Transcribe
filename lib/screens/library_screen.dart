@@ -170,7 +170,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   Future<void> _exportSession(SessionSummary session) async {
     final bridge = ref.read(rustBridgeProvider);
     final settings = ref.read(settingsProvider);
-    await showExportDialog(
+    await showEksporDialog(
       context,
       session,
       bridge: bridge,
