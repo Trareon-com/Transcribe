@@ -45,7 +45,7 @@ Trareon Transcribe is a desktop application that transcribes meetings, lectures,
 
 - **100% offline transcription** — No audio data ever leaves your machine. Zero network calls during active transcription.
 - **No telemetry** — No analytics, no crash reporting, no background network activity.
-- **Privacy Report** — Built-in screen showing all network activity (only model downloads ever appear).
+- **Privacy Report** — Built-in screen showing all network activity (privacy-first, zero network calls during transcription).
 - **No account required** — No sign-up, no login, no cloud dependency.
 
 ### Audio Capture
@@ -57,7 +57,7 @@ Trareon Transcribe is a desktop application that transcribes meetings, lectures,
 
 ### Speech-to-Text
 
-- **whisper.cpp engine** — Local STT via `whisper-rs`, supporting all GGUF models from `tiny` (~75 MB) to `large-v3-turbo`.
+- **whisper.cpp engine** — Local STT via `whisper-rs`, supporting GGUF models from `base` (142 MB) to `large-v3-turbo-q5` (548 MB).
 - **Multi-speaker diarization** — Acoustic feature clustering separates speakers in transcripts.
 - **Echo deduplication** — Cross-source dedupe (MIC vs SPK similarity) prevents duplicate transcription.
 - **Priority queue** — Mic segments processed before speaker segments for responsive live transcription.
@@ -85,7 +85,7 @@ Each export format runs in its own thread for parallel processing.
 - **Session library** — Browse, search, delete (with undo), and re-export past sessions.
 - **Transcript player** — Seek, speed control, inline editing of transcript text.
 - **Mode selector** — Webinar (speaker only), Rapat Online (mic + speaker), Offline (mic only).
-- **First-run setup wizard** — 5-step guided configuration: spec detection, model selection, audio setup, model download, tone test.
+- **First-run setup wizard** — 3-step guided configuration: spec detection, model selection, tone test (no download needed).
 - **Light / dark / system theme** — Full theme switching managed via Riverpod.
 - **Keyboard shortcuts** — Cmd+R (start/stop), Cmd+P (pause/resume), Cmd+L (library), Cmd+, (settings), Cmd+/ (shortcuts panel).
 - **Minimize to tray** — Recording continues when window is hidden.
@@ -101,81 +101,38 @@ Each export format runs in its own thread for parallel processing.
 
 ## Model Performance
 
-Trareon Transcribe uses [whisper.cpp](https://github.com/ggerganov/whisper.cpp) GGML/GGUF models. Below are **real benchmarks** measured on an Intel i3-7100T (4 threads, 3.4 GHz) with **release build** and `--language id` / `--language en`.
+Trareon Transcribe menyertakan **2 model bawaan** — tidak perlu unduh:
 
-### 🇮🇩 Bahasa Indonesia (sample ~10 detik)
+| Model | Ukuran | Kecepatan | Akurasi ID | Akurasi EN | Cocok Untuk |
+|:------|:------:|:---------:|:----------:|:----------:|:------------|
+| **base** ⚡ Cepat | **142 MB** | ⚡ 3-10s | **WER 0%** 🏆 | 90% | Transkrip cepat, akurasi ID maksimal |
+| **large-v3-turbo-q5** 🎯 Akurat | **548 MB** | 🟡 5-15s | WER 4% | **WER 3%** 🏆 | Akurasi global terbaik |
 
-| Model | Ukuran | ⏱️ Rust/GGUF | Akurasi | Hasil |
-|:-----:|:------:|:------------:|:-------:|-------|
-| **tiny** | 75 MB | **3s** 🟢 | ⭐⭐ | Beberapa kata benar, struktur kalimat kacau |
-| **base** | 142 MB | **10s** 🟡 | ⭐⭐⭐⭐ | **🏆 WER 0% untuk ID** — sempurna di test kami! |
-| **small** | 466 MB | 21s 🟠 | ⭐⭐⭐ | Kata kunci terbaca, masih ada noise |
-| **medium** | 1.5 GB | 35s 🔴 | ⭐⭐⭐⭐ | hampir sempurna |
-| **large-v3-turbo-q5** | **548 MB** | ~40-50s 🟡 | ⭐⭐⭐⭐⭐ | **🏆 Rekomendasi! Size -65%** |
-| **large-v3-turbo** | 1.6 GB | 56s 🔴 | ⭐⭐⭐⭐⭐ | Sama akurat, lebih besar |
-| **large-v3** | 2.9 GB | 69s 🔴 | ⭐⭐⭐⭐⭐ | Akurasi tertinggi, tapi paling lambat |
+### 🧪 Word Error Rate (WER)
 
-### 🇬🇧 Bahasa Inggris (sample ~7 detik)
+| Model | 🇮🇩 ID | 🇬🇧 EN |
+|:------|:-----:|:-----:|
+| **base** | **0.00%** 🔥 | 10.34% |
+| **large-v3-turbo-q5** | 4.17% | **3.45%** 🔥 |
 
-| Model | Ukuran | ⏱️ Rust/GGUF | Akurasi | Hasil |
-|:-----:|:------:|:------------:|:-------:|-------|
-| **tiny** | 75 MB | **2s** 🟢 | ⭐⭐⭐ | Lumayan untuk ukurannya |
-| **base** | 142 MB | **3s** 🟢 | ⭐⭐⭐⭐ | 90% benar, cocok untuk transkrip cepat |
-| **small** | 466 MB | 12s 🟡 | ⭐⭐⭐⭐⭐ | ✅ Sempurna |
-| **medium** | 1.5 GB | 36s 🔴 | ⭐⭐⭐⭐⭐ | ✅ Sempurna |
-| **large-v3-turbo** | 1.6 GB | 56s 🔴 | ⭐⭐⭐⭐⭐ | ✅ Sempurna |
-| **large-v3** | 2.9 GB | 69s 🔴 | ⭐⭐⭐⭐⭐ | ✅ Sempurna |
-
----
-
-### 🧪 Model Validation Test (Python/transformers)
-
-Sebagai validasi tambahan, kami melakukan test **Word Error Rate (WER)** menggunakan pipeline `transformers` pada sample yang sama untuk 4 model.
-
-**Sample test:**
-- 🇮🇩 ID: 13.9 detik — *"Selamat siang, selamat datang di webinar hari ini..."*
-- 🇬🇧 EN: 12.0 detik — *"Good morning everyone, thank you for joining today's meeting..."*
-
-| Model | Params | ID WER | EN WER | Catatan |
-|:------|:------:|:------:|:------:|:--------|
-| **tiny** | 39M | 8.33% | 6.90% | Cepat, typo minor "penerapanya" |
-| **base** | 74M | **0.00%** 🔥 | 10.34% | **ID sempurna!** EN terpotong di akhir |
-| **large-v3-turbo** | 809M | 4.17% | **3.45%** 🔥 | Akurasi global terbaik, beda hanya koma↔titik |
-
-> **Catatan:** Nilai WER di atas berasal dari Python/transformers (float32). Di Rust/GGUF (quantized Q5), akurasi bisa turun ~1-2% tetapi kecepatan **30× lebih cepat** — terutama untuk model besar seperti large-v3-turbo (272s di Python vs ~5-10s di Rust/GGUF).
+> **Catatan:** WER diuji dengan Python/transformers (float32). Di Rust/GGUF (Q5 quantized), akurasi bisa turun ~1-2% tetapi kecepatan hingga **30× lebih cepat**.
 
 ### Fine-tune Model (HuggingFace)
 
 Untuk pengguna yang ingin akurasi ID lebih tinggi, model fine-tune seperti `cahya/whisper-small-id` tersedia di HuggingFace. Saat ini model tersebut belum di-convert ke format GGUF — kontribusi dari komunitas sangat diterima! 🙌
 
-Untuk Trascribe, **model original OpenAI (base / large-v3-turbo) sudah cukup akurat untuk ID** dengan WER 0-4%.
+Untuk Trascribe, **model bawaan (base / large-v3-turbo-q5) sudah cukup akurat untuk ID** dengan WER 0-4%.
 
-### 🎯 Target 3-5 Detik
+### Progressive Transcription
 
-Untuk mencapai transkripsi dalam **3-5 detik**, hanya model **tiny** dan **base** yang memenuhi di CPU ini. Tapi akurasinya terbatas, terutama untuk bahasa Indonesia.
-
-**Solusi: Progressive Transcription (Hybrid)**
+Untuk transkripsi real-time + akurat:
 ```
-🎯 Real-time (3-5 detik) → Model TINY → Tampilkan hasil cepat
+🎯 3-5 detik → base → Tampilkan hasil cepat
    ↓
-🔧 Background (30-60 detik) → Model LARGE-TURBO → Refine otomatis
+🔧 Background → large-v3-turbo-q5 → Refine otomatis
    ↓
-🔄 UI terupdate dengan hasil yang lebih akurat
+🔄 UI terupdate dengan hasil lebih akurat
 ```
-
-Cara kerja:
-1. Rekaman selesai → **tiny/base** langsung transkrip dalam 3-5 detik
-2. Hasil cepat ditampilkan ke user
-3. Di **background**, model **large-v3-turbo** memproses ulang audio yang sama
-4. Setelah selesai, hasil transkrip **di-refine otomatis**
-5. User tidak perlu menunggu — dapat hasil cepat + akurat dalam satu workflow
-
-### Auto-recommendation
-The setup wizard automatically suggests a model based on your hardware:
-- ≤ 4 GB RAM → **base** (progressive mode: base → small)
-- 4–8 GB RAM → **small** (progressive mode: tiny → large-turbo-q5)
-- 8+ GB RAM → **large-v3-turbo-q5** 🏆 (progressive mode: tiny → large-turbo-q5)
-- 16+ GB RAM → **large-v3-turbo-q5** (or F16 for maximum quality)
 
 ---
 
@@ -283,7 +240,7 @@ Both scripts: build Rust release → build Flutter release → sign → package 
 ```bash
 cd rust_core
 cargo run --bin trascribe -- \
-  --batch "*.mp3" --output ./transcripts/ --model models/ggml-tiny.bin
+  --batch '*.mp3' --output ./transcripts/ --model models/ggml-base.bin
 ```
 
 ---
@@ -309,7 +266,7 @@ cargo run --bin trascribe -- \
 - **macOS Gatekeeper** — Ad-hoc signing shows "Apple cannot verify this app" on first launch. Right-click → Open to bypass once.
 - **Windows SmartScreen** — Self-signed certificate triggers "Windows protected your PC" on first run until reputation is established.
 - **No auto-update (v1)** — Users check manually via Help → Check for Updates. Ed25519-signed auto-update planned for v2.
-- **Model downloads require internet** — `tiny` (~75 MB) bundled; larger models download on-demand via HTTPS (SHA256-verified).
+- **Both models bundled** — `base` (142 MB) and `large-v3-turbo-q5` (548 MB) included in the app — no download needed.
 - **Live audio capture** — End-to-end hardware validation across target microphones/speakers is ongoing.
 
 ---
@@ -322,7 +279,7 @@ cargo run --bin trascribe -- \
 
 ### What models are supported?
 
-Any GGUF-format Whisper model. `tiny` (~75 MB) is bundled. `base`, `small`, `medium`, and `large-v3-turbo` download on-demand with resume support.
+Any GGUF-format Whisper model. `base` (142 MB) and `large-v3-turbo-q5` (548 MB) are bundled in the app.
 
 ### Can I transcribe pre-recorded files?
 
