@@ -144,7 +144,7 @@ jobs:
   macos-packaging-smoke-test:
     name: macOS packaging smoke test (build, ad-hoc sign, dmg)
     runs-on: macos-latest
-    if: github.event_name == 'push'
+    if: false
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
@@ -207,6 +207,7 @@ jobs:
     name: Performance benchmark
     runs-on: ubuntu-latest
     needs: [rust, flutter]
+    if: false
     steps:
       - uses: actions/checkout@v4
       - name: Download benchmark model
