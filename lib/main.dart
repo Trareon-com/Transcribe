@@ -1,9 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
 
 import 'screens/main_screen.dart';
 import 'services/rust_library_loader.dart';
@@ -13,13 +11,6 @@ import 'src/rust/frb_generated.dart';
 import 'state/models.dart';
 import 'state/settings_model.dart';
 import 'theme/app_theme.dart';
-
-/// Bundled model files (shipped with the installer — no download needed).
-const _bundledModels = [
-  'ggml-tiny.bin',
-  'ggml-base.bin',
-  'ggml-large-v3-turbo-q5_0.bin',
-];
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,39 +27,12 @@ void main() async {
 
   // Extract bundled models to app data directory (once — after that
   // the files stay on disk and loading is instant).
-  await _ensureBundledModels();
+  // Models are resolved at runtime via modelPathForId() in models.dart
+  // No need to extract bundled models as assets anymore.
 
   await TrayService.instance.init();
 
   runApp(const ProviderScope(child: TranscribeApp()));
-}
-
-/// Copies bundled models from Flutter assets to the app's models directory
-/// so Rust/whisper-rs can load them via a normal filesystem path.
-///
-/// Only copies files that don't already exist (checked by name), so after
-/// the first launch this function is essentially free — no I/O, no delays.
-Future<void> _ensureBundledModels() async {
-  final appDir = await getApplicationSupportDirectory();
-  final modelsDir = Directory('${appDir.path}/models');
-  if (!modelsDir.existsSync()) {
-    modelsDir.createSync(recursive: true);
-  }
-
-  for (final filename in _bundledModels) {
-    final dest = File('${modelsDir.path}/$filename');
-    if (dest.existsSync()) continue; // already extracted
-
-    final assetPath = 'rust_core/models/$filename';
-    try {
-      final data = await rootBundle.load(assetPath);
-      await dest.writeAsBytes(data.buffer.asUint8List());
-    } catch (e) {
-      // Model not bundled in this build variant (e.g. debug/web) —
-      // not fatal; the user can download models via the UI.
-      print('⚠️  bundled model not found: $assetPath ($e)');
-    }
-  }
 }
 
 class _AlreadyRunningApp extends StatelessWidget {
