@@ -485,11 +485,11 @@ class _ModelChoiceStep extends StatelessWidget {
   const _ModelChoiceStep({required this.selected, required this.onChanged});
 
   static const _models = [
-    ('tiny', 'tiny (~75 MB)', 'Sudah termasuk di aplikasi · Tercepat'),
-    ('base', 'base (~150 MB)', 'Keseimbangan akurasi & cepat'),
-    ('small', 'small (~500 MB)', 'Akurasi tinggi multi-bahasa'),
-    ('medium', 'medium (~1.5 GB)', 'Kualitas transkripsi presisi'),
-    ('large-v3-turbo', 'large-v3-turbo (~1.6 GB)', '⭐ Model Terbaik'),
+    ('tiny', 'tiny (~75 MB)', '75 MB · ⚡ 0.3× real-time · RAM ~260 MB · Akurasi rendah'),
+    ('base', 'base (~150 MB)', '150 MB · ~0.5× real-time · RAM ~400 MB · Akurasi sedang'),
+    ('small', 'small (~500 MB)', '465 MB · 0.5× real-time · RAM ~900 MB · Akurasi baik'),
+    ('medium', 'medium (~1.5 GB)', '1.5 GB · RAM ~2.8 GB · Akurasi sangat baik'),
+    ('large-v3-turbo', 'large-v3-turbo (~1.6 GB)', '1.6 GB · RAM ~3.2 GB · ⭐ Akurasi terbaik (GPU disarankan)'),
   ];
 
   @override

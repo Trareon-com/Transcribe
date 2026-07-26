@@ -248,7 +248,7 @@ pub fn poll_events(session_id: &str) -> Result<Vec<SessionEvent>, TrascribeError
         let since_last_split = state.last_split_at.elapsed().as_secs();
         let memory_ratio = crate::memory::system_memory_usage_ratio();
         if let Some(reason) = should_split(since_last_split, memory_ratio) {
-            drop(state);
+            // Borrow dari reg.get() di atas ends here — get_mut available
             if let Some(state) = reg.get_mut(session_id) {
                 state.last_split_at = std::time::Instant::now();
                 tracing::info!(

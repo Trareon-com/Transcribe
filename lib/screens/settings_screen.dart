@@ -76,6 +76,13 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
               _SettingsTile(
+                icon: Icons.info_outline,
+                label: 'Perbandingan Model',
+                subtitle: 'tiny (75MB) ⚡ · base (150MB) · small (465MB) · medium (1.5GB) · large-v3 (1.6GB) ⭐\n'
+                    'Semakin besar model → akurasi naik, kecepatan turun. Lihat README untuk detail.',
+                trailing: const SizedBox.shrink(),
+              ),
+              _SettingsTile(
                 icon: Icons.meeting_room_outlined,
                 label: 'Mode default',
                 trailing: _CompactDropdown<SessionMode>(

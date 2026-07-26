@@ -99,6 +99,28 @@ Each export format runs in its own thread for parallel processing.
 
 ---
 
+## Model Comparison
+
+Trareon Transcribe uses [whisper.cpp](https://github.com/ggerganov/whisper.cpp) GGML/GGUF models. Bigger models mean better accuracy but slower performance and higher memory usage.
+
+| Model | Size | RAM Usage | Speed (9.5s audio) | Accuracy (ID) | Best For |
+|-------|:----:|:---------:|:-------------------:|:-------------:|----------|
+| **tiny** | 75 MB | ~260 MB | ⚡ 0.3× real-time | Low | Real-time monitoring, low-spec machines |
+| **base** | 150 MB | ~400 MB | ⚡ ~0.5× real-time | Medium | Balanced speed/accuracy |
+| **small** | 465 MB | ~900 MB | 🐢 ~0.5× real-time | Good | Daily use, decent accuracy |
+| **medium** | 1.5 GB | ~2.8 GB | 🐢 ~0.2× real-time | Very Good | High-accuracy transcription |
+| **large-v3-turbo** | 1.6 GB | ~3.2 GB | 🐢 ~0.15× real-time | Excellent | Best accuracy, GPU recommended |
+
+> **Note:** Speed tests measured on CPU (no GPU) with debug build. Release builds are ~2–4× faster. Indonesian language accuracy improves significantly with small+ models.
+
+### Auto-recommendation
+The setup wizard automatically suggests a model based on your hardware:
+- ≤ 4 GB RAM → **tiny**
+- 4–8 GB RAM → **base** or **small**
+- 8+ GB RAM → **medium** or **large-v3-turbo**
+
+---
+
 ## Screenshots
 
 > Screenshots will be added to `assets/screenshots/` before the first public release. The current UI reflects pre-1.0 development — visual polish and final layout adjustments are ongoing.
