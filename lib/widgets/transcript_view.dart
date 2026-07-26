@@ -172,13 +172,18 @@ class _TranscriptViewState extends State<TranscriptView> {
           child: Builder(
             builder: (context) {
               final query = _searchQuery.trim().toLowerCase();
-              final filtered = query.isEmpty
-                  ? widget.segments
-                  : widget.segments
-                      .where((s) => s.text.toLowerCase().contains(query) || s.speaker.toLowerCase().contains(query))
-                      .toList();
+              // Build (originalIndex, segment) pairs — single pass, no O(n)
+              // indexOf per row.
+              final items = query.isEmpty
+                  ? [for (var i = 0; i < widget.segments.length; i++) (i, widget.segments[i])]
+                  : [
+                      for (var i = 0; i < widget.segments.length; i++)
+                        if (widget.segments[i].text.toLowerCase().contains(query) ||
+                            widget.segments[i].speaker.toLowerCase().contains(query))
+                          (i, widget.segments[i]),
+                    ];
 
-              if (filtered.isEmpty) {
+              if (items.isEmpty) {
                 return Center(
                   child: Text(
                     query.isNotEmpty ? 'Tidak ada segmen cocok' : 'Belum ada transkrip',
@@ -186,14 +191,12 @@ class _TranscriptViewState extends State<TranscriptView> {
                   ),
                 );
               }
-
               return ListView.builder(
                 controller: _scrollController,
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                itemCount: filtered.length,
+                itemCount: items.length,
                 itemBuilder: (context, index) {
-                  final seg = filtered[index];
-                  final originalIndex = widget.segments.indexOf(seg);
+                  final (originalIndex, seg) = items[index];
                   return _SegmentTile(
                     segment: seg,
                     onEdit: widget.onEdit == null

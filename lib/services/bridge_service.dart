@@ -49,15 +49,27 @@ abstract class RustBridge {
     String? language,
   });
 
-  /// Writes [segments] to `outputDir/<sanitized title>/` as Markdown, TXT,
-  /// and JSON. The JSON file doubles as the Library's persisted record —
-  /// see `loadLibrarySessions` in `state/library_loader.dart`, which reads
-  /// it back by scanning `outputDir`.
+  /// Writes [segments] to `outputDir/<sanitized title>/` in each requested
+  /// format. Defaults to Markdown+TXT+JSON (the library record set).
+  /// Pass explicit [formats] from the export dialog for user-chosen formats.
   Future<void> exportSession({
     required List<TranscriptSegment> segments,
     required String outputDir,
     required String title,
+    List<rust_export.ExportFormat> formats = const [
+      rust_export.ExportFormat.markdown,
+      rust_export.ExportFormat.txt,
+      rust_export.ExportFormat.json,
+    ],
   });
+
+  /// Prevents transcript and VU events from being forwarded to the Dart
+  /// stream controllers during a pause. The Rust-side poll keeps draining the
+  /// mpsc channel (preventing overflow) but events are silently discarded.
+  void pauseSession(String sessionId);
+
+  /// Resumes event forwarding for a previously-paused session.
+  void resumeSession(String sessionId);
 }
 
 class RustBridgeMock implements RustBridge {
@@ -203,7 +215,18 @@ class RustBridgeMock implements RustBridge {
     required List<TranscriptSegment> segments,
     required String outputDir,
     required String title,
+    List<rust_export.ExportFormat> formats = const [
+      rust_export.ExportFormat.markdown,
+      rust_export.ExportFormat.txt,
+      rust_export.ExportFormat.json,
+    ],
   }) async {}
+
+  @override
+  void pauseSession(String sessionId) {}
+
+  @override
+  void resumeSession(String sessionId) {}
 }
 
 /// Real bridge backed by the flutter_rust_bridge-generated bindings in
@@ -216,6 +239,7 @@ class RustEngineBridge implements RustBridge {
   final Map<String, StreamController<VuLevel>> _vuControllers = {};
   final Map<String, Timer> _pollTimers = {};
   final Set<String> _polling = {};
+  final Set<String> _pausedSessions = {};
 
   @override
   Future<String> startSession(SessionConfig config) async {
@@ -230,10 +254,17 @@ class RustEngineBridge implements RustBridge {
   Future<void> stopSession(String sessionId) async {
     _pollTimers.remove(sessionId)?.cancel();
     _polling.remove(sessionId);
+    _pausedSessions.remove(sessionId);
     await rust_api.stopSession(sessionId: sessionId);
     await _transcriptControllers.remove(sessionId)?.close();
     await _vuControllers.remove(sessionId)?.close();
   }
+
+  @override
+  void pauseSession(String sessionId) => _pausedSessions.add(sessionId);
+
+  @override
+  void resumeSession(String sessionId) => _pausedSessions.remove(sessionId);
 
   @override
   Future<void> toggleMic(String sessionId, bool enabled) =>
@@ -265,31 +296,32 @@ class RustEngineBridge implements RustBridge {
     if (!_polling.add(sessionId)) return;
     try {
       final events = await rust_session.pollEvents(sessionId: sessionId);
+      // Always drain events even when paused — this prevents the Rust mpsc
+      // channel from filling up and blocking capture threads. Events are
+      // simply not forwarded to the Dart stream controllers.
+      final paused = _pausedSessions.contains(sessionId);
       var micLevel = 0.0;
       var speakerLevel = 0.0;
       var hasVu = false;
       for (final event in events) {
         event.when(
           transcript: (segment) {
-            _transcriptControllers[sessionId]?.add(_fromRustSegment(segment));
+            if (!paused) _transcriptControllers[sessionId]?.add(_fromRustSegment(segment));
           },
           vu: (source, level) {
-            hasVu = true;
-            if (source == 'mic') {
-              micLevel = level;
-            } else if (source == 'spk') {
-              speakerLevel = level;
+            if (!paused) {
+              hasVu = true;
+              if (source == 'mic') { micLevel = level; }
+              else if (source == 'spk') { speakerLevel = level; }
             }
           },
         );
       }
       if (hasVu) {
-        _vuControllers[sessionId]?.add(
-          VuLevel(micLevel: micLevel, speakerLevel: speakerLevel),
-        );
+        _vuControllers[sessionId]?.add(VuLevel(micLevel: micLevel, speakerLevel: speakerLevel));
       }
     } on Object catch (_) {
-      // Session shutdown races with the 100ms poll timer are expected.
+      // Session shutdown races with the 200ms poll timer are expected.
     } finally {
       _polling.remove(sessionId);
     }
@@ -387,6 +419,11 @@ class RustEngineBridge implements RustBridge {
     required List<TranscriptSegment> segments,
     required String outputDir,
     required String title,
+    List<rust_export.ExportFormat> formats = const [
+      rust_export.ExportFormat.markdown,
+      rust_export.ExportFormat.txt,
+      rust_export.ExportFormat.json,
+    ],
   }) async {
     await rust_api.exportSession(
       segments: segments
@@ -403,11 +440,7 @@ class RustEngineBridge implements RustBridge {
             ),
           )
           .toList(),
-      formats: const [
-        rust_export.ExportFormat.markdown,
-        rust_export.ExportFormat.txt,
-        rust_export.ExportFormat.json,
-      ],
+      formats: formats,
       outputDir: outputDir,
       title: title,
     );
@@ -450,7 +483,6 @@ class RustEngineBridge implements RustBridge {
       defaultMode: _fromRustSessionMode(settings.defaultMode),
       libraryPath: settings.libraryPath,
       vadEnabled: settings.vadEnabled,
-      echoDedupeEnabled: settings.echoDedupeEnabled,
       language: settings.language,
       // autoStopMinutes is Dart-only; defaults to null (disabled) on load
       autoStopMinutes: null,
@@ -468,7 +500,8 @@ class RustEngineBridge implements RustBridge {
       alwaysOnTop: false,
       autoSaveIntervalSecs: 10,
       vadEnabled: settings.vadEnabled,
-      echoDedupeEnabled: settings.echoDedupeEnabled,
+      // echoDedupeEnabled is mode-determined in Rust; always persist true
+      echoDedupeEnabled: true,
       language: settings.language,
     );
   }

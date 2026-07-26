@@ -8,6 +8,7 @@ import 'package:trascribe/state/models.dart';
 import 'package:trascribe/state/settings_model.dart';
 import 'package:trascribe/src/rust/audio/device.dart' as rust_device;
 import 'package:trascribe/src/rust/session.dart' as rust_session;
+import 'package:trascribe/src/rust/export.dart' as rust_export;
 import 'package:trascribe/src/rust/stt/file.dart' as rust_stt_file;
 
 /// Timer-free test double
@@ -57,7 +58,12 @@ class _NoopBridge implements RustBridge {
     required List<TranscriptSegment> segments,
     required String outputDir,
     required String title,
+    List<rust_export.ExportFormat> formats = const [],
   }) async {}
+  @override
+  Future<void> pauseSession(String sessionId) async {}
+  @override
+  Future<void> resumeSession(String sessionId) async {}
 }
 
 void main() {
@@ -216,7 +222,6 @@ void main() {
       defaultMode: SessionMode.webinar,
       libraryPath: '/tmp/trascribe',
       vadEnabled: false,
-      echoDedupeEnabled: false,
       language: 'en',
     );
     await bridge.saveSettings(updated);
@@ -226,7 +231,6 @@ void main() {
     expect(reloaded.defaultModel, 'small');
     expect(reloaded.libraryPath, '/tmp/trascribe');
     expect(reloaded.vadEnabled, isFalse);
-    expect(reloaded.echoDedupeEnabled, isFalse);
     expect(reloaded.language, 'en');
   });
 }

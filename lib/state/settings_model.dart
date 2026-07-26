@@ -7,6 +7,10 @@ final rustBridgeProvider = Provider<RustBridge>((ref) => RustEngineBridge());
 
 class SettingsNotifier extends StateNotifier<AppSettings> {
   final RustBridge _bridge;
+  // Set to true as soon as either (a) the disk load completes or (b) a user
+  // action fires — whichever comes first. Prevents the disk load from
+  // overwriting an in-flight user change.
+  bool _userActed = false;
 
   SettingsNotifier(this._bridge) : super(AppSettings.defaults()) {
     _load();
@@ -14,9 +18,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
 
   Future<void> _load() async {
     final loaded = await _bridge.loadSettings();
-    if (state != AppSettings.defaults()) {
-      return;
-    }
+    if (_userActed) return;
+    _userActed = true;
     final sanitized = _sanitizeDefaultModel(loaded);
     state = sanitized;
     if (sanitized != loaded) {
@@ -36,30 +39,31 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       defaultMode: settings.defaultMode,
       libraryPath: settings.libraryPath,
       vadEnabled: settings.vadEnabled,
-      echoDedupeEnabled: settings.echoDedupeEnabled,
       language: settings.language,
       autoStopMinutes: settings.autoStopMinutes,
     );
   }
 
   Future<void> setTheme(AppThemeMode theme) async {
+    _userActed = true;
     state = state.copyWith(theme: theme);
     await _bridge.saveSettings(state);
   }
 
   Future<void> setDefaultMode(SessionMode mode) async {
+    _userActed = true;
     state = state.copyWith(defaultMode: mode);
     await _bridge.saveSettings(state);
   }
 
   Future<void> setLibraryPath(String path) async {
+    _userActed = true;
     state = AppSettings(
       theme: state.theme,
       defaultModel: state.defaultModel,
       defaultMode: state.defaultMode,
       libraryPath: path,
       vadEnabled: state.vadEnabled,
-      echoDedupeEnabled: state.echoDedupeEnabled,
       language: state.language,
       autoStopMinutes: state.autoStopMinutes,
     );
@@ -67,27 +71,13 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   }
 
   Future<void> setVadEnabled(bool enabled) async {
+    _userActed = true;
     state = AppSettings(
       theme: state.theme,
       defaultModel: state.defaultModel,
       defaultMode: state.defaultMode,
       libraryPath: state.libraryPath,
       vadEnabled: enabled,
-      echoDedupeEnabled: state.echoDedupeEnabled,
-      language: state.language,
-      autoStopMinutes: state.autoStopMinutes,
-    );
-    await _bridge.saveSettings(state);
-  }
-
-  Future<void> setEchoDedupeEnabled(bool enabled) async {
-    state = AppSettings(
-      theme: state.theme,
-      defaultModel: state.defaultModel,
-      defaultMode: state.defaultMode,
-      libraryPath: state.libraryPath,
-      vadEnabled: state.vadEnabled,
-      echoDedupeEnabled: enabled,
       language: state.language,
       autoStopMinutes: state.autoStopMinutes,
     );
@@ -95,13 +85,13 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   }
 
   Future<void> setLanguage(String? language) async {
+    _userActed = true;
     state = AppSettings(
       theme: state.theme,
       defaultModel: state.defaultModel,
       defaultMode: state.defaultMode,
       libraryPath: state.libraryPath,
       vadEnabled: state.vadEnabled,
-      echoDedupeEnabled: state.echoDedupeEnabled,
       language: language,
       autoStopMinutes: state.autoStopMinutes,
     );
@@ -109,13 +99,13 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   }
 
   Future<void> setDefaultModel(String modelId) async {
+    _userActed = true;
     state = AppSettings(
       theme: state.theme,
       defaultModel: modelId,
       defaultMode: state.defaultMode,
       libraryPath: state.libraryPath,
       vadEnabled: state.vadEnabled,
-      echoDedupeEnabled: state.echoDedupeEnabled,
       language: state.language,
       autoStopMinutes: state.autoStopMinutes,
     );
@@ -123,13 +113,13 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   }
 
   Future<void> setAutoStopMinutes(int? minutes) async {
+    _userActed = true;
     state = AppSettings(
       theme: state.theme,
       defaultModel: state.defaultModel,
       defaultMode: state.defaultMode,
       libraryPath: state.libraryPath,
       vadEnabled: state.vadEnabled,
-      echoDedupeEnabled: state.echoDedupeEnabled,
       language: state.language,
       autoStopMinutes: minutes,
     );

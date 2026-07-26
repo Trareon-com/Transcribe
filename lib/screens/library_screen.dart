@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -7,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../services/bridge_service.dart';
+import '../src/rust/export.dart' as rust_export;
 import '../state/models.dart';
 import '../state/settings_model.dart';
 import '../theme/app_colors.dart';
@@ -52,6 +54,9 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   String _query = '';
   List<SessionSummary> _sessions = [];
   bool _loading = true;
+  // Soft-delete: timer fires real disk deletion after SnackBar expires.
+  // Cancelled immediately if the user taps "Urungkan".
+  final Map<String, Timer> _pendingDeletions = {};
 
   @override
   void initState() {
@@ -132,6 +137,15 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    // Flush all pending deletions immediately when screen closes
+    for (final entry in _pendingDeletions.entries) {
+      entry.value.cancel();
+      try {
+        final dir = Directory(entry.key);
+        if (dir.existsSync()) dir.deleteSync(recursive: true);
+      } catch (_) {}
+    }
+    _pendingDeletions.clear();
     super.dispose();
   }
 
@@ -144,15 +158,30 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
   void _deleteSession(SessionSummary session) {
     final index = _sessions.indexOf(session);
     if (index == -1) return;
+
+    // Remove from UI immediately (optimistic). Actual disk deletion is
+    // deferred by 5 s so "Urungkan" can cancel it before data is gone.
     setState(() => _sessions.removeAt(index));
-    final dir = Directory(session.id);
-    if (dir.existsSync()) dir.deleteSync(recursive: true);
+    _pendingDeletions[session.id]?.cancel();
+    _pendingDeletions[session.id] = Timer(const Duration(seconds: 5), () {
+      _pendingDeletions.remove(session.id);
+      try {
+        final dir = Directory(session.id);
+        if (dir.existsSync()) dir.deleteSync(recursive: true);
+      } catch (_) {}
+    });
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('"${session.title}" dihapus.'),
         action: SnackBarAction(
           label: 'Urungkan',
-          onPressed: () => setState(() => _sessions.insert(index.clamp(0, _sessions.length), session)),
+          onPressed: () {
+            _pendingDeletions.remove(session.id)?.cancel();
+            if (mounted) {
+              setState(() => _sessions.insert(index.clamp(0, _sessions.length), session));
+            }
+          },
         ),
         duration: const Duration(seconds: 4),
       ),
@@ -434,11 +463,20 @@ Future<void> showExportDialog(
   );
   if (outputDir == null || !context.mounted) return;
 
+  final formats = [
+    if (selected.contains('md')) rust_export.ExportFormat.markdown,
+    if (selected.contains('txt')) rust_export.ExportFormat.txt,
+    if (selected.contains('json')) rust_export.ExportFormat.json,
+    if (selected.contains('srt')) rust_export.ExportFormat.srt,
+    if (selected.contains('vtt')) rust_export.ExportFormat.vtt,
+  ];
+
   try {
     await bridge.exportSession(
       segments: session.segments,
       outputDir: outputDir,
       title: session.title,
+      formats: formats,
     );
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(

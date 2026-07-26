@@ -8,6 +8,7 @@ import 'package:trascribe/state/settings_model.dart';
 import 'package:trascribe/screens/settings_screen.dart';
 import 'package:trascribe/src/rust/audio/device.dart' as rust_device;
 import 'package:trascribe/src/rust/session.dart' as rust_session;
+import 'package:trascribe/src/rust/export.dart' as rust_export;
 import 'package:trascribe/src/rust/stt/file.dart' as rust_stt_file;
 
 class _TestBridge implements RustBridge {
@@ -58,7 +59,12 @@ class _TestBridge implements RustBridge {
     required List<TranscriptSegment> segments,
     required String outputDir,
     required String title,
+    List<rust_export.ExportFormat> formats = const [],
   }) async {}
+  @override
+  Future<void> pauseSession(String sessionId) async {}
+  @override
+  Future<void> resumeSession(String sessionId) async {}
 }
 
 void main() {

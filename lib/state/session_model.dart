@@ -230,12 +230,15 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     _autoStopTimer?.cancel();
     _autoStopTimer = null;
     _cancelLiveStreams();
+    final id = state.sessionId;
+    if (id != null) _bridge.pauseSession(id);
     state = state.copyWith(lifecycle: SessionLifecycle.paused);
   }
 
   void resume() {
     final id = state.sessionId;
     if (id == null || state.lifecycle != SessionLifecycle.paused) return;
+    _bridge.resumeSession(id);
     _subscribeToLiveStreams(id);
     _resetAutoStopTimer();
     state = state.copyWith(lifecycle: SessionLifecycle.recording);

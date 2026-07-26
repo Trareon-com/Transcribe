@@ -224,7 +224,6 @@ class AppSettings {
   final SessionMode defaultMode;
   final String libraryPath;
   final bool vadEnabled;
-  final bool echoDedupeEnabled;
   final String? language;
   final int? autoStopMinutes;
 
@@ -234,7 +233,6 @@ class AppSettings {
     required this.defaultMode,
     required this.libraryPath,
     required this.vadEnabled,
-    required this.echoDedupeEnabled,
     this.language,
     this.autoStopMinutes,
   });
@@ -245,7 +243,6 @@ class AppSettings {
         defaultMode: SessionMode.online,
         libraryPath: '~/Documents/Trascribe',
         vadEnabled: true,
-        echoDedupeEnabled: true,
       );
 
   AppSettings copyWith({
@@ -260,7 +257,6 @@ class AppSettings {
       defaultMode: defaultMode ?? this.defaultMode,
       libraryPath: libraryPath,
       vadEnabled: vadEnabled,
-      echoDedupeEnabled: echoDedupeEnabled,
       language: language,
       autoStopMinutes: clearAutoStop ? null : (autoStopMinutes ?? this.autoStopMinutes),
     );
