@@ -18,26 +18,6 @@ import '../widgets/session_card.dart';
 import '../widgets/storage_bar.dart';
 import 'transcript_player_screen.dart';
 
-class SessionSummary {
-  final String id;
-  final String title;
-  final String date;
-  final double durationSeconds;
-  final int segmentsCount;
-  final List<TranscriptSegment> segments;
-  final String? audioPath;
-
-  const SessionSummary({
-    required this.id,
-    required this.title,
-    required this.date,
-    required this.segmentsCount,
-    this.segments = const [],
-    this.durationSeconds = 0,
-    this.audioPath,
-  });
-}
-
 class LibraryScreen extends ConsumerStatefulWidget {
   /// Optional seed list used in tests to bypass the async disk load.
   final List<SessionSummary>? sessions;

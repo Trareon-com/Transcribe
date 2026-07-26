@@ -16,6 +16,7 @@ class SessionUiState {
   final SessionConfig config;
   final List<TranscriptSegment> segments;
   final String sessionTitle;
+  final double elapsedSeconds;
 
   const SessionUiState({
     required this.lifecycle,
@@ -23,6 +24,7 @@ class SessionUiState {
     this.sessionId,
     this.segments = const [],
     this.sessionTitle = '',
+    this.elapsedSeconds = 0,
   });
 
   /// Average confidence across current segments, or null if there are none
@@ -39,6 +41,7 @@ class SessionUiState {
     SessionConfig? config,
     List<TranscriptSegment>? segments,
     String? sessionTitle,
+    double? elapsedSeconds,
   }) {
     return SessionUiState(
       lifecycle: lifecycle ?? this.lifecycle,
@@ -46,6 +49,7 @@ class SessionUiState {
       config: config ?? this.config,
       segments: segments ?? this.segments,
       sessionTitle: sessionTitle ?? this.sessionTitle,
+      elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
     );
   }
 }

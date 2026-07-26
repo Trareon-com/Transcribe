@@ -262,3 +262,24 @@ class AppSettings {
     );
   }
 }
+
+/// Summary of a recorded session, used by LibraryScreen and export dialogs.
+class SessionSummary {
+  final String id;
+  final String title;
+  final String date;
+  final double durationSeconds;
+  final int segmentsCount;
+  final List<TranscriptSegment> segments;
+  final String? audioPath;
+
+  const SessionSummary({
+    required this.id,
+    required this.title,
+    required this.date,
+    required this.segmentsCount,
+    this.segments = const [],
+    this.durationSeconds = 0,
+    this.audioPath,
+  });
+}

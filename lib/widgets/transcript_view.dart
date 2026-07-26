@@ -328,9 +328,10 @@ class _SegmentTile extends StatelessWidget {
           ),
         ),
       ),
-      ),
-    );
-  }
+    ),
+  ),
+);
+}
 
   void _openEditDialog(BuildContext context) {
     final controller = TextEditingController(text: segment.text);
