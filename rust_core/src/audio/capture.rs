@@ -111,9 +111,9 @@ fn resolve_device(
     device_name: Option<&str>,
 ) -> Result<cpal::Device, TranscribeError> {
     match device_name {
-        None => host
-            .default_input_device()
-            .ok_or_else(|| TranscribeError::AudioDevice("no default input device available".into())),
+        None => host.default_input_device().ok_or_else(|| {
+            TranscribeError::AudioDevice("no default input device available".into())
+        }),
         Some(name) => resolve_named_device(host, name),
     }
 }

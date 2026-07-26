@@ -510,7 +510,8 @@ mod tests {
 
     #[test]
     fn recovery_snapshot_roundtrip_and_cleanup() {
-        let dir = std::env::temp_dir().join(format!("transcribe_recovery_{}", uuid::Uuid::new_v4()));
+        let dir =
+            std::env::temp_dir().join(format!("transcribe_recovery_{}", uuid::Uuid::new_v4()));
         let _ = std::fs::remove_dir_all(&dir);
         set_recovery_dir_override(Some(dir.clone()));
 

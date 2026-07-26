@@ -5,7 +5,10 @@ use std::time::Instant;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = std::env::args().collect();
-    let audio_path = args.get(1).map(|s| s.as_str()).unwrap_or("/tmp/sample_test.wav");
+    let audio_path = args
+        .get(1)
+        .map(|s| s.as_str())
+        .unwrap_or("/tmp/sample_test.wav");
     let model_name = args.get(2).map(|s| s.as_str()).unwrap_or("tiny");
 
     let model_file = format!("ggml-{}.bin", model_name);
@@ -26,8 +29,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let decode_start = Instant::now();
     let audio = rust_core::decode::decode_audio_file(Path::new(audio_path))
         .map_err(|e| format!("Decode error: {}", e))?;
-    println!("📐 Decoded: {:.1}s ({} samples @ {}Hz) in {:?}",
-        audio.duration_secs, audio.samples.len(), 16000, decode_start.elapsed());
+    println!(
+        "📐 Decoded: {:.1}s ({} samples @ {}Hz) in {:?}",
+        audio.duration_secs,
+        audio.samples.len(),
+        16000,
+        decode_start.elapsed()
+    );
 
     // 3. Load engine
     let load_start = Instant::now();
@@ -37,12 +45,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // 4. Transcribe
     let transcribe_start = Instant::now();
-    let result = engine.transcribe_chunk(
-        &audio.samples,
-        "sample",
-        0.0,
-        Some("id"),
-    ).map_err(|e| format!("Transcribe error: {}", e))?;
+    let result = engine
+        .transcribe_chunk(&audio.samples, "sample", 0.0, Some("id"))
+        .map_err(|e| format!("Transcribe error: {}", e))?;
 
     println!("⏱️  Transcribed in {:?}", transcribe_start.elapsed());
     println!("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
@@ -53,7 +58,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("   (tidak ada teks terdeteksi — mungkin model terlalu kecil atau audio terlalu pendek)");
     } else {
         for seg in &result {
-            println!("   [{:>6.1}s - {:>6.1}s] {}", seg.timestamp, seg.timestamp + seg.duration, seg.text);
+            println!(
+                "   [{:>6.1}s - {:>6.1}s] {}",
+                seg.timestamp,
+                seg.timestamp + seg.duration,
+                seg.text
+            );
         }
     }
 

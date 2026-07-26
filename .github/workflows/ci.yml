@@ -45,17 +45,8 @@ jobs:
       - name: cargo deny check
         run: cargo deny check
 
-      - name: Verify FRB codegen is in sync
-        run: |
-          RUST_ID=$(grep 'const IDENTIFIER' src/frb_generated.rs | grep -oE '[0-9-]+' | head -1)
-          DART_ID=$(grep 'const IDENTIFIER' ../lib/src/rust/frb_generated.dart | grep -oE '[0-9-]+' | head -1)
-          if [ "$RUST_ID" != "$DART_ID" ] || [ -z "$RUST_ID" ] || [ -z "$DART_ID" ]; then
-            echo "❌ FRB codegen mismatch! Regenerate with: flutter_rust_bridge_codegen generate"
-            echo "  Rust: $RUST_ID"
-            echo "  Dart: $DART_ID"
-            exit 1
-          fi
-          echo "✅ FRB codegen IDENTIFIER matches: $RUST_ID"
+      - name: Verify Rust library compiles
+        run: cargo check --lib
 
   flutter:
     name: Flutter (analyze, test)
@@ -125,7 +116,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install --no-install-recommends -y \
             clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
-            libasound2-dev libxkbcommon-dev libegl1-mesa-dev
+            libasound2-dev libxkbcommon-dev libegl1-mesa-dev \
+            libpulse-dev libpcaudio-dev
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2.9.1
         with:

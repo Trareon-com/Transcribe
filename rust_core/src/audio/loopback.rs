@@ -29,7 +29,9 @@ pub fn start_loopback(
     #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
     {
         let _ = (device_hint, samples_tx);
-        Err(TranscribeError::AudioDevice("loopback not supported".into()))
+        Err(TranscribeError::AudioDevice(
+            "loopback not supported".into(),
+        ))
     }
 }
 
@@ -87,7 +89,7 @@ pub(crate) mod macos {
     fn try_sck_capture(
         samples_tx: &mpsc::Sender<Vec<f32>>,
     ) -> Result<AudioCapture, TranscribeError> {
-        use screencapturekit::cm::{AudioBufferRef, AudioBufferList, CMSampleBuffer};
+        use screencapturekit::cm::{AudioBufferList, AudioBufferRef, CMSampleBuffer};
         use screencapturekit::prelude::*;
 
         let content = SCShareableContent::get().map_err(|e| {
@@ -127,11 +129,10 @@ pub(crate) mod macos {
                     }
                     if let Some(list) = sample.audio_buffer_list() {
                         for buf in list.iter() {
-                            let ptr = buf.m_data() as *const f32;
-                            let len = buf.m_data_byte_size() as usize / 4;
+                            let ptr = buf.data() as *const f32;
+                            let len = buf.data_byte_size() as usize / 4;
                             if !ptr.is_null() && len > 0 {
-                                let samples =
-                                    unsafe { std::slice::from_raw_parts(ptr, len) };
+                                let samples = unsafe { std::slice::from_raw_parts(ptr, len) };
                                 let _ = tx.send(samples.to_vec());
                             }
                         }
@@ -192,9 +193,10 @@ pub(crate) mod macos {
                         ))
                     })?;
 
-                let stdout = child.stdout.take().ok_or_else(|| {
-                    TranscribeError::AudioDevice("no stdout from ffmpeg".into())
-                })?;
+                let stdout = child
+                    .stdout
+                    .take()
+                    .ok_or_else(|| TranscribeError::AudioDevice("no stdout from ffmpeg".into()))?;
 
                 let _ = ready_tx.send(Ok(()));
                 let mut reader = std::io::BufReader::new(stdout);
@@ -212,9 +214,7 @@ pub(crate) mod macos {
                                 .chunks(4)
                                 .filter_map(|c| {
                                     if c.len() == 4 {
-                                        Some(f32::from_le_bytes([
-                                            c[0], c[1], c[2], c[3],
-                                        ]))
+                                        Some(f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
                                     } else {
                                         None
                                     }
@@ -443,8 +443,8 @@ pub(crate) mod linux {
                 .spawn();
         }
 
-        let mut child =
-            child.map_err(|e| TranscribeError::AudioDevice(format!("need ffmpeg or parec: {e}")))?;
+        let mut child = child
+            .map_err(|e| TranscribeError::AudioDevice(format!("need ffmpeg or parec: {e}")))?;
         let stdout = child
             .stdout
             .take()

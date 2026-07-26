@@ -109,9 +109,6 @@ class _TranscriptViewState extends State<TranscriptView> {
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
-  void _openFullScreen(BuildContext context) {
-    // Future: full-screen transcript view with larger text
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -334,7 +331,6 @@ class _SegmentTile extends StatelessWidget {
     final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
     final activeBg = speakerColor.withValues(alpha: isActive ? 0.12 : 0.0);
     final activeBorder = isActive ? speakerColor : Colors.transparent;
-    final tileBg = colors.chipBackground.withValues(alpha: 0.3);
 
     return Semantics(
       label: '${segment.speaker} pada ${_formatTime(segment.timestamp)}: ${segment.text}',

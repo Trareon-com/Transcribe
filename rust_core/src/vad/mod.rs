@@ -149,8 +149,10 @@ impl SileroDetector {
             .map_err(|e| TranscribeError::Model(format!("Silero input tensor failed: {e}")))?;
         let state = Tensor::from_array(([2usize, 1, 128], self.state.to_vec().into_boxed_slice()))
             .map_err(|e| TranscribeError::Model(format!("Silero state tensor failed: {e}")))?;
-        let sr = Tensor::from_array(([], vec![self.sample_rate].into_boxed_slice()))
-            .map_err(|e| TranscribeError::Model(format!("Silero sample-rate tensor failed: {e}")))?;
+        let sr =
+            Tensor::from_array(([], vec![self.sample_rate].into_boxed_slice())).map_err(|e| {
+                TranscribeError::Model(format!("Silero sample-rate tensor failed: {e}"))
+            })?;
         let outputs = self
             .session
             .run(ort::inputs![input, state, sr])

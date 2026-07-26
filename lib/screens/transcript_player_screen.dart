@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:audioplayers/audioplayers.dart';
 
-import '../services/bridge_service.dart';
 import '../state/models.dart';
 import '../state/settings_model.dart';
 import '../theme/app_colors.dart';

@@ -8,12 +8,10 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../services/bridge_service.dart';
 import '../src/rust/audio/device.dart';
 import '../state/models.dart';
 import '../state/settings_model.dart';
 import '../theme/app_colors.dart';
-import '../widgets/export_dialog.dart';
 class SetupWizardScreen extends ConsumerStatefulWidget {
   final VoidCallback onFinished;
 

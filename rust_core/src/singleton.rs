@@ -89,7 +89,10 @@ mod tests {
     use super::*;
 
     fn temp_lock_path() -> PathBuf {
-        std::env::temp_dir().join(format!("transcribe_lock_test_{}.lock", uuid::Uuid::new_v4()))
+        std::env::temp_dir().join(format!(
+            "transcribe_lock_test_{}.lock",
+            uuid::Uuid::new_v4()
+        ))
     }
 
     #[test]
