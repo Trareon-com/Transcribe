@@ -1,12 +1,12 @@
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/TrareonTranscribe-100%25-Offline%20Transcriber-00796B?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTIgMWEzIDMgMCAwIDAtMyAzdjhhMyAzIDAgMCAwIDYgMFY0YTMgMyAwIDAgMC0zLTN6Ii8+PHBhdGggZD0iTTE5IDEwdjJhNyA3IDAgMCAxLTE0IDB2LTIiLz48bGluZSB4MT0iMTIiIHkxPSIxOSIgeDI9IjEyIiB5Mj0iMjMiLz48bGluZSB4MT0iOCIgeTE9IjIzIiB4Mj0iMTYiIHkyPSIyMyIvPjwvc3ZnPg=="/>
-  <img alt="Trareon Transcribe" src="https://img.shields.io/badge/TrareonTranscribe-100%25-Offline%20Transcriber-00796B?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTIgMWEzIDMgMCAwIDAtMyAzdjhhMyAzIDAgMCAwIDYgMFY0YTMgMyAwIDAgMC0zLTN6Ii8+PHBhdGggZD0iTTE5IDEwdjJhNyA3IDAgMCAxLTE0IDB2LTIiLz48bGluZSB4MT0iMTIiIHkxPSIxOSIgeDI9IjEyIiB5Mj0iMjMiLz48bGluZSB4MT0iOCIgeTE9IjIzIiB4Mj0iMTYiIHkyPSIyMyIvPjwvc3ZnPg=="/>
+  <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/Trareon_Transcribe-100%25_Offline-00796B?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTIgMWEzIDMgMCAwIDAtMyAzdjhhMyAzIDAgMCAwIDYgMFY0YTMgMyAwIDAgMC0zLTN6Ii8+PHBhdGggZD0iTTE5IDEwdjJhNyA3IDAgMCAxLTE0IDB2LTIiLz48bGluZSB4MT0iMTIiIHkxPSIxOSIgeDI9IjEyIiB5Mj0iMjMiLz48bGluZSB4MT0iOCIgeTE9IjIzIiB4Mj0iMTYiIHkyPSIyMyIvPjwvc3ZnPg=="/>
+  <img alt="Trareon Transcribe" src="https://img.shields.io/badge/Trareon_Transcribe-100%25_Offline-00796B?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTIgMWEzIDMgMCAwIDAtMyAzdjhhMyAzIDAgMCAwIDYgMFY0YTMgMyAwIDAgMC0zLTN6Ii8+PHBhdGggZD0iTTE5IDEwdjJhNyA3IDAgMCAxLTE0IDB2LTIiLz48bGluZSB4MT0iMTIiIHkxPSIxOSIgeDI9IjEyIiB5Mj0iMjMiLz48bGluZSB4MT0iOCIgeTE9IjIzIiB4Mj0iMTYiIHkyPSIyMyIvPjwvc3ZnPg=="/>
 </picture>
 
 <h1 align="center">Trareon Transcribe</h1>
 
 <p align="center">
-  <strong>100% offline microphone + speaker transcription for macOS, Windows, and Linux.</strong><br/>
+  <strong>Desktop transcription app — 100% offline. Mic + speaker capture, local Whisper STT, multi-format export.</strong><br/>
   Zero network calls during transcription. Your audio never leaves your machine.
 </p>
 
@@ -24,18 +24,25 @@
     <img src="https://img.shields.io/badge/Flutter-3.27+-blue" alt="Flutter 3.27+"/>
   </a>
   <a href="https://github.com/ggerganov/whisper.cpp">
-    <img src="https://img.shields.io/badge/engine-whisper.cpp-FF6F00" alt="whisper.cpp"/>
+    <img src="https://img.shields.io/badge/Engine-whisper.cpp-FF6F00" alt="whisper.cpp"/>
   </a>
   <br/>
-  <a href="ARCHITECTURE.md">Architecture</a> •
-  <a href="CHANGELOG.md">Changelog</a> •
-  <a href="CONTRIBUTING.md">Contributing</a> •
-  <a href="SECURITY.md">Security</a>
+  <a href="#screenshots">Screenshots</a> •
+  <a href="#features">Features</a> •
+  <a href="#model-performance">Model Performance</a> •
+  <a href="#getting-started">Getting Started</a> •
+  <a href="#architecture">Architecture</a> •
+  <a href="ARCHITECTURE.md">Architecture (detail)</a> •
+  <a href="CHANGELOG.md">Changelog</a>
 </p>
 
 ---
 
-Trareon Transcribe is a desktop application that transcribes meetings, lectures, interviews, and any other audio source — 100% offline. It captures both microphone input and system speaker output simultaneously, runs speech-to-text locally via Whisper, and exports transcripts in multiple formats. No cloud services, no telemetry, no network calls during transcription.
+## Screenshots
+
+| 🏠 Layar Utama (siap) | 🎙️ Layar Utama (merekam) | ⚙️ Pengaturan |
+|:---:|:---:|:---:|
+| <img src="assets/screenshots/main-screen.png" width="300" alt="Main screen"/> | <img src="assets/screenshots/recording-screen.png" width="300" alt="Recording"/> | <img src="assets/screenshots/settings-screen.png" width="220" alt="Settings"/> |
 
 ---
 
@@ -53,49 +60,56 @@ Trareon Transcribe is a desktop application that transcribes meetings, lectures,
 - **Dual capture** — Simultaneously records microphone and system speaker audio for complete meeting coverage.
 - **Dual-stage VAD** — WebRTC VAD gate + confirmation detector for accurate speech boundaries.
 - **VU meter** — Real-time audio level indicators for both MIC and SPK channels.
-- **Platform loopback** — WASAPI loopback (Windows), CoreAudio Process Taps (macOS 14.4+), PipeWire (Linux).
+- **Platform-native loopback** — WASAPI loopback (Windows), CoreAudio Process Taps (macOS 14.4+), PipeWire (Linux).
+- **3 session modes** — Webinar (speaker only), Rapat Online (mic + speaker), Offline (mic only).
 
 ### Speech-to-Text
 
-- **whisper.cpp engine** — Local STT via `whisper-rs`, supporting GGUF models from `base` (142 MB) to `large-v3-turbo-q5` (548 MB).
-- **Multi-speaker diarization** — Acoustic feature clustering separates speakers in transcripts.
+- **Whisper STT engine** — Local speech-to-text via `whisper-rs`, supporting GGUF models from `tiny` (74 MB) to `large-v3-turbo-q5` (548 MB).
+- **Progressive transcription** — Hasil cepat dengan model tiny/base → refine otomatis dengan large-turbo di background.
+- **Multi-speaker diarization** — Acoustic feature clustering separates speakers in transcripts with 8 distinct colors.
 - **Echo deduplication** — Cross-source dedupe (MIC vs SPK similarity) prevents duplicate transcription.
 - **Priority queue** — Mic segments processed before speaker segments for responsive live transcription.
 - **Auto-split sessions** — Sessions split automatically by time (hourly) and memory pressure thresholds.
+- **Session recovery** — Detects and offers to recover interrupted sessions on restart.
 
 ### Export
 
 | Format | Description |
 |--------|-------------|
-| Markdown | Timestamped transcript with speaker labels |
-| TXT | Plain text, speaker-concatenated |
-| JSON | Structured segment data for programmatic use |
-| SRT | Subtitle format with sequence numbering |
-| VTT | WebVTT subtitle format |
-| HTML | Self-contained styled transcript page |
-| DOCX | Microsoft Word document |
-| WAV | Recorded audio alongside transcript |
+| **Markdown** | Timestamped transcript with speaker labels |
+| **TXT** | Plain text, speaker-concatenated |
+| **JSON** | Structured segment data for programmatic use |
+| **SRT** | Subtitle format with sequence numbering |
+| **VTT** | WebVTT subtitle format |
+| **HTML** | Self-contained styled transcript page |
+| **DOCX** | Microsoft Word document |
+| **WAV** | Recorded audio alongside transcript |
 
 Each export format runs in its own thread for parallel processing.
 
 ### User Interface
 
-- **Live transcript view** — Real-time text display with auto-scroll, search, and copy.
+- **Live transcript view** — Real-time text display with auto-scroll, search (with highlight), copy per segment or all.
+- **Speaker color coding** — 8 unique colors, easy to distinguish speakers at a glance.
 - **Pause/resume** — Toggle recording without ending the session.
 - **Session library** — Browse, search, delete (with undo), and re-export past sessions.
-- **Transcript player** — Seek, speed control, inline editing of transcript text.
+- **Transcript player** — Seek, speed control, inline editing of transcript text. Skip 10s buttons.
 - **Mode selector** — Webinar (speaker only), Rapat Online (mic + speaker), Offline (mic only).
-- **First-run setup wizard** — 3-step guided configuration: spec detection, model selection, tone test (no download needed).
+- **First-run setup wizard** — 3-step guided configuration: spec detection, model selection, tone test.
 - **Light / dark / system theme** — Full theme switching managed via Riverpod.
-- **Keyboard shortcuts** — Cmd+R (start/stop), Cmd+P (pause/resume), Cmd+L (library), Cmd+, (settings), Cmd+/ (shortcuts panel).
+- **Keyboard shortcuts** — Cmd/Ctrl+R (start/stop), Cmd/Ctrl+P (pause/resume), Cmd/Ctrl+L (library), Cmd/Ctrl+, (settings), Cmd/Ctrl+/ (shortcuts panel).
 - **Minimize to tray** — Recording continues when window is hidden.
+- **Recovery banner** — Automatically detects and offers to restore interrupted sessions.
 - **WCAG 2.2 AA accessibility** — Semantics labels, keyboard focus traversal, minimum 24×24pt tap targets.
 
 ### CLI & Batch Processing
 
 - **`transcribe` CLI** — Batch-transcribe audio files without the UI.
 - **`gen_fixtures`** — Generate synthetic WAV fixtures for hardware-free testing.
-- **Batch file upload** — Drag-and-drop audio files for multi-file transcription.
+- **`device_probe`** — List available audio input/output devices.
+- **`dual_capture_probe`** — Test dual-capture setup per platform.
+- **Batch file upload** — Drag-and-drop audio files for multi-file transcription on Library screen.
 
 ---
 
@@ -121,7 +135,7 @@ Trareon Transcribe menyertakan **2 model bawaan** — tidak perlu unduh:
 
 Untuk pengguna yang ingin akurasi ID lebih tinggi, model fine-tune seperti `cahya/whisper-small-id` tersedia di HuggingFace. Saat ini model tersebut belum di-convert ke format GGUF — kontribusi dari komunitas sangat diterima! 🙌
 
-Untuk Trareon Transcribe, **model bawaan (base / large-v3-turbo-q5) sudah cukup akurat untuk ID** dengan WER 0-4%.
+Model bawaan (base / large-v3-turbo-q5) sudah cukup akurat untuk ID dengan WER 0-4%.
 
 ### Progressive Transcription
 
@@ -136,22 +150,29 @@ Untuk transkripsi real-time + akurat:
 
 ---
 
-## Screenshots
-
-> Screenshots will be added to `assets/screenshots/` before the first public release. The current UI reflects pre-1.0 development — visual polish and final layout adjustments are ongoing.
-
-| Main Screen | Recording | Settings |
-|:---:|:---:|:---:|
-| *(pending)* | *(pending)* | *(pending)* |
-
----
-
 ## Architecture
 
 ```
 lib/                      Flutter UI (Dart)
 ├── screens/              Full-page screens
+│   ├── main_screen.dart           Main recording + transcript view
+│   ├── library_screen.dart        Session library browser
+│   ├── settings_screen.dart       Settings with theme, model, audio config
+│   ├── setup_wizard_screen.dart   3-step first-run wizard
+│   ├── transcript_player_screen.dart  Playback + inline edit
+│   ├── privacy_report_screen.dart Network activity monitor
+│   └── usage_dashboard_screen.dart  Usage statistics
 ├── widgets/              Reusable UI components
+│   ├── transcript_view.dart       Live transcript with search + highlight
+│   ├── vu_meter.dart              Audio level indicators
+│   ├── mode_selector.dart         Session mode tabs
+│   ├── stream_toggle.dart         Pause/resume control
+│   ├── export_dialog.dart         Export format picker
+│   ├── session_card.dart          Library session card
+│   ├── file_upload_zone.dart      Drag-and-drop upload
+│   ├── shortcuts_panel.dart       Keyboard shortcuts overlay
+│   ├── resource_hud.dart          System resource display
+│   └── storage_bar.dart           Storage usage bar
 ├── state/                Riverpod notifiers + data models
 ├── services/             Bridge interface + implementations
 ├── src/rust/             FRB-generated Dart bindings
@@ -160,17 +181,25 @@ lib/                      Flutter UI (Dart)
 rust_core/                Rust engine
 ├── src/
 │   ├── api.rs            Public FFI surface (FRB entry point)
-│   ├── audio/            Device enumeration, ring buffer, config
+│   ├── audio/            Device enumeration, ring buffer, capture
 │   ├── vad/              Dual-stage VAD
 │   ├── stt/              whisper-rs wrapper + batch transcription
 │   ├── dedupe/           Echo deduplication
+│   ├── diarization.rs    Speaker separation
+│   ├── pipeline.rs       Progressive transcription pipeline
 │   ├── export/           Multi-format export writers
 │   ├── decode/           Audio decode + resample (Symphonia + rubato)
-│   ├── model.rs          Catalog, SHA256 verification, resumable download
+│   ├── model.rs          Catalog, SHA256 verification, download
 │   ├── session.rs        Session registry, auto-split, recovery
 │   ├── settings.rs       Persistence layer
+│   ├── memory.rs         Memory pressure monitoring
+│   ├── watchdog.rs       Crash recovery watchdog
 │   └── singleton.rs      Single-instance PID lock
-└── bin/                  CLI tools (transcribe, gen_fixtures, device_probe)
+└── bin/                  CLI tools
+    ├── transcribe.rs     Batch CLI transcriber
+    ├── gen_fixtures.rs   Synthetic WAV generator
+    ├── device_probe.rs   Audio device lister
+    └── dual_capture_probe.rs  Dual-capture test tool
 ```
 
 See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the complete layout, data flow diagrams, and bridge implementation details.
@@ -181,12 +210,13 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the complete layout, data flow diag
 
 | Layer | Technology |
 |-------|------------|
-| **UI** | Flutter 3.27+ (Dart), Riverpod, flutter_rust_bridge 2.12 |
+| **UI** | Flutter 3.27+ (Dart), Riverpod, flutter_rust_bridge 2.x |
 | **Engine** | Rust 1.80+, edition 2021 |
-| **STT** | whisper.cpp via `whisper-rs` 0.14 |
-| **Audio capture** | `cpal` 0.15 |
+| **STT** | whisper.cpp via `whisper-rs` |
+| **Audio capture** | `cpal` |
 | **Audio decode** | Symphonia + rubato (pure Rust, no ffmpeg) |
-| **VAD** | WebRTC VAD (`webrtc-vad` 0.4) + confirmation stage |
+| **VAD** | WebRTC VAD (`webrtc-vad`) + confirmation stage |
+| **Diarization** | Acoustic feature clustering (local) |
 | **Export** | Markdown, TXT, JSON, SRT, VTT, HTML, DOCX (`docx-rs`), WAV (`hound`) |
 | **Model download** | `reqwest` with SHA256 verification + resume support |
 
@@ -255,19 +285,30 @@ cargo run --bin transcribe -- \
 | All export formats | ✅ | ✅ | ✅ |
 | CLI mode | ✅ | ✅ | ✅ |
 | CI build | ✅ | ✅ | ✅ |
-| Packaging script | ✅ (DMG) | ✅ (ZIP) | — |
-| Distribution channel | Lynk.ID ($5) | Lynk.ID ($5) | — |
-| Notarization / signing | Ad-hoc | Self-signed | — |
+| Package script | ✅ (DMG) | ✅ (ZIP) | — |
+| Distribution | Lynk.ID ($5) | Lynk.ID ($5) | — |
+| Signing | Ad-hoc | Self-signed | — |
+
+---
+
+## Keyboard Shortcuts
+
+| Shortcut | Action |
+|----------|--------|
+| `Cmd/Ctrl + R` | Start / Stop recording |
+| `Cmd/Ctrl + P` | Pause / Resume |
+| `Cmd/Ctrl + L` | Open Library |
+| `Cmd/Ctrl + ,` | Open Settings |
+| `Cmd/Ctrl + /` | Toggle shortcuts panel |
 
 ---
 
 ## Known Limitations
 
 - **macOS Gatekeeper** — Ad-hoc signing shows "Apple cannot verify this app" on first launch. Right-click → Open to bypass once.
-- **Windows SmartScreen** — Self-signed certificate triggers "Windows protected your PC" on first run until reputation is established.
+- **Windows SmartScreen** — Self-signed certificate triggers "Windows protected your PC" on first run.
 - **No auto-update (v1)** — Users check manually via Help → Check for Updates. Ed25519-signed auto-update planned for v2.
-- **Both models bundled** — `base` (142 MB) and `large-v3-turbo-q5` (548 MB) included in the app — no download needed.
-- **Live audio capture** — End-to-end hardware validation across target microphones/speakers is ongoing.
+- **Both models bundled** — `base` (142 MB) and `large-v3-turbo-q5` (548 MB) included in app.
 
 ---
 
@@ -275,11 +316,11 @@ cargo run --bin transcribe -- \
 
 ### Does Trareon Transcribe send my audio to the cloud?
 
-**No.** Trareon Transcribe is 100% offline. During transcription — both live capture and file transcription — the application makes zero network calls. The only network activity is downloading an optional Whisper model (HTTPS, SHA256-verified).
+**No.** Trareon Transcribe is 100% offline. During transcription — both live capture and file transcription — the application makes zero network calls.
 
 ### What models are supported?
 
-Any GGUF-format Whisper model. `base` (142 MB) and `large-v3-turbo-q5` (548 MB) are bundled in the app.
+Any GGUF-format Whisper model. `base` (142 MB) and `large-v3-turbo-q5` (548 MB) are bundled in the app. Also supports `tiny`, `small`, `medium`, `large-v3-turbo` via download.
 
 ### Can I transcribe pre-recorded files?
 
@@ -291,29 +332,7 @@ Acoustic feature clustering separates speakers based on voice characteristics �
 
 ### Is telemetry collected?
 
-**No.** There is no telemetry, analytics, or crash reporting. Any future opt-in diagnostics will be documented in [SECURITY.md](SECURITY.md) before release and will never transmit audio or transcript content.
-
-### How do I update?
-
-v1: manual check via Help → Check for Updates. Auto-update with Ed25519 binary verification is planned for v2.
-
-### How do I bypass the Gatekeeper / SmartScreen warning?
-
-- **macOS**: Right-click (or Ctrl+click) the app → Open → Click "Open". Subsequent launches work normally.
-- **Windows**: Click "More info" → "Run anyway".
-
----
-
-## Project Status
-
-Trareon Transcribe is in **pre-1.0 development**. The engine, UI, and CI pipeline are functional and tested, but the application has not yet undergone a public beta. Key milestones remaining before 1.0:
-
-- [ ] Live audio capture E2E validation across target hardware
-- [ ] Screenshots for README
-- [ ] Lynk.ID product page setup
-- [ ] macOS notarization
-- [ ] Windows code signing
-- [ ] Public beta release
+**No.** There is no telemetry, analytics, or crash reporting. Any future opt-in diagnostics will be documented in [SECURITY.md](SECURITY.md) and will never transmit audio or transcript content.
 
 ---
 
