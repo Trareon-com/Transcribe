@@ -18,7 +18,7 @@ String resolveTilde(String path) {
 
 String _modelFileName(String modelId) => switch (modelId) {
   'base' => 'ggml-base.bin',
-  'large-v3-turbo-q4_k_m' => 'ggml-large-v3-turbo-q4_k_m.gguf',
+  'large-v3-turbo-q5' => 'ggml-large-v3-turbo-q5_0.bin',
   _ => 'ggml-$modelId.bin',
 };
 

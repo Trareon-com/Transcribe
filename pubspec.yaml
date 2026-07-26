@@ -76,9 +76,10 @@ flutter:
     - assets/tray_icon.png
     - assets/tray_icon.ico
     - assets/logo.png
-    - rust_core/models/ggml-tiny.bin
-    - rust_core/models/ggml-base.bin
-    - rust_core/models/ggml-large-v3-turbo-q5_0.bin
+    # Model files are downloaded at runtime via Rust model.rs
+    # - rust_core/models/ggml-tiny.bin
+    # - rust_core/models/ggml-base.bin
+    # - rust_core/models/ggml-large-v3-turbo-q5_0.bin
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

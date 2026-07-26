@@ -93,14 +93,14 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   }
 
   String _suggestModel(int ramMb) {
-    if (ramMb >= 8192) return 'large-v3-turbo-q4_k_m'; // 8GB+
+    if (ramMb >= 8192) return 'large-v3-turbo-q5'; // 8GB+
     return 'base';                                   // < 8GB
   }
 
   String _availableModel(String preferred) {
     final libraryPath = ref.read(settingsProvider).libraryPath;
     if (isModelAvailable(preferred, libraryPath: libraryPath)) return preferred;
-    for (final candidate in ['base', 'large-v3-turbo-q4_k_m']) {
+    for (final candidate in ['base', 'large-v3-turbo-q5']) {
       if (isModelAvailable(candidate, libraryPath: libraryPath)) {
         return candidate;
       }
@@ -360,7 +360,7 @@ class _SpecDetectStep extends StatelessWidget {
       'small' => 'small (akurat)',
       'medium' => 'medium (presisi)',
       'large-v3-turbo' => 'large-v3-turbo (terbaik)',
-      'large-v3-turbo-q4_k_m' => 'large-v3-turbo-Q4_K_M (akurat)',
+      'large-v3-turbo-q5' => 'large-v3-turbo-Q5_0 (akurat)',
       _ => id,
     };
   }
@@ -461,7 +461,7 @@ class _ModelChoiceStep extends StatelessWidget {
 
   static const _models = [
     ('base', 'base — ⚡ Cepat', '142 MB · ✅ Termasuk di aplikasi\n🇮🇩 ID: Sempurna (WER 0%) · 🇬🇧 EN: 90%\nCocok: transkrip cepat, akurasi ID maksimal'),
-    ('large-v3-turbo-q4_k_m', 'large-v3-turbo-Q4_K_M — 🎯 Akurat', '474 MB · ✅ Termasuk di aplikasi\n🇮🇩 ID: ~96% · 🇬🇧 EN: ~97%\n🏆 Akurasi global terbaik — rekomendasi!'),
+    ('large-v3-turbo-q5', 'large-v3-turbo-Q5_0 — 🎯 Akurat', '548 MB · ✅ Termasuk di aplikasi\n🇮🇩 ID: ~96% · 🇬🇧 EN: ~97%\n🏆 Akurasi global terbaik — rekomendasi!'),
   ];
 
   @override

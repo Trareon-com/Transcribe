@@ -45,10 +45,11 @@ jobs:
         with:
           workspaces: rust_core
 
-      - name: Download bundled model
+      - name: Download bundled models
         run: |
           mkdir -p models
           curl -fL -o models/ggml-base.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin
+          curl -fL -o models/ggml-large-v3-turbo-q5_0.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin
 
       - name: Build macOS DMG
         run: |
@@ -74,11 +75,12 @@ jobs:
         with:
           workspaces: rust_core
 
-      - name: Download bundled model
+      - name: Download bundled models
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path models | Out-Null
           Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin" -OutFile "models\ggml-base.bin"
+          Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin" -OutFile "models\ggml-large-v3-turbo-q5_0.bin"
 
       - name: Build Windows ZIP
         run: |
