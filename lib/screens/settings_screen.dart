@@ -560,32 +560,6 @@ class _CompactDropdown<T> extends StatelessWidget {
 // ─────────────────────────────────────────────
 // Coming Soon badge
 // ─────────────────────────────────────────────
-class _BadgeChip extends StatelessWidget {
-  final String label;
-  const _BadgeChip({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: Color.lerp(colors.primary, Colors.transparent, 0.85),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: colors.primary.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: colors.primary,
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.3,
-        ),
-      ),
-    );
-  }
-}
 
 // ─────────────────────────────────────────────
 // Info badge (tappable tooltip icon)

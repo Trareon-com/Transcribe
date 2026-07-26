@@ -30,7 +30,7 @@ pub fn preprocess(samples: &[f32]) -> Vec<f32> {
     // 2. Simple high-pass (first-order IIR, ~80Hz at 16kHz)
     //    H(z) = (1 - a) / (1 - a*z^-1), a = exp(-2*pi*80/16000)
     let a = 0.969_07f32; // exp(-2*pi*80/16000)
-    let b = 1.0 - a;     // 0.03093
+    let b = 1.0 - a; // 0.03093
     prev_y = 0.0f32;
     for sample in out.iter_mut() {
         let x = *sample;
@@ -40,10 +40,7 @@ pub fn preprocess(samples: &[f32]) -> Vec<f32> {
     }
 
     // 3. Normalize: find peak, scale to -3dB (0.707)
-    let peak = out
-        .iter()
-        .map(|s| s.abs())
-        .fold(0.0f32, f32::max);
+    let peak = out.iter().map(|s| s.abs()).fold(0.0f32, f32::max);
     if peak > 0.001 {
         let gain = (0.707 / peak).min(3.0); // max 3x gain to avoid amplifying noise too much
         for sample in out.iter_mut() {
@@ -66,8 +63,12 @@ mod tests {
         let mean = result.iter().sum::<f32>() / result.len() as f32;
         assert!(mean.abs() < 0.3, "DC offset not reduced: mean={}", mean);
         // Last 100 samples should be closer to zero
-        let tail_mean = result[result.len()-100..].iter().sum::<f32>() / 100.0;
-        assert!(tail_mean.abs() < 0.2, "DC tail not converging: mean={}", tail_mean);
+        let tail_mean = result[result.len() - 100..].iter().sum::<f32>() / 100.0;
+        assert!(
+            tail_mean.abs() < 0.2,
+            "DC tail not converging: mean={}",
+            tail_mean
+        );
     }
 
     #[test]

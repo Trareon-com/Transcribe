@@ -550,4 +550,55 @@ class _SegmentTile extends StatelessWidget {
       }
     });
   }
+
+  void _openRenameDialog(BuildContext context) {
+    final controller = TextEditingController(text: displaySpeaker);
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: colors.surface,
+        title: Row(
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                color: speakerColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text('Ganti Nama Speaker', style: TextStyle(color: colors.text, fontSize: 16)),
+          ],
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          style: TextStyle(color: colors.text, fontSize: 14),
+          decoration: InputDecoration(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+            filled: true,
+            fillColor: colors.chipBackground,
+            hintText: 'Nama baru...',
+            hintStyle: TextStyle(color: colors.textTertiary, fontSize: 13),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text('Batal', style: TextStyle(color: colors.textSecondary)),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(controller.text),
+            child: const Text('Simpan'),
+          ),
+        ],
+      ),
+    ).then((newName) {
+      if (newName != null && newName.trim().isNotEmpty) {
+        onRename?.call(newName.trim());
+      }
+    });
+  }
 }

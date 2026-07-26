@@ -58,13 +58,13 @@ mod tests {
 
     fn seg(source: &str, text: &str, ts: f64) -> Segment {
         Segment {
-            source: source.into(),
-            speaker: source.to_uppercase(),
-            text: text.into(),
+            source: "test".to_string(),
+            speaker: "TEST".to_string(),
+            text: text.to_string(),
             timestamp: ts,
-            duration: 1.0,
-            language: "id".into(),
-            confidence: 0.9,
+            duration: 0.0,
+            language: "auto".to_string(),
+            confidence: 1.0,
             is_partial: false,
         }
     }
