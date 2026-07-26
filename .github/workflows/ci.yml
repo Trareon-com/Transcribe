@@ -117,7 +117,8 @@ jobs:
           sudo apt-get install --no-install-recommends -y \
             clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
             libasound2-dev libxkbcommon-dev libegl1-mesa-dev \
-            libpulse-dev libpcaudio-dev
+            libpulse-dev libpcaudio-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2.9.1
         with:

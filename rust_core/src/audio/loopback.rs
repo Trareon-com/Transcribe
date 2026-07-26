@@ -97,7 +97,8 @@ pub(crate) mod macos {
                 "ScreenCaptureKit: cannot list content — grant Screen & System Audio Recording permission in System Settings ({e})"
             ))
         })?;
-        let display = content.displays().first().ok_or_else(|| {
+        let displays = content.displays();
+        let display = displays.first().ok_or_else(|| {
             TranscribeError::AudioDevice("ScreenCaptureKit: no display found".into())
         })?;
 
