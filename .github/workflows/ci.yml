@@ -200,6 +200,20 @@ jobs:
     needs: [rust, flutter]
     steps:
       - uses: actions/checkout@v4
+      - name: Download benchmark model
+        run: |
+          mkdir -p ~/Library/Caches/TrareonTranscribe/models 2>/dev/null || true
+          curl -fL -o /tmp/ggml-tiny.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
+          echo "MODEL_PATH=/tmp/ggml-tiny.bin" >> $GITHUB_ENV
+      - name: Generate test audio
+        run: |
+          python3 -c "
+          import struct, math, wave
+          with wave.open('/tmp/test_en.wav', 'w') as w:
+            w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000)
+            for i in range(16000*5):
+              w.writeframes(struct.pack('<h', int(math.sin(2*math.pi*440*i/16000)*8000)))
+          "
       - name: Run benchmarks
         run: |
           chmod +x scripts/benchmark.sh

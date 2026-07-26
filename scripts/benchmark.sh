@@ -32,7 +32,7 @@ echo ""
 if command -v cargo &>/dev/null && [ -f "rust_core/Cargo.toml" ]; then
     echo "--- Benchmark: STT Latency (5s WAV) ---"
     if [ -f /tmp/test_en.wav ]; then
-        MODEL="${HOME}/Library/Caches/TrareonTranscribe/models/ggml-tiny.bin"
+        MODEL="${MODEL_PATH:-${HOME}/Library/Caches/TrareonTranscribe/models/ggml-tiny.bin}"
         if [ -f "$MODEL" ]; then
             START=$SECONDS
             cd rust_core
