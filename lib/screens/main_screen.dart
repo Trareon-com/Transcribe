@@ -276,6 +276,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
+                    const SizedBox(width: 12),
+                    _QualityToggle(),
                     const Spacer(),
                     IconButton(
                       icon: Icon(Icons.folder_outlined, size: 18),
@@ -811,6 +813,40 @@ class _ShortcutRow extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Toggle kualitas: ⚡ Cepat (base) / 🎯 Akurat (large-v3-turbo-q5)
+class _QualityToggle extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final settings = ref.watch(settingsProvider);
+    final notifier = ref.read(settingsProvider.notifier);
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final isAkurat = settings.defaultModel == 'large-v3-turbo-q5';
+
+    return GestureDetector(
+      onTap: () => notifier.setDefaultModel(isAkurat ? 'base' : 'large-v3-turbo-q5'),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: colors.chipBackground,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: colors.border),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(isAkurat ? '🎯' : '⚡', style: const TextStyle(fontSize: 12)),
+            const SizedBox(width: 4),
+            Text(
+              isAkurat ? 'Akurat' : 'Cepat',
+              style: TextStyle(color: colors.textSecondary, fontSize: 12),
+            ),
+          ],
+        ),
       ),
     );
   }
