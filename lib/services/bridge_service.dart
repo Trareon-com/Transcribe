@@ -49,9 +49,9 @@ abstract class RustBridge {
     String? language,
   });
 
-  /// Writes [segments] to `outputDir/<sanitized title>/` in each requested
-  /// format. Defaults to Markdown+TXT+JSON (the library record set).
-  /// Pass explicit [formats] from the export dialog for user-chosen formats.
+  /// Writes [segments] to `outputDir/<sanitized title>/` in the requested
+  /// [formats]. Each format is a member of [rust_export.ExportFormat].
+  /// Defaults to [markdown, txt, json] when empty.
   Future<void> exportSession({
     required List<TranscriptSegment> segments,
     required String outputDir,

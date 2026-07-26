@@ -60,12 +60,16 @@ class _RecoveryBridge implements RustBridge {
     required List<TranscriptSegment> segments,
     required String outputDir,
     required String title,
-    List<rust_export.ExportFormat> formats = const [],
+    List<rust_export.ExportFormat> formats = const [
+      rust_export.ExportFormat.markdown,
+      rust_export.ExportFormat.txt,
+      rust_export.ExportFormat.json,
+    ],
   }) async {}
   @override
-  Future<void> pauseSession(String sessionId) async {}
+  void pauseSession(String sessionId) {}
   @override
-  Future<void> resumeSession(String sessionId) async {}
+  void resumeSession(String sessionId) {}
 }
 
 void main() {
