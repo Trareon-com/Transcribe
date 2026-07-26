@@ -444,9 +444,26 @@ class _ControlBar extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _ModeSelectorCompact(
-                    selected: session.config.mode,
-                    onChanged: notifier.setMode,
+                  // Auto mode info
+                  Container(
+                    height: 36,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: colors.chipBackground,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: colors.border),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('🎙️', style: TextStyle(fontSize: 14)),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Otomatis',
+                          style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(width: 12),
 

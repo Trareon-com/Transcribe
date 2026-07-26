@@ -24,7 +24,7 @@ class SetupWizardScreen extends ConsumerStatefulWidget {
   ConsumerState<SetupWizardScreen> createState() => _SetupWizardScreenState();
 }
 
-enum _WizardStep { specDetect, modelChoice, audioSetup, modelDownload, toneTest }
+enum _WizardStep { specDetect, modelChoice, modelDownload, toneTest }
 
 class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   _WizardStep _step = _WizardStep.specDetect;
@@ -184,8 +184,6 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
             ref.read(settingsProvider.notifier).setDefaultModel(id);
           },
         );
-      case _WizardStep.audioSetup:
-        return const _AudioSetupStep();
       case _WizardStep.modelDownload:
         return _DownloadStep(
           modelId: _selectedModel,
