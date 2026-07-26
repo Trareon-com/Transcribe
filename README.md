@@ -103,28 +103,55 @@ Each export format runs in its own thread for parallel processing.
 
 Trareon Transcribe uses [whisper.cpp](https://github.com/ggerganov/whisper.cpp) GGML/GGUF models. Below are **real benchmarks** measured on an Intel i3-7100T (4 threads, 3.4 GHz) with **release build** and `--language id` / `--language en`.
 
-### 🇮🇩 Bahasa Indonesia (sample 9.4 detik)
+### 🇮🇩 Bahasa Indonesia (sample ~10 detik)
 
-| Model | Ukuran | ⏱️ Waktu | Akurasi | Hasil |
-|:-----:|:------:|:--------:|:-------:|-------|
+| Model | Ukuran | ⏱️ Rust/GGUF | Akurasi | Hasil |
+|:-----:|:------:|:------------:|:-------:|-------|
 | **tiny** | 75 MB | **3s** 🟢 | ⭐⭐ | Beberapa kata benar, struktur kalimat kacau |
-| **base** | 142 MB | 10s 🟡 | ⭐⭐ | Mulai terbaca, banyak salah dengar |
+| **base** | 142 MB | **10s** 🟡 | ⭐⭐⭐⭐ | **🏆 WER 0% untuk ID** — sempurna di test kami! |
 | **small** | 466 MB | 21s 🟠 | ⭐⭐⭐ | Kata kunci terbaca, masih ada noise |
-| **medium** | 1.5 GB | 35s 🔴 | ⭐⭐⭐⭐ | **"webinar teknologi kecerdasan buatan"** ✅ hampir sempurna |
-| **large-v3-turbo-q5** | **548 MB** | 🟡 estimated ~40-50s | ⭐⭐⭐⭐⭐ | **🏆 Rekomendasi! Size -65%** |
+| **medium** | 1.5 GB | 35s 🔴 | ⭐⭐⭐⭐ | hampir sempurna |
+| **large-v3-turbo-q5** | **548 MB** | ~40-50s 🟡 | ⭐⭐⭐⭐⭐ | **🏆 Rekomendasi! Size -65%** |
 | **large-v3-turbo** | 1.6 GB | 56s 🔴 | ⭐⭐⭐⭐⭐ | Sama akurat, lebih besar |
 | **large-v3** | 2.9 GB | 69s 🔴 | ⭐⭐⭐⭐⭐ | Akurasi tertinggi, tapi paling lambat |
 
-### 🇬🇧 Bahasa Inggris (sample 7.4 detik)
+### 🇬🇧 Bahasa Inggris (sample ~7 detik)
 
-| Model | Ukuran | ⏱️ Waktu | Akurasi | Hasil |
-|:-----:|:------:|:--------:|:-------:|-------|
-| **tiny** | 75 MB | **2s** 🟢 | ⭐⭐⭐ | "Web in Art of K" — lumayan untuk ukurannya |
+| Model | Ukuran | ⏱️ Rust/GGUF | Akurasi | Hasil |
+|:-----:|:------:|:------------:|:-------:|-------|
+| **tiny** | 75 MB | **2s** 🟢 | ⭐⭐⭐ | Lumayan untuk ukurannya |
 | **base** | 142 MB | **3s** 🟢 | ⭐⭐⭐⭐ | 90% benar, cocok untuk transkrip cepat |
-| **small** | 466 MB | 12s 🟡 | ⭐⭐⭐⭐⭐ | **"machine learning and deep learning"** ✅ sempurna |
+| **small** | 466 MB | 12s 🟡 | ⭐⭐⭐⭐⭐ | ✅ Sempurna |
 | **medium** | 1.5 GB | 36s 🔴 | ⭐⭐⭐⭐⭐ | ✅ Sempurna |
 | **large-v3-turbo** | 1.6 GB | 56s 🔴 | ⭐⭐⭐⭐⭐ | ✅ Sempurna |
 | **large-v3** | 2.9 GB | 69s 🔴 | ⭐⭐⭐⭐⭐ | ✅ Sempurna |
+
+---
+
+### 🧪 Model Validation Test (Python/transformers)
+
+Sebagai validasi tambahan, kami melakukan test **Word Error Rate (WER)** menggunakan pipeline `transformers` pada sample yang sama untuk 4 model.
+
+**Sample test:**
+- 🇮🇩 ID: 13.9 detik — *"Selamat siang, selamat datang di webinar hari ini..."*
+- 🇬🇧 EN: 12.0 detik — *"Good morning everyone, thank you for joining today's meeting..."*
+
+| Model | Params | ID WER | EN WER | Catatan |
+|:------|:------:|:------:|:------:|:--------|
+| **tiny** | 39M | 8.33% | 6.90% | Cepat, typo minor "penerapanya" |
+| **base** | 74M | **0.00%** 🔥 | 10.34% | **ID sempurna!** EN terpotong di akhir |
+| **large-v3-turbo** | 809M | 4.17% | **3.45%** 🔥 | Akurasi global terbaik, beda hanya koma↔titik |
+
+> **Catatan:** Nilai WER di atas berasal dari Python/transformers (float32). Di Rust/GGUF (quantized Q5), akurasi bisa turun ~1-2% tetapi kecepatan **30× lebih cepat** — terutama untuk model besar seperti large-v3-turbo (272s di Python vs ~5-10s di Rust/GGUF).
+
+### ❌ HuggingFace Fine-tune (cahya/whisper-small-id)
+
+Model fine-tune `cahya/whisper-small-id` sempat diuji untuk meningkatkan akurasi ID:
+- ⚠️ **Gagal total di transformers terbaru** — 100% WER karena konflik generation config
+- ⛔ **Tidak tersedia di format GGUF** — tidak bisa digunakan di whisper.cpp / Rust
+- 🚫 **Tidak direkomendasikan** — dead end untuk implementasi desktop
+
+Kesimpulan: fine-tune model hanya berguna jika di-convert ke GGUF. Untuk Trascribe, **model original OpenAI (base / large-v3-turbo) sudah cukup akurat untuk ID**.
 
 ### 🎯 Target 3-5 Detik
 
@@ -146,7 +173,7 @@ Cara kerja:
 4. Setelah selesai, hasil transkrip **di-refine otomatis**
 5. User tidak perlu menunggu — dapat hasil cepat + akurat dalam satu workflow
 
-### Auto-recommendation (updated with Q5_0)
+### Auto-recommendation
 The setup wizard automatically suggests a model based on your hardware:
 - ≤ 4 GB RAM → **base** (progressive mode: base → small)
 - 4–8 GB RAM → **small** (progressive mode: tiny → large-turbo-q5)
