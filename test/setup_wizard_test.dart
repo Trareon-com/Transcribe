@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:transcribe/screens/setup_wizard_screen.dart';
 import 'package:transcribe/services/bridge_service.dart';
 import 'package:transcribe/state/models.dart';
-import 'package:transcribe/state/privacy_report_model.dart';
 import 'package:transcribe/state/settings_model.dart';
 import 'package:transcribe/src/rust/audio/device.dart' as rust_device;
 import 'package:transcribe/src/rust/session.dart' as rust_session;
@@ -185,5 +184,3 @@ void main() {
     skip: true,
   );
 }
-
-void _noop() {}
