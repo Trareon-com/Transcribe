@@ -101,7 +101,6 @@ void main() {
       ProviderScope(
         overrides: [
           rustBridgeProvider.overrideWithValue(bridge),
-          firstRunCompleteProvider.overrideWith((ref) => true),
         ],
         child: const MaterialApp(home: TrascribeApp()),
       ),

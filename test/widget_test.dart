@@ -77,7 +77,6 @@ void main() {
     return ProviderScope(
       overrides: [
         rustBridgeProvider.overrideWithValue(_NoopBridge()),
-        firstRunCompleteProvider.overrideWith((ref) => true),
       ],
       child: const TrascribeApp(),
     );

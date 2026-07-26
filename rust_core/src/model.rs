@@ -44,7 +44,7 @@ pub const KNOWN_MODELS: &[(&str, &str, u32, bool, &str)] = &[
         "base",
         "ggml-base.bin",
         1,
-        false,
+        true,
         "60ed5bc3dd14eea856493d334349b405782ddcaf0028d4b5df4088345fba2efe",
     ),
     (
@@ -72,7 +72,7 @@ pub const KNOWN_MODELS: &[(&str, &str, u32, bool, &str)] = &[
         "large-v3-turbo-q5",
         "ggml-large-v3-turbo-q5_0.bin",
         4,
-        false,
+        true,
         "394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2",
     ),
 ];
