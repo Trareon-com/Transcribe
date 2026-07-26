@@ -106,7 +106,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         }
       }
       sessions.sort((a, b) => b.date.compareTo(a.date));
-    } catch (_) {}
+    } catch (e) { debugPrint("LibraryScreen: sort error: $e"); }
     setState(() {
       _sessions = sessions;
       _loading = false;
@@ -122,7 +122,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       try {
         final dir = Directory(entry.key);
         if (dir.existsSync()) dir.deleteSync(recursive: true);
-      } catch (_) {}
+      } catch (e) { debugPrint("LibraryScreen: deleteSync error: $e"); }
     }
     _pendingDeletions.clear();
     super.dispose();
@@ -147,7 +147,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       try {
         final dir = Directory(session.id);
         if (dir.existsSync()) dir.deleteSync(recursive: true);
-      } catch (_) {}
+      } catch (e) { debugPrint("LibraryScreen: timer error: $e"); }
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -190,7 +190,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
         appBar: AppBar(
           backgroundColor: colors.headerBackground,
           foregroundColor: colors.text,
-          title: const Text('Library', style: TextStyle(fontWeight: FontWeight.w600)),
+          title: const Text('Perpustakaan', style: TextStyle(fontWeight: FontWeight.w600)),
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back_ios_new, size: 20),
@@ -202,7 +202,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
             indicatorColor: colors.primary,
             tabs: const [
               Tab(text: 'Sesi'),
-              Tab(text: 'Upload File'),
+              Tab(text: 'Upload Berkas'),
             ],
           ),
         ),
