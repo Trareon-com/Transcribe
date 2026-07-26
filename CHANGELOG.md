@@ -23,7 +23,7 @@ phase instead.
   DOCX/WAV), pure-Rust decode (Symphonia + rubato, no ffmpeg), model
   catalog with SHA256 verification and resumable download, in-memory
   session registry with auto-split (time + memory pressure), settings
-  persistence, singleton instance lock, CLI mode (`trascribe-cli`),
+  persistence, singleton instance lock, CLI mode (`transcribe-cli`),
   diarization (acoustic feature clustering for multi-speaker)
 - Flutter UI: theme (light/dark/system), Riverpod state management, main
   screen (mode selector, mic/speaker toggles, VU meter, transcript view,

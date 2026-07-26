@@ -11,24 +11,24 @@ part 'error.freezed.dart';
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `fmt`, `fmt`, `from`
 
 @freezed
-sealed class TrascribeError with _$TrascribeError implements FrbException {
-  const TrascribeError._();
+sealed class TranscribeError with _$TranscribeError implements FrbException {
+  const TranscribeError._();
 
-  const factory TrascribeError.audioDevice(String field0) =
-      TrascribeError_AudioDevice;
-  const factory TrascribeError.audioDecode(String field0) =
-      TrascribeError_AudioDecode;
-  const factory TrascribeError.model(String field0) = TrascribeError_Model;
-  const factory TrascribeError.transcription(String field0) =
-      TrascribeError_Transcription;
-  const factory TrascribeError.export_(String field0) = TrascribeError_Export;
+  const factory TranscribeError.audioDevice(String field0) =
+      TranscribeError_AudioDevice;
+  const factory TranscribeError.audioDecode(String field0) =
+      TranscribeError_AudioDecode;
+  const factory TranscribeError.model(String field0) = TranscribeError_Model;
+  const factory TranscribeError.transcription(String field0) =
+      TranscribeError_Transcription;
+  const factory TranscribeError.export_(String field0) = TranscribeError_Export;
 
   /// String, not `std::io::Error` — the latter has no FRB `SseEncode`
   /// impl, which broke bridge codegen. Construct via
-  /// `TrascribeError::from(io_err)` or `.map_err(TrascribeError::from)`.
-  const factory TrascribeError.io(String field0) = TrascribeError_Io;
-  const factory TrascribeError.invalidInput(String field0) =
-      TrascribeError_InvalidInput;
-  const factory TrascribeError.sessionNotFound(String field0) =
-      TrascribeError_SessionNotFound;
+  /// `TranscribeError::from(io_err)` or `.map_err(TranscribeError::from)`.
+  const factory TranscribeError.io(String field0) = TranscribeError_Io;
+  const factory TranscribeError.invalidInput(String field0) =
+      TranscribeError_InvalidInput;
+  const factory TranscribeError.sessionNotFound(String field0) =
+      TranscribeError_SessionNotFound;
 }

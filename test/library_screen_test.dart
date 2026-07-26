@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:trascribe/screens/library_screen.dart';
-import 'package:trascribe/state/models.dart';
+import 'package:transcribe/screens/library_screen.dart';
+import 'package:transcribe/state/models.dart';
 
 void main() {
   testWidgets('empty library shows placeholder message', (WidgetTester tester) async {

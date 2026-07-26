@@ -74,7 +74,7 @@ fn wire__crate__api__acquire_instance_lock_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::acquire_instance_lock()?;
                     Ok(output_ok)
                 })())
@@ -141,7 +141,7 @@ fn wire__crate__audio__loopback__macos__capture_loopback_impl(
             let api_samples_tx = <Sender<Vec<f32>>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::audio::loopback::macos::capture_loopback(
                         api_device_hint,
                         api_samples_tx,
@@ -177,7 +177,7 @@ fn wire__crate__session__check_auto_split_impl(
             let api_session_id = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::session::check_auto_split(&api_session_id)?;
                     Ok(output_ok)
                 })())
@@ -210,7 +210,7 @@ fn wire__crate__api__decode_audio_file_impl(
             let api_path = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::decode_audio_file(api_path)?;
                     Ok(output_ok)
                 })())
@@ -276,7 +276,7 @@ fn wire__crate__api__download_model_impl(
             let api_model_id = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| async move {
-                transform_result_sse::<_, crate::error::TrascribeError>(
+                transform_result_sse::<_, crate::error::TranscribeError>(
                     (move || async move {
                         let output_ok =
                             crate::api::download_model(api_models_dir, api_model_id).await?;
@@ -348,7 +348,7 @@ fn wire__crate__api__export_session_impl(
             let api_title = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::export_session(
                         api_segments,
                         api_formats,
@@ -418,7 +418,7 @@ fn wire__crate__api__get_loopback_device_impl(
             let api_name_hint = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::get_loopback_device(api_name_hint)?;
                     Ok(output_ok)
                 })())
@@ -451,7 +451,7 @@ fn wire__crate__audio__device__get_loopback_device_impl(
             let api_name_hint = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::audio::device::get_loopback_device(&api_name_hint)?;
                     Ok(output_ok)
                 })())
@@ -484,7 +484,7 @@ fn wire__crate__api__get_session_status_impl(
             let api_session_id = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::get_session_status(api_session_id)?;
                     Ok(output_ok)
                 })())
@@ -517,7 +517,7 @@ fn wire__crate__session__get_status_impl(
             let api_session_id = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::session::get_status(&api_session_id)?;
                     Ok(output_ok)
                 })())
@@ -549,7 +549,7 @@ fn wire__crate__api__health_check_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::health_check()?;
                     Ok(output_ok)
                 })())
@@ -615,7 +615,7 @@ fn wire__crate__api__is_another_instance_running_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::is_another_instance_running()?;
                     Ok(output_ok)
                 })())
@@ -684,7 +684,7 @@ fn wire__crate__api__list_audio_devices_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::list_audio_devices()?;
                     Ok(output_ok)
                 })())
@@ -750,7 +750,7 @@ fn wire__crate__audio__device__list_input_devices_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::audio::device::list_input_devices()?;
                     Ok(output_ok)
                 })())
@@ -782,7 +782,7 @@ fn wire__crate__audio__device__list_output_devices_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::audio::device::list_output_devices()?;
                     Ok(output_ok)
                 })())
@@ -814,7 +814,7 @@ fn wire__crate__api__list_recoverable_sessions_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::list_recoverable_sessions()?;
                     Ok(output_ok)
                 })())
@@ -846,7 +846,7 @@ fn wire__crate__session__list_recoverable_sessions_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::session::list_recoverable_sessions()?;
                     Ok(output_ok)
                 })())
@@ -943,7 +943,7 @@ fn wire__crate__session__mark_split_impl(
             let api_session_id = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::session::mark_split(&api_session_id)?;
                     Ok(output_ok)
                 })())
@@ -976,7 +976,7 @@ fn wire__crate__session__poll_events_impl(
             let api_session_id = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::session::poll_events(&api_session_id)?;
                     Ok(output_ok)
                 })())
@@ -1009,7 +1009,7 @@ fn wire__crate__api__poll_session_events_impl(
             let api_session_id = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::poll_session_events(api_session_id)?;
                     Ok(output_ok)
                 })())
@@ -1042,7 +1042,7 @@ fn wire__crate__session__record_segment_impl(
             let api_session_id = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::session::record_segment(&api_session_id)?;
                     Ok(output_ok)
                 })())
@@ -1076,7 +1076,7 @@ fn wire__crate__api__recover_session_impl(
                 <crate::session::SessionRecoverySnapshot>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::recover_session(api_snapshot)?;
                     Ok(output_ok)
                 })())
@@ -1110,7 +1110,7 @@ fn wire__crate__session__recover_session_impl(
                 <crate::session::SessionRecoverySnapshot>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::session::recover_session(api_snapshot)?;
                     Ok(output_ok)
                 })())
@@ -1142,7 +1142,7 @@ fn wire__crate__api__release_instance_lock_impl(
                 flutter_rust_bridge::for_generated::SseDeserializer::new(message);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::release_instance_lock()?;
                     Ok(output_ok)
                 })())
@@ -1209,7 +1209,7 @@ fn wire__crate__api__save_settings_impl(
             let api_settings = <crate::settings::AppSettings>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::save_settings(api_settings)?;
                     Ok(output_ok)
                 })())
@@ -1242,7 +1242,7 @@ fn wire__crate__settings__save_settings_impl(
             let api_settings = <crate::settings::AppSettings>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::settings::save_settings(&api_settings)?;
                     Ok(output_ok)
                 })())
@@ -1382,7 +1382,7 @@ fn wire__crate__api__set_session_mode_impl(
             let api_mode = <crate::audio::SessionMode>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::set_session_mode(api_session_id, api_mode)?;
                     Ok(output_ok)
                 })())
@@ -1416,7 +1416,7 @@ fn wire__crate__session__set_session_mode_impl(
             let api_mode = <crate::audio::SessionMode>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::session::set_session_mode(&api_session_id, api_mode)?;
                     Ok(output_ok)
                 })())
@@ -1450,7 +1450,7 @@ fn wire__crate__audio__loopback__start_loopback_impl(
             let api_samples_tx = <Sender<Vec<f32>>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok =
                         crate::audio::loopback::start_loopback(api_device_hint, api_samples_tx)?;
                     Ok(output_ok)
@@ -1484,7 +1484,7 @@ fn wire__crate__api__start_session_impl(
             let api_config = <crate::audio::SessionConfig>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::start_session(api_config)?;
                     Ok(output_ok)
                 })())
@@ -1517,7 +1517,7 @@ fn wire__crate__session__start_session_impl(
             let api_config = <crate::audio::SessionConfig>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::session::start_session(api_config)?;
                     Ok(output_ok)
                 })())
@@ -1550,7 +1550,7 @@ fn wire__crate__api__stop_session_impl(
             let api_session_id = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::stop_session(api_session_id)?;
                     Ok(output_ok)
                 })())
@@ -1583,7 +1583,7 @@ fn wire__crate__session__stop_session_impl(
             let api_session_id = <String>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::session::stop_session(&api_session_id)?;
                     Ok(output_ok)
                 })())
@@ -1617,7 +1617,7 @@ fn wire__crate__api__toggle_mic_impl(
             let api_enabled = <bool>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::toggle_mic(api_session_id, api_enabled)?;
                     Ok(output_ok)
                 })())
@@ -1651,7 +1651,7 @@ fn wire__crate__session__toggle_mic_impl(
             let api_enabled = <bool>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::session::toggle_mic(&api_session_id, api_enabled)?;
                     Ok(output_ok)
                 })())
@@ -1685,7 +1685,7 @@ fn wire__crate__api__toggle_speaker_impl(
             let api_enabled = <bool>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::toggle_speaker(api_session_id, api_enabled)?;
                     Ok(output_ok)
                 })())
@@ -1719,7 +1719,7 @@ fn wire__crate__session__toggle_speaker_impl(
             let api_enabled = <bool>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::session::toggle_speaker(&api_session_id, api_enabled)?;
                     Ok(output_ok)
                 })())
@@ -1754,7 +1754,7 @@ fn wire__crate__api__transcribe_files_batch_impl(
             let api_language = <Option<String>>::sse_decode(&mut deserializer);
             deserializer.end();
             move |context| {
-                transform_result_sse::<_, crate::error::TrascribeError>((move || {
+                transform_result_sse::<_, crate::error::TranscribeError>((move || {
                     let output_ok = crate::api::transcribe_files_batch(
                         api_model_path,
                         api_files,
@@ -2390,42 +2390,42 @@ impl SseDecode for crate::stt::file::TranscribeFileResult {
     }
 }
 
-impl SseDecode for crate::error::TrascribeError {
+impl SseDecode for crate::error::TranscribeError {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut tag_ = <i32>::sse_decode(deserializer);
         match tag_ {
             0 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::error::TrascribeError::AudioDevice(var_field0);
+                return crate::error::TranscribeError::AudioDevice(var_field0);
             }
             1 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::error::TrascribeError::AudioDecode(var_field0);
+                return crate::error::TranscribeError::AudioDecode(var_field0);
             }
             2 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::error::TrascribeError::Model(var_field0);
+                return crate::error::TranscribeError::Model(var_field0);
             }
             3 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::error::TrascribeError::Transcription(var_field0);
+                return crate::error::TranscribeError::Transcription(var_field0);
             }
             4 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::error::TrascribeError::Export(var_field0);
+                return crate::error::TranscribeError::Export(var_field0);
             }
             5 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::error::TrascribeError::Io(var_field0);
+                return crate::error::TranscribeError::Io(var_field0);
             }
             6 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::error::TrascribeError::InvalidInput(var_field0);
+                return crate::error::TranscribeError::InvalidInput(var_field0);
             }
             7 => {
                 let mut var_field0 = <String>::sse_decode(deserializer);
-                return crate::error::TrascribeError::SessionNotFound(var_field0);
+                return crate::error::TranscribeError::SessionNotFound(var_field0);
             }
             _ => {
                 unimplemented!("");
@@ -2970,31 +2970,31 @@ impl flutter_rust_bridge::IntoIntoDart<crate::stt::file::TranscribeFileResult>
     }
 }
 // Codec=Dco (DartCObject based), see doc to use other codecs
-impl flutter_rust_bridge::IntoDart for crate::error::TrascribeError {
+impl flutter_rust_bridge::IntoDart for crate::error::TranscribeError {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         match self {
-            crate::error::TrascribeError::AudioDevice(field0) => {
+            crate::error::TranscribeError::AudioDevice(field0) => {
                 [0.into_dart(), field0.into_into_dart().into_dart()].into_dart()
             }
-            crate::error::TrascribeError::AudioDecode(field0) => {
+            crate::error::TranscribeError::AudioDecode(field0) => {
                 [1.into_dart(), field0.into_into_dart().into_dart()].into_dart()
             }
-            crate::error::TrascribeError::Model(field0) => {
+            crate::error::TranscribeError::Model(field0) => {
                 [2.into_dart(), field0.into_into_dart().into_dart()].into_dart()
             }
-            crate::error::TrascribeError::Transcription(field0) => {
+            crate::error::TranscribeError::Transcription(field0) => {
                 [3.into_dart(), field0.into_into_dart().into_dart()].into_dart()
             }
-            crate::error::TrascribeError::Export(field0) => {
+            crate::error::TranscribeError::Export(field0) => {
                 [4.into_dart(), field0.into_into_dart().into_dart()].into_dart()
             }
-            crate::error::TrascribeError::Io(field0) => {
+            crate::error::TranscribeError::Io(field0) => {
                 [5.into_dart(), field0.into_into_dart().into_dart()].into_dart()
             }
-            crate::error::TrascribeError::InvalidInput(field0) => {
+            crate::error::TranscribeError::InvalidInput(field0) => {
                 [6.into_dart(), field0.into_into_dart().into_dart()].into_dart()
             }
-            crate::error::TrascribeError::SessionNotFound(field0) => {
+            crate::error::TranscribeError::SessionNotFound(field0) => {
                 [7.into_dart(), field0.into_into_dart().into_dart()].into_dart()
             }
             _ => {
@@ -3003,11 +3003,11 @@ impl flutter_rust_bridge::IntoDart for crate::error::TrascribeError {
         }
     }
 }
-impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::error::TrascribeError {}
-impl flutter_rust_bridge::IntoIntoDart<crate::error::TrascribeError>
-    for crate::error::TrascribeError
+impl flutter_rust_bridge::for_generated::IntoDartExceptPrimitive for crate::error::TranscribeError {}
+impl flutter_rust_bridge::IntoIntoDart<crate::error::TranscribeError>
+    for crate::error::TranscribeError
 {
-    fn into_into_dart(self) -> crate::error::TrascribeError {
+    fn into_into_dart(self) -> crate::error::TranscribeError {
         self
     }
 }
@@ -3506,39 +3506,39 @@ impl SseEncode for crate::stt::file::TranscribeFileResult {
     }
 }
 
-impl SseEncode for crate::error::TrascribeError {
+impl SseEncode for crate::error::TranscribeError {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         match self {
-            crate::error::TrascribeError::AudioDevice(field0) => {
+            crate::error::TranscribeError::AudioDevice(field0) => {
                 <i32>::sse_encode(0, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::error::TrascribeError::AudioDecode(field0) => {
+            crate::error::TranscribeError::AudioDecode(field0) => {
                 <i32>::sse_encode(1, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::error::TrascribeError::Model(field0) => {
+            crate::error::TranscribeError::Model(field0) => {
                 <i32>::sse_encode(2, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::error::TrascribeError::Transcription(field0) => {
+            crate::error::TranscribeError::Transcription(field0) => {
                 <i32>::sse_encode(3, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::error::TrascribeError::Export(field0) => {
+            crate::error::TranscribeError::Export(field0) => {
                 <i32>::sse_encode(4, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::error::TrascribeError::Io(field0) => {
+            crate::error::TranscribeError::Io(field0) => {
                 <i32>::sse_encode(5, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::error::TrascribeError::InvalidInput(field0) => {
+            crate::error::TranscribeError::InvalidInput(field0) => {
                 <i32>::sse_encode(6, serializer);
                 <String>::sse_encode(field0, serializer);
             }
-            crate::error::TrascribeError::SessionNotFound(field0) => {
+            crate::error::TranscribeError::SessionNotFound(field0) => {
                 <i32>::sse_encode(7, serializer);
                 <String>::sse_encode(field0, serializer);
             }
@@ -3613,42 +3613,42 @@ mod io {
     flutter_rust_bridge::frb_generated_boilerplate_io!();
 
     #[unsafe(no_mangle)]
-    pub extern "C" fn frbgen_trascribe_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerJoinHandle(
+    pub extern "C" fn frbgen_transcribe_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerJoinHandle(
         ptr: *const std::ffi::c_void,
     ) {
         MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<JoinHandle < () >>>::increment_strong_count(ptr as _);
     }
 
     #[unsafe(no_mangle)]
-    pub extern "C" fn frbgen_trascribe_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerJoinHandle(
+    pub extern "C" fn frbgen_transcribe_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerJoinHandle(
         ptr: *const std::ffi::c_void,
     ) {
         MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<JoinHandle < () >>>::decrement_strong_count(ptr as _);
     }
 
     #[unsafe(no_mangle)]
-    pub extern "C" fn frbgen_trascribe_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSender(
+    pub extern "C" fn frbgen_transcribe_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSender(
         ptr: *const std::ffi::c_void,
     ) {
         MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner< Sender < () >>>::increment_strong_count(ptr as _);
     }
 
     #[unsafe(no_mangle)]
-    pub extern "C" fn frbgen_trascribe_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSender(
+    pub extern "C" fn frbgen_transcribe_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSender(
         ptr: *const std::ffi::c_void,
     ) {
         MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner< Sender < () >>>::decrement_strong_count(ptr as _);
     }
 
     #[unsafe(no_mangle)]
-    pub extern "C" fn frbgen_trascribe_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSenderVecf32(
+    pub extern "C" fn frbgen_transcribe_rust_arc_increment_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSenderVecf32(
         ptr: *const std::ffi::c_void,
     ) {
         MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Sender < Vec < f32 > >>>::increment_strong_count(ptr as _);
     }
 
     #[unsafe(no_mangle)]
-    pub extern "C" fn frbgen_trascribe_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSenderVecf32(
+    pub extern "C" fn frbgen_transcribe_rust_arc_decrement_strong_count_RustOpaque_flutter_rust_bridgefor_generatedRustAutoOpaqueInnerSenderVecf32(
         ptr: *const std::ffi::c_void,
     ) {
         MoiArc::<flutter_rust_bridge::for_generated::RustAutoOpaqueInner<Sender < Vec < f32 > >>>::decrement_strong_count(ptr as _);

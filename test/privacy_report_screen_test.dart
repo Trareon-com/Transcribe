@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:trascribe/screens/privacy_report_screen.dart';
-import 'package:trascribe/state/privacy_report_model.dart';
+import 'package:transcribe/screens/privacy_report_screen.dart';
+import 'package:transcribe/state/privacy_report_model.dart';
 
 void main() {
   testWidgets('shows zero network calls by default', (WidgetTester tester) async {

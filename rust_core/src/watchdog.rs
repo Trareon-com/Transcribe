@@ -13,7 +13,7 @@ use std::time::Duration;
 use tracing;
 
 use crate::audio::device::{list_input_devices, list_output_devices};
-use crate::error::TrascribeError;
+use crate::error::TranscribeError;
 
 /// Events emitted by the watchdog to the session orchestrator.
 #[derive(Debug, Clone)]
@@ -91,7 +91,7 @@ pub fn start_watchdog(
 /// Returns `Ok(list of device names)` if at least one input and one output
 /// device are present. Returns `Err` if audio devices appear to be gone
 /// (sleep / disconnect).
-fn check_device_health(monitor_hints: &[String]) -> Result<Vec<String>, TrascribeError> {
+fn check_device_health(monitor_hints: &[String]) -> Result<Vec<String>, TranscribeError> {
     let inputs = list_input_devices()?;
     let outputs = list_output_devices()?;
 
@@ -102,7 +102,7 @@ fn check_device_health(monitor_hints: &[String]) -> Result<Vec<String>, Trascrib
         .collect();
 
     if all_names.is_empty() {
-        return Err(TrascribeError::AudioDevice(
+        return Err(TranscribeError::AudioDevice(
             "no audio devices found — system may be sleeping".into(),
         ));
     }
@@ -115,7 +115,7 @@ fn check_device_health(monitor_hints: &[String]) -> Result<Vec<String>, Trascrib
                 .any(|hint| name.to_lowercase().contains(&hint.to_lowercase()))
         };
         if !all_names.iter().any(|n| hint_matches(n)) {
-            return Err(TrascribeError::AudioDevice(
+            return Err(TranscribeError::AudioDevice(
                 "monitored audio device not found".into(),
             ));
         }

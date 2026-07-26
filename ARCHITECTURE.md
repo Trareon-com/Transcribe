@@ -34,9 +34,9 @@ rust_core/                 Rust engine (compiled as staticlib/cdylib/lib)
     singleton.rs             Single-instance PID lock
     memory.rs                Memory-pressure detection
     bin/gen_fixtures.rs      Synthetic WAV fixtures for hardware-free tests
-    bin/trascribe.rs         Main power-user CLI (batch transcribe without the UI)
+    bin/transcribe.rs         Main power-user CLI (batch transcribe without the UI)
     bin/cli_shared.rs        Shared batch CLI implementation
-    bin/trascribe_cli.rs     Compatibility alias for the power-user CLI
+    bin/transcribe_cli.rs     Compatibility alias for the power-user CLI
 
 test/                       Flutter widget/unit tests
 ```
@@ -67,13 +67,13 @@ FRB codegen is wired and verified end-to-end (real `.dylib`, real Dart
 bindings, app launches and calls into Rust without crashing). Getting here
 required two fixes to `rust_core/src/error.rs`:
 
-1. `TrascribeResult<T>` type alias isn't resolved by FRB when scanning
+1. `TranscribeResult<T>` type alias isn't resolved by FRB when scanning
    multiple modules — every FRB-exposed signature spells out
-   `Result<T, TrascribeError>` explicitly instead. The alias still exists
+   `Result<T, TranscribeError>` explicitly instead. The alias still exists
    for internal-only code.
-2. `TrascribeError::Io` changed from `std::io::Error` (no FFI codec) to
+2. `TranscribeError::Io` changed from `std::io::Error` (no FFI codec) to
    `String`, with a manual `From<std::io::Error>` impl so
-   `.map_err(TrascribeError::from)` still works at every call site.
+   `.map_err(TranscribeError::from)` still works at every call site.
 
 Internal-only items not meant for the Dart surface (`RingBuffer`,
 `decode::decode_audio_file`/`resample_to_target` which take `&Path`,
@@ -140,9 +140,9 @@ generate SHA256 checksum → output to `dist/`.
 ```bash
 cd rust_core && cargo build --release --lib
 # macOS — copy the dylib into the built app bundle:
-mkdir -p ../build/macos/Build/Products/Debug/trascribe.app/Contents/Frameworks
+mkdir -p ../build/macos/Build/Products/Debug/transcribe.app/Contents/Frameworks
 cp target/release/librust_core.dylib \
-   ../build/macos/Build/Products/Debug/trascribe.app/Contents/Frameworks/
+   ../build/macos/Build/Products/Debug/transcribe.app/Contents/Frameworks/
 ```
 
 The macOS target now has an Xcode shell-script build phase that runs

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:trascribe/state/batch_upload_model.dart';
-import 'package:trascribe/widgets/file_upload_zone.dart';
+import 'package:transcribe/state/batch_upload_model.dart';
+import 'package:transcribe/widgets/file_upload_zone.dart';
 
 void main() {
   testWidgets('shows cleanup controls only when queue has items and removes done files', (

@@ -297,7 +297,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiAcquireInstanceLockConstMeta,
         argValues: [],
@@ -359,7 +359,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_audio_capture,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateAudioLoopbackMacosCaptureLoopbackConstMeta,
         argValues: [deviceHint, samplesTx],
@@ -392,7 +392,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_opt_box_autoadd_auto_split_reason,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateSessionCheckAutoSplitConstMeta,
         argValues: [sessionId],
@@ -422,7 +422,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_audio_buffer,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiDecodeAudioFileConstMeta,
         argValues: [path],
@@ -481,7 +481,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiDownloadModelConstMeta,
         argValues: [modelsDir, modelId],
@@ -546,7 +546,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_exported_file,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiExportSessionConstMeta,
         argValues: [segments, formats, outputDir, title],
@@ -605,7 +605,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_audio_device_info,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiGetLoopbackDeviceConstMeta,
         argValues: [nameHint],
@@ -637,7 +637,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_audio_device_info,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateAudioDeviceGetLoopbackDeviceConstMeta,
         argValues: [nameHint],
@@ -668,7 +668,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_session_status,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiGetSessionStatusConstMeta,
         argValues: [sessionId],
@@ -698,7 +698,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_session_status,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateSessionGetStatusConstMeta,
         argValues: [sessionId],
@@ -725,7 +725,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_bool,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiHealthCheckConstMeta,
         argValues: [],
@@ -779,7 +779,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_bool,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiIsAnotherInstanceRunningConstMeta,
         argValues: [],
@@ -843,7 +843,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_audio_device_info,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiListAudioDevicesConstMeta,
         argValues: [],
@@ -903,7 +903,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_audio_device_info,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateAudioDeviceListInputDevicesConstMeta,
         argValues: [],
@@ -930,7 +930,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_audio_device_info,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateAudioDeviceListOutputDevicesConstMeta,
         argValues: [],
@@ -957,7 +957,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_session_recovery_snapshot,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiListRecoverableSessionsConstMeta,
         argValues: [],
@@ -984,7 +984,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_session_recovery_snapshot,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateSessionListRecoverableSessionsConstMeta,
         argValues: [],
@@ -1066,7 +1066,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateSessionMarkSplitConstMeta,
         argValues: [sessionId],
@@ -1096,7 +1096,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_session_event,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateSessionPollEventsConstMeta,
         argValues: [sessionId],
@@ -1126,7 +1126,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_session_event,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiPollSessionEventsConstMeta,
         argValues: [sessionId],
@@ -1156,7 +1156,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateSessionRecordSegmentConstMeta,
         argValues: [sessionId],
@@ -1189,7 +1189,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiRecoverSessionConstMeta,
         argValues: [snapshot],
@@ -1222,7 +1222,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateSessionRecoverSessionConstMeta,
         argValues: [snapshot],
@@ -1249,7 +1249,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiReleaseInstanceLockConstMeta,
         argValues: [],
@@ -1305,7 +1305,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiSaveSettingsConstMeta,
         argValues: [settings],
@@ -1333,7 +1333,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateSettingsSaveSettingsConstMeta,
         argValues: [settings],
@@ -1466,7 +1466,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiSetSessionModeConstMeta,
         argValues: [sessionId, mode],
@@ -1500,7 +1500,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateSessionSetSessionModeConstMeta,
         argValues: [sessionId, mode],
@@ -1537,7 +1537,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_audio_capture,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateAudioLoopbackStartLoopbackConstMeta,
         argValues: [deviceHint, samplesTx],
@@ -1568,7 +1568,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiStartSessionConstMeta,
         argValues: [config],
@@ -1596,7 +1596,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_String,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateSessionStartSessionConstMeta,
         argValues: [config],
@@ -1624,7 +1624,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiStopSessionConstMeta,
         argValues: [sessionId],
@@ -1652,7 +1652,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateSessionStopSessionConstMeta,
         argValues: [sessionId],
@@ -1684,7 +1684,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiToggleMicConstMeta,
         argValues: [sessionId, enabled],
@@ -1718,7 +1718,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateSessionToggleMicConstMeta,
         argValues: [sessionId, enabled],
@@ -1752,7 +1752,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiToggleSpeakerConstMeta,
         argValues: [sessionId, enabled],
@@ -1786,7 +1786,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_unit,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateSessionToggleSpeakerConstMeta,
         argValues: [sessionId, enabled],
@@ -1822,7 +1822,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
         },
         codec: SseCodec(
           decodeSuccessData: sse_decode_list_transcribe_file_result,
-          decodeErrorData: sse_decode_trascribe_error,
+          decodeErrorData: sse_decode_transcribe_error,
         ),
         constMeta: kCrateApiTranscribeFilesBatchConstMeta,
         argValues: [modelPath, files, language],
@@ -2368,25 +2368,25 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  TrascribeError dco_decode_trascribe_error(dynamic raw) {
+  TranscribeError dco_decode_transcribe_error(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     switch (raw[0]) {
       case 0:
-        return TrascribeError_AudioDevice(dco_decode_String(raw[1]));
+        return TranscribeError_AudioDevice(dco_decode_String(raw[1]));
       case 1:
-        return TrascribeError_AudioDecode(dco_decode_String(raw[1]));
+        return TranscribeError_AudioDecode(dco_decode_String(raw[1]));
       case 2:
-        return TrascribeError_Model(dco_decode_String(raw[1]));
+        return TranscribeError_Model(dco_decode_String(raw[1]));
       case 3:
-        return TrascribeError_Transcription(dco_decode_String(raw[1]));
+        return TranscribeError_Transcription(dco_decode_String(raw[1]));
       case 4:
-        return TrascribeError_Export(dco_decode_String(raw[1]));
+        return TranscribeError_Export(dco_decode_String(raw[1]));
       case 5:
-        return TrascribeError_Io(dco_decode_String(raw[1]));
+        return TranscribeError_Io(dco_decode_String(raw[1]));
       case 6:
-        return TrascribeError_InvalidInput(dco_decode_String(raw[1]));
+        return TranscribeError_InvalidInput(dco_decode_String(raw[1]));
       case 7:
-        return TrascribeError_SessionNotFound(dco_decode_String(raw[1]));
+        return TranscribeError_SessionNotFound(dco_decode_String(raw[1]));
       default:
         throw Exception("unreachable");
     }
@@ -3080,35 +3080,35 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  TrascribeError sse_decode_trascribe_error(SseDeserializer deserializer) {
+  TranscribeError sse_decode_transcribe_error(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
 
     var tag_ = sse_decode_i_32(deserializer);
     switch (tag_) {
       case 0:
         var var_field0 = sse_decode_String(deserializer);
-        return TrascribeError_AudioDevice(var_field0);
+        return TranscribeError_AudioDevice(var_field0);
       case 1:
         var var_field0 = sse_decode_String(deserializer);
-        return TrascribeError_AudioDecode(var_field0);
+        return TranscribeError_AudioDecode(var_field0);
       case 2:
         var var_field0 = sse_decode_String(deserializer);
-        return TrascribeError_Model(var_field0);
+        return TranscribeError_Model(var_field0);
       case 3:
         var var_field0 = sse_decode_String(deserializer);
-        return TrascribeError_Transcription(var_field0);
+        return TranscribeError_Transcription(var_field0);
       case 4:
         var var_field0 = sse_decode_String(deserializer);
-        return TrascribeError_Export(var_field0);
+        return TranscribeError_Export(var_field0);
       case 5:
         var var_field0 = sse_decode_String(deserializer);
-        return TrascribeError_Io(var_field0);
+        return TranscribeError_Io(var_field0);
       case 6:
         var var_field0 = sse_decode_String(deserializer);
-        return TrascribeError_InvalidInput(var_field0);
+        return TranscribeError_InvalidInput(var_field0);
       case 7:
         var var_field0 = sse_decode_String(deserializer);
-        return TrascribeError_SessionNotFound(var_field0);
+        return TranscribeError_SessionNotFound(var_field0);
       default:
         throw UnimplementedError('');
     }
@@ -3730,34 +3730,34 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
-  void sse_encode_trascribe_error(
-    TrascribeError self,
+  void sse_encode_transcribe_error(
+    TranscribeError self,
     SseSerializer serializer,
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     switch (self) {
-      case TrascribeError_AudioDevice(field0: final field0):
+      case TranscribeError_AudioDevice(field0: final field0):
         sse_encode_i_32(0, serializer);
         sse_encode_String(field0, serializer);
-      case TrascribeError_AudioDecode(field0: final field0):
+      case TranscribeError_AudioDecode(field0: final field0):
         sse_encode_i_32(1, serializer);
         sse_encode_String(field0, serializer);
-      case TrascribeError_Model(field0: final field0):
+      case TranscribeError_Model(field0: final field0):
         sse_encode_i_32(2, serializer);
         sse_encode_String(field0, serializer);
-      case TrascribeError_Transcription(field0: final field0):
+      case TranscribeError_Transcription(field0: final field0):
         sse_encode_i_32(3, serializer);
         sse_encode_String(field0, serializer);
-      case TrascribeError_Export(field0: final field0):
+      case TranscribeError_Export(field0: final field0):
         sse_encode_i_32(4, serializer);
         sse_encode_String(field0, serializer);
-      case TrascribeError_Io(field0: final field0):
+      case TranscribeError_Io(field0: final field0):
         sse_encode_i_32(5, serializer);
         sse_encode_String(field0, serializer);
-      case TrascribeError_InvalidInput(field0: final field0):
+      case TranscribeError_InvalidInput(field0: final field0):
         sse_encode_i_32(6, serializer);
         sse_encode_String(field0, serializer);
-      case TrascribeError_SessionNotFound(field0: final field0):
+      case TranscribeError_SessionNotFound(field0: final field0):
         sse_encode_i_32(7, serializer);
         sse_encode_String(field0, serializer);
     }

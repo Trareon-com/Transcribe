@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use crate::audio::SessionMode;
-use crate::error::TrascribeError;
+use crate::error::TranscribeError;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Theme {
@@ -50,9 +50,9 @@ pub fn default_library_path() -> String {
         .unwrap_or_else(|| "./TrareonTranscribe".to_string())
 }
 
-fn settings_path() -> Result<PathBuf, TrascribeError> {
+fn settings_path() -> Result<PathBuf, TranscribeError> {
     let dir = dirs::config_dir()
-        .ok_or_else(|| TrascribeError::InvalidInput("no config directory available".into()))?
+        .ok_or_else(|| TranscribeError::InvalidInput("no config directory available".into()))?
         .join("TrareonTranscribe");
     Ok(dir.join("settings.json"))
 }
@@ -71,14 +71,14 @@ fn load_settings_from(path: &Option<PathBuf>) -> AppSettings {
     }
 }
 
-pub fn save_settings(settings: &AppSettings) -> Result<(), TrascribeError> {
+pub fn save_settings(settings: &AppSettings) -> Result<(), TranscribeError> {
     let path = settings_path()?;
     if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(TrascribeError::from)?;
+        fs::create_dir_all(parent).map_err(TranscribeError::from)?;
     }
     let json = serde_json::to_string_pretty(settings)
-        .map_err(|e| TrascribeError::InvalidInput(e.to_string()))?;
-    fs::write(&path, json).map_err(TrascribeError::from)
+        .map_err(|e| TranscribeError::InvalidInput(e.to_string()))?;
+    fs::write(&path, json).map_err(TranscribeError::from)
 }
 
 #[cfg(test)]
@@ -95,7 +95,7 @@ mod tests {
 
     #[test]
     fn load_missing_file_returns_default() {
-        let path = Some(std::env::temp_dir().join("trascribe_settings_does_not_exist.json"));
+        let path = Some(std::env::temp_dir().join("transcribe_settings_does_not_exist.json"));
         let s = load_settings_from(&path);
         assert_eq!(s.default_model, "tiny");
     }
@@ -103,7 +103,7 @@ mod tests {
     #[test]
     fn save_then_load_roundtrip() {
         let dir =
-            std::env::temp_dir().join(format!("trascribe_settings_test_{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("transcribe_settings_test_{}", uuid::Uuid::new_v4()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("settings.json");
 
@@ -126,7 +126,7 @@ mod tests {
     #[test]
     fn corrupt_settings_file_falls_back_to_default() {
         let dir = std::env::temp_dir().join(format!(
-            "trascribe_settings_corrupt_{}",
+            "transcribe_settings_corrupt_{}",
             uuid::Uuid::new_v4()
         ));
         std::fs::create_dir_all(&dir).unwrap();

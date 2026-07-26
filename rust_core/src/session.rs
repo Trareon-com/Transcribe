@@ -14,7 +14,7 @@ use uuid::Uuid;
 
 use crate::audio::{AudioCapture, SessionConfig, SessionMode};
 use crate::dedupe::is_echo;
-use crate::error::TrascribeError;
+use crate::error::TranscribeError;
 use crate::export::Segment;
 use crate::memory;
 use crate::pipeline::{LiveEvent, LiveWorker};
@@ -110,12 +110,12 @@ pub(crate) fn set_recovery_dir_override(path: Option<PathBuf>) {
     });
 }
 
-pub fn start_session(config: SessionConfig) -> Result<String, TrascribeError> {
+pub fn start_session(config: SessionConfig) -> Result<String, TranscribeError> {
     let id = Uuid::new_v4().to_string();
     start_session_with_id(id, config)
 }
 
-pub fn recover_session(snapshot: SessionRecoverySnapshot) -> Result<String, TrascribeError> {
+pub fn recover_session(snapshot: SessionRecoverySnapshot) -> Result<String, TranscribeError> {
     start_session_with_id(snapshot.session_id, snapshot.config)
 }
 
@@ -125,7 +125,7 @@ fn start_capture(
     model_path: &str,
     source: &str,
     language: Option<String>,
-) -> Result<Option<CaptureChannel>, TrascribeError> {
+) -> Result<Option<CaptureChannel>, TranscribeError> {
     if !enabled {
         return Ok(None);
     }
@@ -158,27 +158,27 @@ fn start_capture(
     }))
 }
 
-pub fn stop_session(session_id: &str) -> Result<(), TrascribeError> {
+pub fn stop_session(session_id: &str) -> Result<(), TranscribeError> {
     let mut reg = registry()
         .lock()
-        .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
+        .map_err(|_| TranscribeError::Transcription("session registry lock poisoned".into()))?;
     reg.remove(session_id)
-        .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))?;
+        .ok_or_else(|| TranscribeError::SessionNotFound(session_id.to_string()))?;
     remove_snapshot_file(session_id)?;
     Ok(())
 }
 
-pub fn toggle_mic(session_id: &str, enabled: bool) -> Result<(), TrascribeError> {
+pub fn toggle_mic(session_id: &str, enabled: bool) -> Result<(), TranscribeError> {
     with_session_mut(session_id, |s| s.config.mic_enabled = enabled)?;
     persist_session_snapshot(session_id)
 }
 
-pub fn toggle_speaker(session_id: &str, enabled: bool) -> Result<(), TrascribeError> {
+pub fn toggle_speaker(session_id: &str, enabled: bool) -> Result<(), TranscribeError> {
     with_session_mut(session_id, |s| s.config.speaker_enabled = enabled)?;
     persist_session_snapshot(session_id)
 }
 
-pub fn set_session_mode(session_id: &str, mode: SessionMode) -> Result<(), TrascribeError> {
+pub fn set_session_mode(session_id: &str, mode: SessionMode) -> Result<(), TranscribeError> {
     with_session_mut(session_id, |s| {
         let (mic, spk) = mode.default_toggles();
         s.config.mode = mode;
@@ -188,7 +188,7 @@ pub fn set_session_mode(session_id: &str, mode: SessionMode) -> Result<(), Trasc
     persist_session_snapshot(session_id)
 }
 
-pub fn record_segment(session_id: &str) -> Result<(), TrascribeError> {
+pub fn record_segment(session_id: &str) -> Result<(), TranscribeError> {
     with_session_mut(session_id, |s| s.segments_count += 1)?;
     persist_session_snapshot(session_id)
 }
@@ -196,20 +196,20 @@ pub fn record_segment(session_id: &str) -> Result<(), TrascribeError> {
 /// Call periodically (e.g. every minute) from the live capture loop. If it
 /// returns `Some`, the caller should flush the current chunk to disk and
 /// start a new file segment, then call [`mark_split`].
-pub fn check_auto_split(session_id: &str) -> Result<Option<AutoSplitReason>, TrascribeError> {
+pub fn check_auto_split(session_id: &str) -> Result<Option<AutoSplitReason>, TranscribeError> {
     let reg = registry()
         .lock()
-        .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
+        .map_err(|_| TranscribeError::Transcription("session registry lock poisoned".into()))?;
     let state = reg
         .get(session_id)
-        .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))?;
+        .ok_or_else(|| TranscribeError::SessionNotFound(session_id.to_string()))?;
 
     let elapsed = state.last_split_at.elapsed().as_secs();
     let memory_ratio = memory::system_memory_usage_ratio();
     Ok(should_split(elapsed, memory_ratio))
 }
 
-pub fn mark_split(session_id: &str) -> Result<(), TrascribeError> {
+pub fn mark_split(session_id: &str) -> Result<(), TranscribeError> {
     with_session_mut(session_id, |s| {
         s.last_split_at = std::time::Instant::now();
         s.last_split_at_unix_ms = unix_ms_now().unwrap_or(s.last_split_at_unix_ms);
@@ -217,13 +217,13 @@ pub fn mark_split(session_id: &str) -> Result<(), TrascribeError> {
     persist_session_snapshot(session_id)
 }
 
-pub fn get_status(session_id: &str) -> Result<SessionStatus, TrascribeError> {
+pub fn get_status(session_id: &str) -> Result<SessionStatus, TranscribeError> {
     let mut reg = registry()
         .lock()
-        .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
+        .map_err(|_| TranscribeError::Transcription("session registry lock poisoned".into()))?;
     let state = reg
         .get_mut(session_id)
-        .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))?;
+        .ok_or_else(|| TranscribeError::SessionNotFound(session_id.to_string()))?;
     state.collect_worker_events();
     let status = SessionStatus {
         session_id: session_id.to_string(),
@@ -238,14 +238,14 @@ pub fn get_status(session_id: &str) -> Result<SessionStatus, TrascribeError> {
     Ok(status)
 }
 
-pub fn poll_events(session_id: &str) -> Result<Vec<SessionEvent>, TrascribeError> {
+pub fn poll_events(session_id: &str) -> Result<Vec<SessionEvent>, TranscribeError> {
     let mut reg = registry()
         .lock()
-        .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
+        .map_err(|_| TranscribeError::Transcription("session registry lock poisoned".into()))?;
     let events = {
         let state = reg
             .get_mut(session_id)
-            .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))?;
+            .ok_or_else(|| TranscribeError::SessionNotFound(session_id.to_string()))?;
         state.collect_worker_events();
         std::mem::take(&mut state.pending_events)
     };
@@ -276,14 +276,14 @@ pub fn poll_events(session_id: &str) -> Result<Vec<SessionEvent>, TrascribeError
     Ok(events)
 }
 
-pub fn list_recoverable_sessions() -> Result<Vec<SessionRecoverySnapshot>, TrascribeError> {
+pub fn list_recoverable_sessions() -> Result<Vec<SessionRecoverySnapshot>, TranscribeError> {
     let dir = recovery_dir()?;
     let mut out = Vec::new();
     if !dir.exists() {
         return Ok(out);
     }
-    for entry in fs::read_dir(dir).map_err(TrascribeError::from)? {
-        let entry = entry.map_err(TrascribeError::from)?;
+    for entry in fs::read_dir(dir).map_err(TranscribeError::from)? {
+        let entry = entry.map_err(TranscribeError::from)?;
         let path = entry.path();
         if path.extension().and_then(|v| v.to_str()) != Some("inprogress") {
             continue;
@@ -296,7 +296,7 @@ pub fn list_recoverable_sessions() -> Result<Vec<SessionRecoverySnapshot>, Trasc
     Ok(out)
 }
 
-fn start_session_with_id(id: String, config: SessionConfig) -> Result<String, TrascribeError> {
+fn start_session_with_id(id: String, config: SessionConfig) -> Result<String, TranscribeError> {
     let now = std::time::Instant::now();
     let now_unix_ms = unix_ms_now()?;
     let language = crate::settings::load_settings().language;
@@ -329,20 +329,20 @@ fn start_session_with_id(id: String, config: SessionConfig) -> Result<String, Tr
     };
     registry()
         .lock()
-        .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?
+        .map_err(|_| TranscribeError::Transcription("session registry lock poisoned".into()))?
         .insert(id.clone(), state);
     persist_session_snapshot(&id)?;
     Ok(id)
 }
 
-fn persist_session_snapshot(session_id: &str) -> Result<(), TrascribeError> {
+fn persist_session_snapshot(session_id: &str) -> Result<(), TranscribeError> {
     let snapshot = {
         let reg = registry()
             .lock()
-            .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
+            .map_err(|_| TranscribeError::Transcription("session registry lock poisoned".into()))?;
         let state = reg
             .get(session_id)
-            .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))?;
+            .ok_or_else(|| TranscribeError::SessionNotFound(session_id.to_string()))?;
         SessionRecoverySnapshot {
             session_id: state.session_id.clone(),
             config: state.config.clone(),
@@ -354,7 +354,7 @@ fn persist_session_snapshot(session_id: &str) -> Result<(), TrascribeError> {
     write_snapshot_file(&snapshot)
 }
 
-fn recovery_dir() -> Result<PathBuf, TrascribeError> {
+fn recovery_dir() -> Result<PathBuf, TranscribeError> {
     if let Some(path) = RECOVERY_DIR_OVERRIDE.with(|slot| slot.borrow().clone()) {
         return Ok(path);
     }
@@ -363,39 +363,39 @@ fn recovery_dir() -> Result<PathBuf, TrascribeError> {
         .join("recovery"))
 }
 
-fn recovery_path(session_id: &str) -> Result<PathBuf, TrascribeError> {
+fn recovery_path(session_id: &str) -> Result<PathBuf, TranscribeError> {
     Ok(recovery_dir()?.join(format!("{session_id}.inprogress")))
 }
 
-fn write_snapshot_file(snapshot: &SessionRecoverySnapshot) -> Result<(), TrascribeError> {
+fn write_snapshot_file(snapshot: &SessionRecoverySnapshot) -> Result<(), TranscribeError> {
     let dir = recovery_dir()?;
-    fs::create_dir_all(&dir).map_err(TrascribeError::from)?;
+    fs::create_dir_all(&dir).map_err(TranscribeError::from)?;
     let final_path = recovery_path(&snapshot.session_id)?;
     let tmp_path = final_path.with_extension("inprogress.tmp");
     let json = serde_json::to_vec_pretty(snapshot)
-        .map_err(|e| TrascribeError::InvalidInput(e.to_string()))?;
-    fs::write(&tmp_path, json).map_err(TrascribeError::from)?;
-    fs::rename(&tmp_path, &final_path).map_err(TrascribeError::from)
+        .map_err(|e| TranscribeError::InvalidInput(e.to_string()))?;
+    fs::write(&tmp_path, json).map_err(TranscribeError::from)?;
+    fs::rename(&tmp_path, &final_path).map_err(TranscribeError::from)
 }
 
-fn remove_snapshot_file(session_id: &str) -> Result<(), TrascribeError> {
+fn remove_snapshot_file(session_id: &str) -> Result<(), TranscribeError> {
     let path = recovery_path(session_id)?;
     match fs::remove_file(path) {
         Ok(_) => Ok(()),
         Err(err) if err.kind() == std::io::ErrorKind::NotFound => Ok(()),
-        Err(err) => Err(TrascribeError::from(err)),
+        Err(err) => Err(TranscribeError::from(err)),
     }
 }
 
-fn load_snapshot_file(path: &Path) -> Result<SessionRecoverySnapshot, TrascribeError> {
-    let content = fs::read_to_string(path).map_err(TrascribeError::from)?;
-    serde_json::from_str(&content).map_err(|e| TrascribeError::InvalidInput(e.to_string()))
+fn load_snapshot_file(path: &Path) -> Result<SessionRecoverySnapshot, TranscribeError> {
+    let content = fs::read_to_string(path).map_err(TranscribeError::from)?;
+    serde_json::from_str(&content).map_err(|e| TranscribeError::InvalidInput(e.to_string()))
 }
 
-fn unix_ms_now() -> Result<u64, TrascribeError> {
+fn unix_ms_now() -> Result<u64, TranscribeError> {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .map_err(|e| TrascribeError::InvalidInput(e.to_string()))?;
+        .map_err(|e| TranscribeError::InvalidInput(e.to_string()))?;
     Ok(now.as_millis() as u64)
 }
 
@@ -481,13 +481,13 @@ fn trim_recent_emitted(segments: &mut Vec<Segment>) {
 fn with_session_mut(
     session_id: &str,
     f: impl FnOnce(&mut SessionState),
-) -> Result<(), TrascribeError> {
+) -> Result<(), TranscribeError> {
     let mut reg = registry()
         .lock()
-        .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
+        .map_err(|_| TranscribeError::Transcription("session registry lock poisoned".into()))?;
     let state = reg
         .get_mut(session_id)
-        .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))?;
+        .ok_or_else(|| TranscribeError::SessionNotFound(session_id.to_string()))?;
     f(state);
     Ok(())
 }
@@ -510,7 +510,7 @@ mod tests {
 
     #[test]
     fn recovery_snapshot_roundtrip_and_cleanup() {
-        let dir = std::env::temp_dir().join(format!("trascribe_recovery_{}", uuid::Uuid::new_v4()));
+        let dir = std::env::temp_dir().join(format!("transcribe_recovery_{}", uuid::Uuid::new_v4()));
         let _ = std::fs::remove_dir_all(&dir);
         set_recovery_dir_override(Some(dir.clone()));
 

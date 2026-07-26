@@ -13,7 +13,7 @@ use symphonia::core::io::MediaSourceStream;
 use symphonia::core::meta::MetadataOptions;
 use symphonia::core::probe::Hint;
 
-use crate::error::TrascribeError;
+use crate::error::TranscribeError;
 
 pub const TARGET_SAMPLE_RATE: u32 = 16_000;
 
@@ -31,8 +31,8 @@ pub struct AudioBuffer {
 /// Not FRB-exposed directly (takes `&Path`); see `api::decode_audio_file`
 /// for the `String`-path wrapper Dart calls into.
 #[flutter_rust_bridge::frb(ignore)]
-pub fn decode_audio_file(path: &Path) -> Result<AudioBuffer, TrascribeError> {
-    let file = File::open(path).map_err(TrascribeError::from)?;
+pub fn decode_audio_file(path: &Path) -> Result<AudioBuffer, TranscribeError> {
+    let file = File::open(path).map_err(TranscribeError::from)?;
     let mss = MediaSourceStream::new(Box::new(file), Default::default());
 
     let mut hint = Hint::new();
@@ -47,7 +47,7 @@ pub fn decode_audio_file(path: &Path) -> Result<AudioBuffer, TrascribeError> {
             &FormatOptions::default(),
             &MetadataOptions::default(),
         )
-        .map_err(|e| TrascribeError::AudioDecode(format!("unsupported or corrupt file: {e}")))?;
+        .map_err(|e| TranscribeError::AudioDecode(format!("unsupported or corrupt file: {e}")))?;
 
     let mut format = probed.format;
 
@@ -55,7 +55,7 @@ pub fn decode_audio_file(path: &Path) -> Result<AudioBuffer, TrascribeError> {
         .tracks()
         .iter()
         .find(|t| t.codec_params.codec != CODEC_TYPE_NULL)
-        .ok_or_else(|| TrascribeError::AudioDecode("no decodable audio track found".into()))?
+        .ok_or_else(|| TranscribeError::AudioDecode("no decodable audio track found".into()))?
         .clone();
 
     let original_sample_rate = track.codec_params.sample_rate.unwrap_or(TARGET_SAMPLE_RATE);
@@ -67,7 +67,7 @@ pub fn decode_audio_file(path: &Path) -> Result<AudioBuffer, TrascribeError> {
 
     let mut decoder = symphonia::default::get_codecs()
         .make(&track.codec_params, &DecoderOptions::default())
-        .map_err(|e| TrascribeError::AudioDecode(format!("unsupported codec: {e}")))?;
+        .map_err(|e| TranscribeError::AudioDecode(format!("unsupported codec: {e}")))?;
 
     let track_id = track.id;
     let mut mono_samples: Vec<f32> = Vec::new();
@@ -80,7 +80,7 @@ pub fn decode_audio_file(path: &Path) -> Result<AudioBuffer, TrascribeError> {
             {
                 break;
             }
-            Err(e) => return Err(TrascribeError::AudioDecode(format!("read error: {e}"))),
+            Err(e) => return Err(TranscribeError::AudioDecode(format!("read error: {e}"))),
         };
 
         if packet.track_id() != track_id {
@@ -90,12 +90,12 @@ pub fn decode_audio_file(path: &Path) -> Result<AudioBuffer, TrascribeError> {
         match decoder.decode(&packet) {
             Ok(decoded) => append_as_mono(&decoded, &mut mono_samples),
             Err(symphonia::core::errors::Error::DecodeError(_)) => continue,
-            Err(e) => return Err(TrascribeError::AudioDecode(format!("decode error: {e}"))),
+            Err(e) => return Err(TranscribeError::AudioDecode(format!("decode error: {e}"))),
         }
     }
 
     if mono_samples.is_empty() {
-        return Err(TrascribeError::AudioDecode(
+        return Err(TranscribeError::AudioDecode(
             "file contains no audio samples".into(),
         ));
     }
@@ -147,7 +147,7 @@ fn append_as_mono(decoded: &AudioBufferRef, out: &mut Vec<f32>) {
 /// Resample mono PCM to [`TARGET_SAMPLE_RATE`] using rubato (SIMD-accelerated).
 /// Internal helper, not FRB-exposed.
 #[flutter_rust_bridge::frb(ignore)]
-pub fn resample_to_target(samples: &[f32], from_rate: u32) -> Result<Vec<f32>, TrascribeError> {
+pub fn resample_to_target(samples: &[f32], from_rate: u32) -> Result<Vec<f32>, TranscribeError> {
     if from_rate == TARGET_SAMPLE_RATE {
         return Ok(samples.to_vec());
     }
@@ -169,11 +169,11 @@ pub fn resample_to_target(samples: &[f32], from_rate: u32) -> Result<Vec<f32>, T
 
     let ratio = TARGET_SAMPLE_RATE as f64 / from_rate as f64;
     let mut resampler = SincFixedIn::<f32>::new(ratio, 2.0, params, samples.len(), 1)
-        .map_err(|e| TrascribeError::AudioDecode(format!("resampler init failed: {e}")))?;
+        .map_err(|e| TranscribeError::AudioDecode(format!("resampler init failed: {e}")))?;
 
     let output = resampler
         .process(&[samples.to_vec()], None)
-        .map_err(|e| TrascribeError::AudioDecode(format!("resample failed: {e}")))?;
+        .map_err(|e| TranscribeError::AudioDecode(format!("resample failed: {e}")))?;
 
     Ok(output.into_iter().next().unwrap_or_default())
 }
@@ -216,7 +216,7 @@ mod tests {
     #[test]
     fn decode_corrupt_file_errors() {
         let dir = std::env::temp_dir();
-        let path = dir.join("trascribe_test_corrupt.wav");
+        let path = dir.join("transcribe_test_corrupt.wav");
         std::fs::write(&path, b"not a real wav file at all").unwrap();
         let result = decode_audio_file(&path);
         assert!(result.is_err());

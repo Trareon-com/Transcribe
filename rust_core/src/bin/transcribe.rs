@@ -1,6 +1,6 @@
 //! Main power-user entrypoint.
 //!
-//! Usage: `trascribe --batch "*.mp3" --output ./transkrip/ --model models/ggml-tiny.bin`
+//! Usage: `transcribe --batch "*.mp3" --output ./transkrip/ --model models/ggml-tiny.bin`
 
 mod cli_shared;
 

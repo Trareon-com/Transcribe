@@ -13,7 +13,7 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use cpal::{Sample, SampleFormat, StreamConfig};
 
 use crate::decode::resample_to_target;
-use crate::error::TrascribeError;
+use crate::error::TranscribeError;
 
 /// A running capture session. Dropping this stops the stream and joins
 /// the capture thread. Not FRB-exposed — driven from Rust-side session
@@ -41,8 +41,8 @@ impl AudioCapture {
     pub fn start(
         device_name: Option<String>,
         samples_tx: mpsc::Sender<Vec<f32>>,
-    ) -> Result<Self, TrascribeError> {
-        let (ready_tx, ready_rx) = mpsc::channel::<Result<(), TrascribeError>>();
+    ) -> Result<Self, TranscribeError> {
+        let (ready_tx, ready_rx) = mpsc::channel::<Result<(), TranscribeError>>();
         let (stop_tx, stop_rx) = mpsc::channel::<()>();
 
         let thread = std::thread::spawn(move || {
@@ -59,7 +59,7 @@ impl AudioCapture {
                 thread: Some(thread),
             }),
             Ok(Err(e)) => Err(e),
-            Err(_) => Err(TrascribeError::AudioDevice(
+            Err(_) => Err(TranscribeError::AudioDevice(
                 "capture thread exited before signaling readiness".into(),
             )),
         }
@@ -69,8 +69,8 @@ impl AudioCapture {
         device_name: Option<String>,
         samples_tx: mpsc::Sender<Vec<f32>>,
         stop_rx: mpsc::Receiver<()>,
-        ready_tx: &mpsc::Sender<Result<(), TrascribeError>>,
-    ) -> Result<(), TrascribeError> {
+        ready_tx: &mpsc::Sender<Result<(), TranscribeError>>,
+    ) -> Result<(), TranscribeError> {
         let host = cpal::default_host();
         let device = resolve_device(&host, device_name.as_deref())?;
         let config = resolve_input_config(&device)?;
@@ -78,7 +78,7 @@ impl AudioCapture {
         let stream = build_input_stream(&device, &config, samples_tx)?;
         stream
             .play()
-            .map_err(|e| TrascribeError::AudioDevice(format!("failed to start stream: {e}")))?;
+            .map_err(|e| TranscribeError::AudioDevice(format!("failed to start stream: {e}")))?;
 
         // Signal readiness now that the stream is actually playing.
         let _ = ready_tx.send(Ok(()));
@@ -109,48 +109,48 @@ impl Drop for AudioCapture {
 fn resolve_device(
     host: &cpal::Host,
     device_name: Option<&str>,
-) -> Result<cpal::Device, TrascribeError> {
+) -> Result<cpal::Device, TranscribeError> {
     match device_name {
         None => host
             .default_input_device()
-            .ok_or_else(|| TrascribeError::AudioDevice("no default input device available".into())),
+            .ok_or_else(|| TranscribeError::AudioDevice("no default input device available".into())),
         Some(name) => resolve_named_device(host, name),
     }
 }
 
-fn resolve_named_device(host: &cpal::Host, name: &str) -> Result<cpal::Device, TrascribeError> {
+fn resolve_named_device(host: &cpal::Host, name: &str) -> Result<cpal::Device, TranscribeError> {
     if let Some(device) = host
         .input_devices()
-        .map_err(|e| TrascribeError::AudioDevice(e.to_string()))?
+        .map_err(|e| TranscribeError::AudioDevice(e.to_string()))?
         .find(|d| d.name().map(|n| n == name).unwrap_or(false))
     {
         return Ok(device);
     }
     if let Some(device) = host
         .output_devices()
-        .map_err(|e| TrascribeError::AudioDevice(e.to_string()))?
+        .map_err(|e| TranscribeError::AudioDevice(e.to_string()))?
         .find(|d| d.name().map(|n| n == name).unwrap_or(false))
     {
         return Ok(device);
     }
-    Err(TrascribeError::AudioDevice(format!(
+    Err(TranscribeError::AudioDevice(format!(
         "device '{name}' not found"
     )))
 }
 
 fn resolve_input_config(
     device: &cpal::Device,
-) -> Result<cpal::SupportedStreamConfig, TrascribeError> {
+) -> Result<cpal::SupportedStreamConfig, TranscribeError> {
     device
         .default_input_config()
-        .map_err(|e| TrascribeError::AudioDevice(format!("no supported input config: {e}")))
+        .map_err(|e| TranscribeError::AudioDevice(format!("no supported input config: {e}")))
 }
 
 fn build_input_stream(
     device: &cpal::Device,
     supported_config: &cpal::SupportedStreamConfig,
     samples_tx: mpsc::Sender<Vec<f32>>,
-) -> Result<cpal::Stream, TrascribeError> {
+) -> Result<cpal::Stream, TranscribeError> {
     let config: StreamConfig = supported_config.config();
     let sample_format = supported_config.sample_format();
     let channels = config.channels as usize;
@@ -169,7 +169,7 @@ fn build_input_stream(
             samples_tx,
             err_fn,
         )
-        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        .map_err(|e| TranscribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
         SampleFormat::I16 => build_generic_input_stream::<i16>(
             device,
             &config,
@@ -178,7 +178,7 @@ fn build_input_stream(
             samples_tx,
             err_fn,
         )
-        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        .map_err(|e| TranscribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
         SampleFormat::U16 => build_generic_input_stream::<u16>(
             device,
             &config,
@@ -187,7 +187,7 @@ fn build_input_stream(
             samples_tx,
             err_fn,
         )
-        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        .map_err(|e| TranscribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
         SampleFormat::I8 => build_generic_input_stream::<i8>(
             device,
             &config,
@@ -196,7 +196,7 @@ fn build_input_stream(
             samples_tx,
             err_fn,
         )
-        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        .map_err(|e| TranscribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
         SampleFormat::U8 => build_generic_input_stream::<u8>(
             device,
             &config,
@@ -205,7 +205,7 @@ fn build_input_stream(
             samples_tx,
             err_fn,
         )
-        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        .map_err(|e| TranscribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
         SampleFormat::I32 => build_generic_input_stream::<i32>(
             device,
             &config,
@@ -214,7 +214,7 @@ fn build_input_stream(
             samples_tx,
             err_fn,
         )
-        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        .map_err(|e| TranscribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
         SampleFormat::U32 => build_generic_input_stream::<u32>(
             device,
             &config,
@@ -223,7 +223,7 @@ fn build_input_stream(
             samples_tx,
             err_fn,
         )
-        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        .map_err(|e| TranscribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
         SampleFormat::I64 => build_generic_input_stream::<i64>(
             device,
             &config,
@@ -232,7 +232,7 @@ fn build_input_stream(
             samples_tx,
             err_fn,
         )
-        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        .map_err(|e| TranscribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
         SampleFormat::U64 => build_generic_input_stream::<u64>(
             device,
             &config,
@@ -241,7 +241,7 @@ fn build_input_stream(
             samples_tx,
             err_fn,
         )
-        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        .map_err(|e| TranscribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
         SampleFormat::F64 => build_generic_input_stream::<f64>(
             device,
             &config,
@@ -250,9 +250,9 @@ fn build_input_stream(
             samples_tx,
             err_fn,
         )
-        .map_err(|e| TrascribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
+        .map_err(|e| TranscribeError::AudioDevice(format!("failed to build input stream: {e}")))?,
         other => {
-            return Err(TrascribeError::AudioDevice(format!(
+            return Err(TranscribeError::AudioDevice(format!(
                 "unsupported sample format: {other:?}"
             )));
         }

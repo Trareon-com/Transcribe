@@ -7,13 +7,13 @@
 //! | Linux    | ffmpeg PulseAudio monitor (primary) + parec (fallback) |
 
 use crate::audio::capture::AudioCapture;
-use crate::error::TrascribeError;
+use crate::error::TranscribeError;
 use std::sync::mpsc;
 
 pub fn start_loopback(
     device_hint: Option<String>,
     samples_tx: mpsc::Sender<Vec<f32>>,
-) -> Result<AudioCapture, TrascribeError> {
+) -> Result<AudioCapture, TranscribeError> {
     #[cfg(target_os = "macos")]
     {
         macos::capture_loopback(device_hint, samples_tx)
@@ -29,7 +29,7 @@ pub fn start_loopback(
     #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
     {
         let _ = (device_hint, samples_tx);
-        Err(TrascribeError::AudioDevice("loopback not supported".into()))
+        Err(TranscribeError::AudioDevice("loopback not supported".into()))
     }
 }
 
@@ -39,7 +39,7 @@ pub fn start_loopback(
 #[cfg(target_os = "macos")]
 pub(crate) mod macos {
     use crate::audio::capture::AudioCapture;
-    use crate::error::TrascribeError;
+    use crate::error::TranscribeError;
     use std::io::Read;
     use std::process::{Command, Stdio};
     use std::sync::mpsc;
@@ -48,7 +48,7 @@ pub(crate) mod macos {
     pub fn capture_loopback(
         device_hint: Option<String>,
         samples_tx: mpsc::Sender<Vec<f32>>,
-    ) -> Result<AudioCapture, TrascribeError> {
+    ) -> Result<AudioCapture, TranscribeError> {
         // ScreenCaptureKit: zero-setup system audio on macOS 13+
         // Skip if user explicitly requested a specific device (e.g. BlackHole)
         let wants_sck = device_hint
@@ -86,17 +86,17 @@ pub(crate) mod macos {
     /// Requires macOS 13.0+ and one-time "Screen & System Audio Recording" permission.
     fn try_sck_capture(
         samples_tx: &mpsc::Sender<Vec<f32>>,
-    ) -> Result<AudioCapture, TrascribeError> {
+    ) -> Result<AudioCapture, TranscribeError> {
         use screencapturekit::cm::{AudioBufferRef, AudioBufferList, CMSampleBuffer};
         use screencapturekit::prelude::*;
 
         let content = SCShareableContent::get().map_err(|e| {
-            TrascribeError::AudioDevice(format!(
+            TranscribeError::AudioDevice(format!(
                 "ScreenCaptureKit: cannot list content — grant Screen & System Audio Recording permission in System Settings ({e})"
             ))
         })?;
         let display = content.displays().first().ok_or_else(|| {
-            TrascribeError::AudioDevice("ScreenCaptureKit: no display found".into())
+            TranscribeError::AudioDevice("ScreenCaptureKit: no display found".into())
         })?;
 
         let filter = SCContentFilter::create()
@@ -140,11 +140,11 @@ pub(crate) mod macos {
                 SCStreamOutputType::Audio,
             )
             .map_err(|e| {
-                TrascribeError::AudioDevice(format!("ScreenCaptureKit: add handler failed: {e}"))
+                TranscribeError::AudioDevice(format!("ScreenCaptureKit: add handler failed: {e}"))
             })?;
 
         stream.start_capture().map_err(|e| {
-            TrascribeError::AudioDevice(format!("ScreenCaptureKit: start failed: {e}"))
+            TranscribeError::AudioDevice(format!("ScreenCaptureKit: start failed: {e}"))
         })?;
 
         let (stop_tx, stop_rx) = mpsc::channel::<()>();
@@ -160,12 +160,12 @@ pub(crate) mod macos {
     /// ScreenCaptureKit permission is unavailable.
     fn ffmpeg_fallback(
         samples_tx: mpsc::Sender<Vec<f32>>,
-    ) -> Result<AudioCapture, TrascribeError> {
+    ) -> Result<AudioCapture, TranscribeError> {
         let (stop_tx, stop_rx) = mpsc::channel::<()>();
-        let (ready_tx, ready_rx) = mpsc::channel::<Result<(), TrascribeError>>();
+        let (ready_tx, ready_rx) = mpsc::channel::<Result<(), TranscribeError>>();
 
         let thread = std::thread::spawn(move || {
-            let result = (|| -> Result<(), TrascribeError> {
+            let result = (|| -> Result<(), TranscribeError> {
                 let mut child = Command::new("ffmpeg")
                     .args([
                         "-hide_banner",
@@ -187,13 +187,13 @@ pub(crate) mod macos {
                     .stderr(Stdio::null())
                     .spawn()
                     .map_err(|e| {
-                        TrascribeError::AudioDevice(format!(
+                        TranscribeError::AudioDevice(format!(
                             "ffmpeg not found. Install: brew install ffmpeg ({e})"
                         ))
                     })?;
 
                 let stdout = child.stdout.take().ok_or_else(|| {
-                    TrascribeError::AudioDevice("no stdout from ffmpeg".into())
+                    TranscribeError::AudioDevice("no stdout from ffmpeg".into())
                 })?;
 
                 let _ = ready_tx.send(Ok(()));
@@ -236,7 +236,7 @@ pub(crate) mod macos {
         match ready_rx.recv() {
             Ok(Ok(())) => Ok(AudioCapture::new(stop_tx, thread)),
             Ok(Err(e)) => Err(e),
-            Err(_) => Err(TrascribeError::AudioDevice("ffmpeg thread failed".into())),
+            Err(_) => Err(TranscribeError::AudioDevice("ffmpeg thread failed".into())),
         }
     }
 }
@@ -248,7 +248,7 @@ pub(crate) mod macos {
 pub(crate) mod windows {
     use crate::audio::capture::AudioCapture;
     use crate::decode::resample_to_target;
-    use crate::error::TrascribeError;
+    use crate::error::TranscribeError;
     use std::sync::mpsc;
     // The `windows` crate (not `windows-sys`) is used here specifically because
     // it generates ergonomic method-call bindings for COM interfaces
@@ -267,9 +267,9 @@ pub(crate) mod windows {
     pub fn capture_loopback(
         _device_hint: Option<String>,
         samples_tx: mpsc::Sender<Vec<f32>>,
-    ) -> Result<AudioCapture, TrascribeError> {
+    ) -> Result<AudioCapture, TranscribeError> {
         let (stop_tx, stop_rx) = mpsc::channel::<()>();
-        let (ready_tx, ready_rx) = mpsc::channel::<Result<(), TrascribeError>>();
+        let (ready_tx, ready_rx) = mpsc::channel::<Result<(), TranscribeError>>();
 
         let thread = std::thread::spawn(move || {
             let result = unsafe { run_wasapi_loopback(&samples_tx, &stop_rx, &ready_tx) };
@@ -279,32 +279,32 @@ pub(crate) mod windows {
         match ready_rx.recv() {
             Ok(Ok(())) => Ok(AudioCapture::new(stop_tx, thread)),
             Ok(Err(e)) => Err(e),
-            Err(_) => Err(TrascribeError::AudioDevice("WASAPI thread failed".into())),
+            Err(_) => Err(TranscribeError::AudioDevice("WASAPI thread failed".into())),
         }
     }
 
     unsafe fn run_wasapi_loopback(
         samples_tx: &mpsc::Sender<Vec<f32>>,
         stop_rx: &mpsc::Receiver<()>,
-        ready_tx: &mpsc::Sender<Result<(), TrascribeError>>,
-    ) -> Result<(), TrascribeError> {
+        ready_tx: &mpsc::Sender<Result<(), TranscribeError>>,
+    ) -> Result<(), TranscribeError> {
         let _ = CoInitializeEx(None, COINIT_APARTMENTTHREADED);
 
         let enumerator: IMMDeviceEnumerator =
             CoCreateInstance(&MMDeviceEnumerator, None, CLSCTX_ALL)
-                .map_err(|e| TrascribeError::AudioDevice(format!("CoCreateInstance: {e}")))?;
+                .map_err(|e| TranscribeError::AudioDevice(format!("CoCreateInstance: {e}")))?;
 
         let device = enumerator
             .GetDefaultAudioEndpoint(eRender, eConsole)
-            .map_err(|e| TrascribeError::AudioDevice(format!("GetDefaultAudioEndpoint: {e}")))?;
+            .map_err(|e| TranscribeError::AudioDevice(format!("GetDefaultAudioEndpoint: {e}")))?;
 
         let client: IAudioClient = device
             .Activate(CLSCTX_ALL, None)
-            .map_err(|e| TrascribeError::AudioDevice(format!("Activate: {e}")))?;
+            .map_err(|e| TranscribeError::AudioDevice(format!("Activate: {e}")))?;
 
         let fmt = client
             .GetMixFormat()
-            .map_err(|e| TrascribeError::AudioDevice(format!("GetMixFormat: {e}")))?;
+            .map_err(|e| TranscribeError::AudioDevice(format!("GetMixFormat: {e}")))?;
         let sr = (*fmt).nSamplesPerSec;
         let ch = (*fmt).nChannels as usize;
 
@@ -317,16 +317,16 @@ pub(crate) mod windows {
                 fmt,
                 None,
             )
-            .map_err(|e| TrascribeError::AudioDevice(format!("Initialize: {e}")))?;
+            .map_err(|e| TranscribeError::AudioDevice(format!("Initialize: {e}")))?;
         CoTaskMemFree(Some(fmt.cast()));
 
         let cc: IAudioCaptureClient = client
             .GetService()
-            .map_err(|e| TrascribeError::AudioDevice(format!("GetService: {e}")))?;
+            .map_err(|e| TranscribeError::AudioDevice(format!("GetService: {e}")))?;
 
         client
             .Start()
-            .map_err(|e| TrascribeError::AudioDevice(format!("Start: {e}")))?;
+            .map_err(|e| TranscribeError::AudioDevice(format!("Start: {e}")))?;
         let _ = ready_tx.send(Ok(()));
 
         let batch = (sr / 10) as u32;
@@ -380,7 +380,7 @@ pub(crate) mod windows {
 #[cfg(target_os = "linux")]
 pub(crate) mod linux {
     use crate::audio::capture::AudioCapture;
-    use crate::error::TrascribeError;
+    use crate::error::TranscribeError;
     use std::io::Read;
     use std::process::{Command, Stdio};
     use std::sync::mpsc;
@@ -389,9 +389,9 @@ pub(crate) mod linux {
     pub fn capture_loopback(
         _device_hint: Option<String>,
         samples_tx: mpsc::Sender<Vec<f32>>,
-    ) -> Result<AudioCapture, TrascribeError> {
+    ) -> Result<AudioCapture, TranscribeError> {
         let (stop_tx, stop_rx) = mpsc::channel::<()>();
-        let (ready_tx, ready_rx) = mpsc::channel::<Result<(), TrascribeError>>();
+        let (ready_tx, ready_rx) = mpsc::channel::<Result<(), TranscribeError>>();
 
         let thread = std::thread::spawn(move || {
             let result = run_linux_loopback(&samples_tx, &stop_rx, &ready_tx);
@@ -401,7 +401,7 @@ pub(crate) mod linux {
         match ready_rx.recv() {
             Ok(Ok(())) => Ok(AudioCapture::new(stop_tx, thread)),
             Ok(Err(e)) => Err(e),
-            Err(_) => Err(TrascribeError::AudioDevice(
+            Err(_) => Err(TranscribeError::AudioDevice(
                 "Linux loopback thread failed".into(),
             )),
         }
@@ -410,8 +410,8 @@ pub(crate) mod linux {
     fn run_linux_loopback(
         samples_tx: &mpsc::Sender<Vec<f32>>,
         stop_rx: &mpsc::Receiver<()>,
-        ready_tx: &mpsc::Sender<Result<(), TrascribeError>>,
-    ) -> Result<(), TrascribeError> {
+        ready_tx: &mpsc::Sender<Result<(), TranscribeError>>,
+    ) -> Result<(), TranscribeError> {
         // ffmpeg -f pulse -i default -ac 1 -ar 16000 -f f32le -
         // fallback: parec --rate=16000 --channels=1 --format=float32le
         let mut child = Command::new("ffmpeg")
@@ -444,11 +444,11 @@ pub(crate) mod linux {
         }
 
         let mut child =
-            child.map_err(|e| TrascribeError::AudioDevice(format!("need ffmpeg or parec: {e}")))?;
+            child.map_err(|e| TranscribeError::AudioDevice(format!("need ffmpeg or parec: {e}")))?;
         let stdout = child
             .stdout
             .take()
-            .ok_or_else(|| TrascribeError::AudioDevice("no stdout".into()))?;
+            .ok_or_else(|| TranscribeError::AudioDevice("no stdout".into()))?;
 
         let _ = ready_tx.send(Ok(()));
         let mut reader = std::io::BufReader::new(stdout);

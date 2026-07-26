@@ -1,4 +1,4 @@
-# Gap Analysis & Completion Plan — Trascribe Blueprint vs Current Implementation
+# Gap Analysis & Completion Plan — Transcribe Blueprint vs Current Implementation
 
 > **For Hermes:** This plan identifies gaps between the 5913-line TRASCRIBE-BLUEPRINT.md and the current codebase, then prioritizes remaining work.
 
@@ -92,10 +92,10 @@
 **What needs to happen:**
 1. Create Lynk.ID account
 2. Create product page with:
-   - Title: "Trascribe — Offline Meeting Transcriber"
+   - Title: "Transcribe — Offline Meeting Transcriber"
    - Price: $5 (or IDR equivalent)
    - Description noting ad-hoc signing warnings
-   - Screenshots from `~/Desktop/trascribe_*.png`
+   - Screenshots from `~/Desktop/transcribe_*.png`
 3. Create Gumroad backup
 4. Upload macOS `.dmg` and Windows `.zip` (once Gap #1 is resolved)
 
@@ -237,7 +237,7 @@
    - Project banner/logo
    - CI badges (from GitHub Actions)
    - Feature list
-   - Screenshots (from `~/Desktop/trascribe_*.png`)
+   - Screenshots (from `~/Desktop/transcribe_*.png`)
    - Installation instructions
    - FAQ
    - License + links

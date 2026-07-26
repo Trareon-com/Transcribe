@@ -9,7 +9,7 @@ use std::path::Path;
 use serde::Serialize;
 
 use crate::decode::{decode_audio_file, TARGET_SAMPLE_RATE};
-use crate::error::TrascribeResult;
+use crate::error::TranscribeResult;
 use crate::export::Segment;
 use crate::stt::WhisperEngine;
 
@@ -28,7 +28,7 @@ pub fn transcribe_file(
     engine: &WhisperEngine,
     path: &Path,
     language: Option<&str>,
-) -> TrascribeResult<TranscribeFileResult> {
+) -> TranscribeResult<TranscribeFileResult> {
     let audio = decode_audio_file(path)?;
 
     // ADR-10 CHUNKED PROCESSING: for large audio files (>30s), split into

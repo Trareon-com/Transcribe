@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:trascribe/screens/usage_dashboard_screen.dart';
+import 'package:transcribe/screens/usage_dashboard_screen.dart';
 
 void main() {
   testWidgets('shows zero state by default', (WidgetTester tester) async {

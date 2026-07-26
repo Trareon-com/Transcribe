@@ -1,4 +1,4 @@
-# Trascribe — Wiring, Latency & Cross-Platform Fix Plan
+# Transcribe — Wiring, Latency & Cross-Platform Fix Plan
 
 > **For Hermes:** Use subagent-driven-development to implement this plan task-by-task.
 
@@ -252,7 +252,7 @@ cd rust_core && cargo build --release --lib          # Release build
 ```
 
 Manual smoke test on macOS:
-1. Launch app via `open build/macos/Build/Products/Debug/trascribe.app`
+1. Launch app via `open build/macos/Build/Products/Debug/transcribe.app`
 2. Complete setup wizard
 3. Click "Mulai" → VU meter moves, transcript appears within 5 seconds
 4. Click "Stop" → session saved

@@ -1,10 +1,10 @@
-# Finalisasi Trascribe + Setup Computer Use (Claude Code-style)
+# Finalisasi Transcribe + Setup Computer Use (Claude Code-style)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Gunakan `subagent-driven-development` atau `executing-plans` untuk implementasi task-by-task. Steps menggunakan checkbox (`- [ ]`) syntax.
 
-**Goal:** Menyempurnakan aplikasi Trascribe (wiring end-to-end yang tersisa) dan mengkonfigurasi computer use (cua-driver) agar Hermes bisa melakukan GUI testing otomatis layaknya Claude Code.
+**Goal:** Menyempurnakan aplikasi Transcribe (wiring end-to-end yang tersisa) dan mengkonfigurasi computer use (cua-driver) agar Hermes bisa melakukan GUI testing otomatis layaknya Claude Code.
 
-**Architecture:** Dua jalur paralel: (A) Finalisasi kode — menghubungkan download model progress dari Rust ke Dart, expose `read_download_progress` ke FRB, polling progress di wizard, dan fix edge case terakhir. (B) Setup computer use — memastikan cua-driver berfungsi penuh di M4 Pro MacBook, membuat Hermes agent bisa capture/click/type/scroll pada Trascribe app untuk smoke testing otomatis.
+**Architecture:** Dua jalur paralel: (A) Finalisasi kode — menghubungkan download model progress dari Rust ke Dart, expose `read_download_progress` ke FRB, polling progress di wizard, dan fix edge case terakhir. (B) Setup computer use — memastikan cua-driver berfungsi penuh di M4 Pro MacBook, membuat Hermes agent bisa capture/click/type/scroll pada Transcribe app untuk smoke testing otomatis.
 
 **Tech Stack:** Rust (flutter_rust_bridge v2.12), Dart (Riverpod), cua-driver v0.12.6 (49 macOS MCP tools), Hermes Agent desktop app.
 
@@ -17,7 +17,7 @@
 3. **Pre-commit:** `cd rust_core && cargo test --lib && cargo fmt`
 4. **Pre-commit:** `flutter analyze && flutter test`
 5. **Tidak ada `unwrap()`/`expect()`/`panic!()` di library code Rust**
-6. **FRB-exposed signatures harus `Result<T, TrascribeError>` eksplisit (bukan type alias)**
+6. **FRB-exposed signatures harus `Result<T, TranscribeError>` eksplisit (bukan type alias)**
 7. **Tidak ada `unsafe` tanpa inline justification comment**
 8. **Versi pinned:** flutter_rust_bridge =2.12.0, whisper-rs 0.14, cpal 0.15
 
@@ -47,7 +47,7 @@ Dari audit lengkap, ditemukan bahwa:
 - [ ] **Step 1: Baca `api.rs` untuk lihat pattern existing**
 
 ```bash
-cd /Users/user/Projects/Trareon/Trascribe\ Transcribe
+cd /Users/user/Projects/Trareon/Transcribe\ Transcribe
 read_file rust_core/src/api.rs
 ```
 
@@ -252,7 +252,7 @@ pub fn transcribe_files_batch(
     files: Vec<String>,
     output_dir: String,
     language: Option<String>,
-) -> Result<(), TrascribeError> {
+) -> Result<(), TranscribeError> {
     // Load engine, process files
 }
 ```
@@ -294,7 +294,7 @@ git commit -m "feat: wire batch transcription to Rust engine"
 
 cua-driver v0.12.6 sudah terinstall di M4 Pro MacBook (dari memory notes). Tersedia 49 macOS MCP tools. Yang perlu dilakukan:
 1. Verifikasi cua-driver berfungsi penuh (Accessibility + Screen Recording permissions)
-2. Buat sesi Hermes + cua-driver untuk testing Trascribe
+2. Buat sesi Hermes + cua-driver untuk testing Transcribe
 3. Buat smoke test script yang bisa jalan otomatis
 4. Integrasikan dengan workflow development (pre-commit GUI smoke test opsional)
 
@@ -345,7 +345,7 @@ cua-driver permissions grant --all
 cua-driver status
 ```
 
-### Task B2: Buat Smoke Test Script untuk Trascribe
+### Task B2: Buat Smoke Test Script untuk Transcribe
 
 **Files:**
 - Create: `scripts/gui_smoke_test.sh`
@@ -360,13 +360,13 @@ cua-driver status
 ```bash
 cat > scripts/gui_smoke_test.sh << 'SCRIPT'
 #!/usr/bin/env bash
-# GUI Smoke Test untuk Trascribe menggunakan computer_use via Hermes
+# GUI Smoke Test untuk Transcribe menggunakan computer_use via Hermes
 # Jalankan: hermes chat -q "$(cat scripts/gui_smoke_test.sh)"
 set -euo pipefail
 
-echo "=== Trascribe GUI Smoke Test ==="
+echo "=== Transcribe GUI Smoke Test ==="
 echo "Test 1: Launch app"
-open -a "Trascribe" || { echo "FAIL: App not found"; exit 1; }
+open -a "Transcribe" || { echo "FAIL: App not found"; exit 1; }
 sleep 2
 
 echo "Test 2: Verify window exists"
@@ -380,11 +380,11 @@ chmod +x scripts/gui_smoke_test.sh
 Bikin file markdown yang menjelaskan setiap langkah GUI test secara detail:
 
 ```markdown
-# GUI Smoke Test Plan — Trascribe
+# GUI Smoke Test Plan — Transcribe
 
 ## Prerequisites
 - cua-driver daemon running
-- Trascribe app built (flutter build macos --debug)
+- Transcribe app built (flutter build macos --debug)
 - Models directory with ggml-tiny.bin
 
 ## Test Cases
@@ -392,10 +392,10 @@ Bikin file markdown yang menjelaskan setiap langkah GUI test secara detail:
 ### TC1: App Launches
 1. capture(desktop) → verify app icon exists
 2. Launch app via open command
-3. capture(app="Trascribe") → verify main window visible
+3. capture(app="Transcribe") → verify main window visible
 
 ### TC2: Wizard Complete Flow (5 steps)
-1. capture(app="Trascribe") → find "Lanjut" button
+1. capture(app="Transcribe") → find "Lanjut" button
 2. click(element=N) → verify step changes
 3. Repeat for all 5 steps
 4. Verify "Selesai" button visible on last step
@@ -411,8 +411,8 @@ Bikin file markdown yang menjelaskan setiap langkah GUI test secara detail:
 
 Jalankan sesi Hermes dengan skill computer-use terload:
 ```bash
-hermes chat -q "Jalankan GUI smoke test untuk Trascribe: 
-1. Buka aplikasi Trascribe 
+hermes chat -q "Jalankan GUI smoke test untuk Transcribe: 
+1. Buka aplikasi Transcribe 
 2. Verifikasi window muncul
 3. Screenshot dan report"
 ```
@@ -423,7 +423,7 @@ Gunakan `computer_use(action="capture")` untuk screenshot, `computer_use(action=
 
 ```bash
 mkdir -p test/screenshots/gui-smoke
-cp /tmp/trascribe_smoke_*.png test/screenshots/gui-smoke/
+cp /tmp/transcribe_smoke_*.png test/screenshots/gui-smoke/
 ```
 
 ### Task B3: Integrasi GUI Smoke Test ke Workflow
@@ -433,7 +433,7 @@ cp /tmp/trascribe_smoke_*.png test/screenshots/gui-smoke/
 - Modify: `AGENTS.md` (tambah step GUI smoke test)
 
 **Interfaces:**
-- Consumes: `scripts/gui_smoke_test.sh`, cua-driver, Trascribe debug build
+- Consumes: `scripts/gui_smoke_test.sh`, cua-driver, Transcribe debug build
 - Produces: Pre-commit / pre-push GUI smoke test yang bisa jalan otomatis
 
 - [ ] **Step 1: Update AGENTS.md**
@@ -484,7 +484,7 @@ Expected: 0 errors, 50+ tests passed
 - [ ] **Step 3: GUI smoke test manual**
 
 ```bash
-hermes chat -q "Jalankan GUI smoke test Trascribe: buka app, screenshots, verifikasi semua elemen utama"
+hermes chat -q "Jalankan GUI smoke test Transcribe: buka app, screenshots, verifikasi semua elemen utama"
 ```
 
 - [ ] **Step 4: Push ke origin**

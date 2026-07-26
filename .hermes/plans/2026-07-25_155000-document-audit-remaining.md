@@ -87,9 +87,9 @@ git push origin main
 
 1. Sign up at Lynk.ID
 2. Create product with:
-   - Title: "Trascribe — Offline Meeting Transcriber"
+   - Title: "Transcribe — Offline Meeting Transcriber"
    - Price: $5 (IDR equivalent)
-   - Screenshots: use images from `~/Desktop/trascribe_*.png`
+   - Screenshots: use images from `~/Desktop/transcribe_*.png`
    - Description: 100% offline, zero network calls, macOS+Windows
    - Known limitations: ad-hoc signing, SmartScreen warning
 3. Upload macOS `.dmg` and Windows `.zip`

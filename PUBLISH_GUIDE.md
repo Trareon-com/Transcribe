@@ -1,7 +1,7 @@
 # Lynk.ID & Gumroad — Panduan Publikasi
 
 > Dokumen ini berisi konten yang siap di-copy-paste ke halaman produk Lynk.ID dan Gumroad.
-> Screenshot ada di `~/Desktop/trascribe_*.png` — pilih yang terbaik untuk hero image.
+> Screenshot ada di `~/Desktop/transcribe_*.png` — pilih yang terbaik untuk hero image.
 
 ---
 
@@ -15,7 +15,7 @@
 
 ### Hero Image
 Gunakan salah satu dari:
-- `~/Desktop/trascribe_main_screen.png` — Main screen dengan mode selector
+- `~/Desktop/transcribe_main_screen.png` — Main screen dengan mode selector
 - `~/Desktop/wizard_main_screen.png` — Setelah wizard selesai
 - `~/Desktop/hwtest_recording_state.png` — Saat recording aktif
 
@@ -78,7 +78,7 @@ Setelah itu 100% offline selamanya.
 Upload dari `~/Desktop/`:
 1. Setup wizard — `wizard_step1.png`
 2. Model selection — `wizard_step2.png`
-3. Main screen — `trascribe_main_screen.png`  
+3. Main screen — `transcribe_main_screen.png`  
 4. Recording active — `hwtest_recording_state.png`
 5. Settings — `settings_main.png`
 6. Privacy Report — `privacy_report.png`
@@ -103,8 +103,8 @@ Sama dengan deskripsi Lynk.ID di atas (copy-paste).
 - Product type: Digital download
 
 ### Files to upload
-1. `trascribe-1.0.0-macos.dmg` (build dari CI)
-2. `trascribe-1.0.0-windows.zip` (build dari CI)
+1. `transcribe-1.0.0-macos.dmg` (build dari CI)
+2. `transcribe-1.0.0-windows.zip` (build dari CI)
 
 ---
 

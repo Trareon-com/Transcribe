@@ -20,4 +20,4 @@ if [ ! -f "$MODEL_FILE" ]; then
 fi
 
 echo "🎤 Menjalankan Trareon Transcribe..."
-exec "$BUNDLE_DIR/trascribe"
+exec "$BUNDLE_DIR/transcribe"

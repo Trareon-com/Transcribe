@@ -4,7 +4,7 @@ use thiserror::Error;
 /// No `unwrap`/`expect`/`panic!` in library code — every fallible
 /// operation must resolve to one of these variants.
 #[derive(Debug, Error)]
-pub enum TrascribeError {
+pub enum TranscribeError {
     #[error("audio device error: {0}")]
     AudioDevice(String),
 
@@ -22,7 +22,7 @@ pub enum TrascribeError {
 
     /// String, not `std::io::Error` — the latter has no FRB `SseEncode`
     /// impl, which broke bridge codegen. Construct via
-    /// `TrascribeError::from(io_err)` or `.map_err(TrascribeError::from)`.
+    /// `TranscribeError::from(io_err)` or `.map_err(TranscribeError::from)`.
     #[error("io error: {0}")]
     Io(String),
 
@@ -33,14 +33,14 @@ pub enum TrascribeError {
     SessionNotFound(String),
 }
 
-impl From<std::io::Error> for TrascribeError {
+impl From<std::io::Error> for TranscribeError {
     fn from(e: std::io::Error) -> Self {
-        TrascribeError::Io(e.to_string())
+        TranscribeError::Io(e.to_string())
     }
 }
 
 /// Internal-only convenience alias. FRB-exposed signatures (anything in a
 /// module listed in the codegen `--rust-input`) must spell out
-/// `Result<T, TrascribeError>` explicitly — the codegen doesn't resolve
+/// `Result<T, TranscribeError>` explicitly — the codegen doesn't resolve
 /// this alias when scanning multiple modules.
-pub type TrascribeResult<T> = Result<T, TrascribeError>;
+pub type TranscribeResult<T> = Result<T, TranscribeError>;

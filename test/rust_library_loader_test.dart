@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:trascribe/services/rust_library_loader.dart';
+import 'package:transcribe/services/rust_library_loader.dart';
 
 void main() {
   test('does not throw when no library is present on the test machine', () {

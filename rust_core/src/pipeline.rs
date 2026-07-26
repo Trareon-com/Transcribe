@@ -13,7 +13,7 @@
 
 use crate::audio::RingBuffer;
 use crate::diarization::Diarizer;
-use crate::error::{TrascribeError, TrascribeResult};
+use crate::error::{TranscribeError, TranscribeResult};
 use crate::export::Segment;
 use crate::stt::WhisperEngine;
 use crate::vad::{DualVad, VadConfig, FRAME_SAMPLES_10MS};
@@ -46,7 +46,7 @@ impl LiveWorker {
         language: Option<String>,
         samples_rx: std::sync::mpsc::Receiver<Vec<f32>>,
         events_tx: std::sync::mpsc::Sender<LiveEvent>,
-    ) -> Result<Self, TrascribeError> {
+    ) -> Result<Self, TranscribeError> {
         let engine = WhisperEngine::load(model_path.as_ref())?;
         let source = source.into();
         let (stop_tx, stop_rx) = std::sync::mpsc::channel();
@@ -113,7 +113,7 @@ impl<'a> LivePipeline<'a> {
         source: impl Into<String>,
         language: Option<String>,
         vad_config: VadConfig,
-    ) -> TrascribeResult<Self> {
+    ) -> TranscribeResult<Self> {
         Ok(Self {
             engine,
             ring: RingBuffer::default(),
@@ -132,7 +132,7 @@ impl<'a> LivePipeline<'a> {
     /// echo-filtered — this pipeline only ever sees its own source, so
     /// cross-source dedupe happens where mic and speaker segments actually
     /// meet (see the module doc comment).
-    pub fn ingest(&mut self, samples: &[f32]) -> TrascribeResult<Vec<Segment>> {
+    pub fn ingest(&mut self, samples: &[f32]) -> TranscribeResult<Vec<Segment>> {
         if samples.is_empty() {
             return Ok(Vec::new());
         }

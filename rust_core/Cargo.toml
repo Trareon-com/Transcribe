@@ -16,11 +16,11 @@ path = "src/bin/gen_fixtures.rs"
 
 [[bin]]
 name = "trareon-transcribe"
-path = "src/bin/trascribe.rs"
+path = "src/bin/transcribe.rs"
 
 [[bin]]
-name = "trascribe_cli"
-path = "src/bin/trascribe_cli.rs"
+name = "transcribe_cli"
+path = "src/bin/transcribe_cli.rs"
 
 [[bin]]
 name = "device_probe"

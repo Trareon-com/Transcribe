@@ -1,14 +1,14 @@
 //! Public API surface exposed to Flutter via flutter_rust_bridge V2.
 //!
 //! FRB-compatible: no lifetimes in public signatures, every fallible
-//! function returns `Result<T, TrascribeError>`. Streams (`vu_meter_stream`,
+//! function returns `Result<T, TranscribeError>`. Streams (`vu_meter_stream`,
 //! `transcript_stream`, live audio thread wiring) land once FRB codegen is
 //! set up against the actual Flutter app.
 
 use std::path::PathBuf;
 
 use crate::audio::{AudioDeviceInfo, SessionConfig, SessionMode};
-use crate::error::TrascribeError;
+use crate::error::TranscribeError;
 use crate::export::{ExportFormat, ExportedFile, Segment};
 use crate::model::ModelInfo;
 use crate::session::{SessionEvent, SessionRecoverySnapshot, SessionStatus};
@@ -28,55 +28,55 @@ pub fn engine_version() -> String {
     env!("CARGO_PKG_VERSION").to_string()
 }
 
-pub fn health_check() -> Result<bool, TrascribeError> {
+pub fn health_check() -> Result<bool, TranscribeError> {
     Ok(true)
 }
 
 // --- Audio devices -----------------------------------------------------
 
-pub fn list_audio_devices() -> Result<Vec<AudioDeviceInfo>, TrascribeError> {
+pub fn list_audio_devices() -> Result<Vec<AudioDeviceInfo>, TranscribeError> {
     crate::audio::list_input_devices()
 }
 
-pub fn get_loopback_device(name_hint: String) -> Result<AudioDeviceInfo, TrascribeError> {
+pub fn get_loopback_device(name_hint: String) -> Result<AudioDeviceInfo, TranscribeError> {
     crate::audio::get_loopback_device(&name_hint)
 }
 
 // --- Session control -----------------------------------------------------
 
-pub fn start_session(config: SessionConfig) -> Result<String, TrascribeError> {
+pub fn start_session(config: SessionConfig) -> Result<String, TranscribeError> {
     crate::session::start_session(config)
 }
 
-pub fn stop_session(session_id: String) -> Result<(), TrascribeError> {
+pub fn stop_session(session_id: String) -> Result<(), TranscribeError> {
     crate::session::stop_session(&session_id)
 }
 
-pub fn toggle_mic(session_id: String, enabled: bool) -> Result<(), TrascribeError> {
+pub fn toggle_mic(session_id: String, enabled: bool) -> Result<(), TranscribeError> {
     crate::session::toggle_mic(&session_id, enabled)
 }
 
-pub fn toggle_speaker(session_id: String, enabled: bool) -> Result<(), TrascribeError> {
+pub fn toggle_speaker(session_id: String, enabled: bool) -> Result<(), TranscribeError> {
     crate::session::toggle_speaker(&session_id, enabled)
 }
 
-pub fn set_session_mode(session_id: String, mode: SessionMode) -> Result<(), TrascribeError> {
+pub fn set_session_mode(session_id: String, mode: SessionMode) -> Result<(), TranscribeError> {
     crate::session::set_session_mode(&session_id, mode)
 }
 
-pub fn get_session_status(session_id: String) -> Result<SessionStatus, TrascribeError> {
+pub fn get_session_status(session_id: String) -> Result<SessionStatus, TranscribeError> {
     crate::session::get_status(&session_id)
 }
 
-pub fn poll_session_events(session_id: String) -> Result<Vec<SessionEvent>, TrascribeError> {
+pub fn poll_session_events(session_id: String) -> Result<Vec<SessionEvent>, TranscribeError> {
     crate::session::poll_events(&session_id)
 }
 
-pub fn list_recoverable_sessions() -> Result<Vec<SessionRecoverySnapshot>, TrascribeError> {
+pub fn list_recoverable_sessions() -> Result<Vec<SessionRecoverySnapshot>, TranscribeError> {
     crate::session::list_recoverable_sessions()
 }
 
-pub fn recover_session(snapshot: SessionRecoverySnapshot) -> Result<String, TrascribeError> {
+pub fn recover_session(snapshot: SessionRecoverySnapshot) -> Result<String, TranscribeError> {
     crate::session::recover_session(snapshot)
 }
 
@@ -90,13 +90,13 @@ pub fn is_model_downloaded(models_dir: String, model_id: String) -> bool {
     crate::model::is_model_downloaded(&PathBuf::from(models_dir), &model_id)
 }
 
-pub async fn download_model(models_dir: String, model_id: String) -> Result<(), TrascribeError> {
+pub async fn download_model(models_dir: String, model_id: String) -> Result<(), TranscribeError> {
     let models_path = PathBuf::from(models_dir);
     let info = crate::model::resolve_model_info(&models_path, &model_id)?;
     let dest_path = crate::model::resolve_model_path(&models_path, &model_id)?;
 
     if let Some(parent) = dest_path.parent() {
-        std::fs::create_dir_all(parent).map_err(TrascribeError::from)?;
+        std::fs::create_dir_all(parent).map_err(TranscribeError::from)?;
     }
 
     crate::model::download_with_resume(&info.url, &dest_path, |progress| {
@@ -124,13 +124,13 @@ pub fn export_session(
     formats: Vec<ExportFormat>,
     output_dir: String,
     title: String,
-) -> Result<Vec<ExportedFile>, TrascribeError> {
+) -> Result<Vec<ExportedFile>, TranscribeError> {
     crate::export::export_segments(&segments, &formats, &PathBuf::from(output_dir), &title)
 }
 
 // --- File transcription -----------------------------------------------------
 
-pub fn decode_audio_file(path: String) -> Result<crate::decode::AudioBuffer, TrascribeError> {
+pub fn decode_audio_file(path: String) -> Result<crate::decode::AudioBuffer, TranscribeError> {
     crate::decode::decode_audio_file(&PathBuf::from(path))
 }
 
@@ -140,7 +140,7 @@ pub fn transcribe_files_batch(
     model_path: String,
     files: Vec<String>,
     language: Option<String>,
-) -> Result<Vec<crate::stt::file::TranscribeFileResult>, TrascribeError> {
+) -> Result<Vec<crate::stt::file::TranscribeFileResult>, TranscribeError> {
     let engine = crate::stt::WhisperEngine::load(&PathBuf::from(&model_path))?;
     let file_paths: Vec<PathBuf> = files.iter().map(PathBuf::from).collect();
     let mut results = Vec::new();
@@ -165,21 +165,21 @@ pub fn load_settings() -> AppSettings {
     crate::settings::load_settings()
 }
 
-pub fn save_settings(settings: AppSettings) -> Result<(), TrascribeError> {
+pub fn save_settings(settings: AppSettings) -> Result<(), TranscribeError> {
     crate::settings::save_settings(&settings)
 }
 
 // --- Singleton instance lock -----------------------------------------------------
 
-pub fn is_another_instance_running() -> Result<bool, TrascribeError> {
+pub fn is_another_instance_running() -> Result<bool, TranscribeError> {
     crate::singleton::is_another_instance_running()
 }
 
-pub fn acquire_instance_lock() -> Result<(), TrascribeError> {
+pub fn acquire_instance_lock() -> Result<(), TranscribeError> {
     crate::singleton::acquire_lock()
 }
 
-pub fn release_instance_lock() -> Result<(), TrascribeError> {
+pub fn release_instance_lock() -> Result<(), TranscribeError> {
     crate::singleton::release_lock()
 }
 

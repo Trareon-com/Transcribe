@@ -8,7 +8,7 @@ use std::sync::Mutex;
 
 use whisper_rs::{FullParams, SamplingStrategy, WhisperContext, WhisperContextParameters};
 
-use crate::error::{TrascribeError, TrascribeResult};
+use crate::error::{TranscribeError, TranscribeResult};
 use crate::export::Segment;
 
 pub mod file;
@@ -22,7 +22,7 @@ pub struct WhisperEngine {
 impl WhisperEngine {
     /// Load a GGML/GGUF model from disk. Returns an error (never panics)
     /// if the file is missing, unreadable, or not a valid whisper model.
-    pub fn load(model_path: &Path) -> TrascribeResult<Self> {
+    pub fn load(model_path: &Path) -> TranscribeResult<Self> {
         Self::load_with_gpu(model_path, false, 0)
     }
 
@@ -33,9 +33,9 @@ impl WhisperEngine {
         model_path: &Path,
         use_gpu: bool,
         gpu_device: i32,
-    ) -> TrascribeResult<Self> {
+    ) -> TranscribeResult<Self> {
         if !model_path.exists() {
-            return Err(TrascribeError::Model(format!(
+            return Err(TranscribeError::Model(format!(
                 "model file not found: {}",
                 model_path.display()
             )));
@@ -43,13 +43,13 @@ impl WhisperEngine {
 
         let path_str = model_path
             .to_str()
-            .ok_or_else(|| TrascribeError::Model("model path is not valid UTF-8".into()))?;
+            .ok_or_else(|| TranscribeError::Model("model path is not valid UTF-8".into()))?;
 
         let mut params = WhisperContextParameters::new();
         params.use_gpu(use_gpu).gpu_device(gpu_device);
 
         let context = WhisperContext::new_with_params(path_str, params)
-            .map_err(|e| TrascribeError::Model(format!("failed to load model: {e}")))?;
+            .map_err(|e| TranscribeError::Model(format!("failed to load model: {e}")))?;
 
         Ok(Self {
             context: Mutex::new(context),
@@ -78,9 +78,9 @@ impl WhisperEngine {
         source: &str,
         chunk_start_secs: f64,
         language: Option<&str>,
-    ) -> TrascribeResult<Vec<Segment>> {
+    ) -> TranscribeResult<Vec<Segment>> {
         if samples.is_empty() {
-            return Err(TrascribeError::InvalidInput(
+            return Err(TranscribeError::InvalidInput(
                 "cannot transcribe empty audio buffer".into(),
             ));
         }
@@ -88,11 +88,11 @@ impl WhisperEngine {
         let ctx = self
             .context
             .lock()
-            .map_err(|_| TrascribeError::Transcription("whisper context lock poisoned".into()))?;
+            .map_err(|_| TranscribeError::Transcription("whisper context lock poisoned".into()))?;
 
         let mut state = ctx
             .create_state()
-            .map_err(|e| TrascribeError::Transcription(format!("failed to create state: {e}")))?;
+            .map_err(|e| TranscribeError::Transcription(format!("failed to create state: {e}")))?;
 
         let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
         params.set_print_special(false);
@@ -104,25 +104,25 @@ impl WhisperEngine {
 
         state
             .full(params, samples)
-            .map_err(|e| TrascribeError::Transcription(format!("inference failed: {e}")))?;
+            .map_err(|e| TranscribeError::Transcription(format!("inference failed: {e}")))?;
 
         let num_segments = state
             .full_n_segments()
-            .map_err(|e| TrascribeError::Transcription(e.to_string()))?;
+            .map_err(|e| TranscribeError::Transcription(e.to_string()))?;
 
         let mut out = Vec::with_capacity(num_segments as usize);
         for i in 0..num_segments {
             let text = state
                 .full_get_segment_text(i)
-                .map_err(|e| TrascribeError::Transcription(e.to_string()))?;
+                .map_err(|e| TranscribeError::Transcription(e.to_string()))?;
             let t0 = state
                 .full_get_segment_t0(i)
-                .map_err(|e| TrascribeError::Transcription(e.to_string()))?
+                .map_err(|e| TranscribeError::Transcription(e.to_string()))?
                 as f64
                 / 100.0;
             let t1 = state
                 .full_get_segment_t1(i)
-                .map_err(|e| TrascribeError::Transcription(e.to_string()))?
+                .map_err(|e| TranscribeError::Transcription(e.to_string()))?
                 as f64
                 / 100.0;
 
@@ -154,7 +154,7 @@ mod tests {
 
     #[test]
     fn load_invalid_model_file_errors() {
-        let path = std::env::temp_dir().join("trascribe_not_a_model.gguf");
+        let path = std::env::temp_dir().join("transcribe_not_a_model.gguf");
         std::fs::write(&path, b"not a real ggml model").unwrap();
         let result = WhisperEngine::load(&path);
         assert!(result.is_err());

@@ -40,7 +40,7 @@ void main() async {
 
   await TrayService.instance.init();
 
-  runApp(const ProviderScope(child: TrascribeApp()));
+  runApp(const ProviderScope(child: TranscribeApp()));
 }
 
 /// Copies bundled models from Flutter assets to the app's models directory
@@ -108,8 +108,8 @@ class _AlreadyRunningApp extends StatelessWidget {
   }
 }
 
-class TrascribeApp extends ConsumerWidget {
-  const TrascribeApp({super.key});
+class TranscribeApp extends ConsumerWidget {
+  const TranscribeApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

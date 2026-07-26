@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:trascribe/theme/app_colors.dart';
-import 'package:trascribe/widgets/stream_toggle.dart';
+import 'package:transcribe/theme/app_colors.dart';
+import 'package:transcribe/widgets/stream_toggle.dart';
 
 void main() {
   testWidgets('exposes a merged semantic node with the label and switch', (

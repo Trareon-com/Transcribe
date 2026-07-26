@@ -7,7 +7,7 @@ use std::sync::Arc;
 
 use serde::{Deserialize, Serialize};
 
-use crate::error::TrascribeError;
+use crate::error::TranscribeError;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Segment {
@@ -65,12 +65,12 @@ pub fn export_segments(
     formats: &[ExportFormat],
     output_dir: &Path,
     title: &str,
-) -> Result<Vec<ExportedFile>, TrascribeError> {
+) -> Result<Vec<ExportedFile>, TranscribeError> {
     let safe_title = sanitize_filename(title);
     // Prepend today's date in YYYYMMDD format per blueprint §5.4
     let date_prefix = chrono::Local::now().format("%Y%m%d").to_string();
     let session_dir = output_dir.join(format!("{date_prefix}-{safe_title}"));
-    fs::create_dir_all(&session_dir).map_err(TrascribeError::from)?;
+    fs::create_dir_all(&session_dir).map_err(TranscribeError::from)?;
 
     // PARALLEL EXPORT: spawn a thread per format so that e.g. Markdown
     // generation doesn't block DOCX (which involves expensive ZIP packing)
@@ -96,7 +96,7 @@ pub fn export_segments(
                 ExportFormat::Json => (
                     format!("{safe_title}.json"),
                     serde_json::to_string_pretty(&*segments)
-                        .map_err(|e| TrascribeError::Export(e.to_string()))?
+                        .map_err(|e| TranscribeError::Export(e.to_string()))?
                         .into_bytes(),
                 ),
                 ExportFormat::Srt => (format!("{safe_title}.srt"), to_srt(&*segments).into_bytes()),
@@ -112,11 +112,11 @@ pub fn export_segments(
             };
 
             let path: PathBuf = session_dir.join(&filename);
-            let mut file = fs::File::create(&path).map_err(TrascribeError::from)?;
-            file.write_all(&content).map_err(TrascribeError::from)?;
+            let mut file = fs::File::create(&path).map_err(TranscribeError::from)?;
+            file.write_all(&content).map_err(TranscribeError::from)?;
 
-            let size_bytes = fs::metadata(&path).map_err(TrascribeError::from)?.len();
-            Ok::<ExportedFile, TrascribeError>(ExportedFile {
+            let size_bytes = fs::metadata(&path).map_err(TranscribeError::from)?.len();
+            Ok::<ExportedFile, TranscribeError>(ExportedFile {
                 filename,
                 path: path.to_string_lossy().to_string(),
                 size_bytes,
@@ -131,7 +131,7 @@ pub fn export_segments(
             Ok(Ok(file)) => results.push(file),
             Ok(Err(e)) => return Err(e),
             Err(e) => {
-                return Err(TrascribeError::Export(format!(
+                return Err(TranscribeError::Export(format!(
                     "export thread panicked: {:?}",
                     e
                 )));
@@ -144,7 +144,7 @@ pub fn export_segments(
 
 /// Write mono f32 PCM (16kHz) as a 16-bit WAV file.
 #[flutter_rust_bridge::frb(ignore)]
-pub fn write_wav(samples: &[f32], sample_rate: u32, path: &Path) -> Result<(), TrascribeError> {
+pub fn write_wav(samples: &[f32], sample_rate: u32, path: &Path) -> Result<(), TranscribeError> {
     let spec = hound::WavSpec {
         channels: 1,
         sample_rate,
@@ -152,16 +152,16 @@ pub fn write_wav(samples: &[f32], sample_rate: u32, path: &Path) -> Result<(), T
         sample_format: hound::SampleFormat::Int,
     };
     let mut writer =
-        hound::WavWriter::create(path, spec).map_err(|e| TrascribeError::Export(e.to_string()))?;
+        hound::WavWriter::create(path, spec).map_err(|e| TranscribeError::Export(e.to_string()))?;
     for &s in samples {
         let clamped = (s.clamp(-1.0, 1.0) * i16::MAX as f32) as i16;
         writer
             .write_sample(clamped)
-            .map_err(|e| TrascribeError::Export(e.to_string()))?;
+            .map_err(|e| TranscribeError::Export(e.to_string()))?;
     }
     writer
         .finalize()
-        .map_err(|e| TrascribeError::Export(e.to_string()))
+        .map_err(|e| TranscribeError::Export(e.to_string()))
 }
 
 fn to_markdown(segments: &[Segment], title: &str) -> String {
@@ -239,7 +239,7 @@ fn html_escape(raw: &str) -> String {
         .replace('"', "&quot;")
 }
 
-fn to_docx_bytes(segments: &[Segment], title: &str) -> Result<Vec<u8>, TrascribeError> {
+fn to_docx_bytes(segments: &[Segment], title: &str) -> Result<Vec<u8>, TranscribeError> {
     use docx_rs::{Docx, Paragraph, Run};
 
     let mut docx = Docx::new()
@@ -258,7 +258,7 @@ fn to_docx_bytes(segments: &[Segment], title: &str) -> Result<Vec<u8>, Trascribe
     let mut cursor = std::io::Cursor::new(Vec::new());
     docx.build()
         .pack(&mut cursor)
-        .map_err(|e| TrascribeError::Export(format!("docx build failed: {e}")))?;
+        .map_err(|e| TranscribeError::Export(format!("docx build failed: {e}")))?;
     Ok(cursor.into_inner())
 }
 
@@ -326,7 +326,7 @@ mod tests {
     #[test]
     fn export_all_formats_writes_files() {
         let dir =
-            std::env::temp_dir().join(format!("trascribe_export_test_{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("transcribe_export_test_{}", uuid::Uuid::new_v4()));
         let segments = sample_segments();
         let formats = [
             ExportFormat::Markdown,
@@ -378,7 +378,7 @@ mod tests {
     #[test]
     fn export_path_traversal_title_is_contained() {
         let dir =
-            std::env::temp_dir().join(format!("trascribe_export_test_{}", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("transcribe_export_test_{}", uuid::Uuid::new_v4()));
         let segments = sample_segments();
         let files = export_segments(&segments, &[ExportFormat::Txt], &dir, "../../evil").unwrap();
         for f in &files {
@@ -390,7 +390,7 @@ mod tests {
     #[test]
     fn wav_roundtrip_readable() {
         let path =
-            std::env::temp_dir().join(format!("trascribe_wav_test_{}.wav", uuid::Uuid::new_v4()));
+            std::env::temp_dir().join(format!("transcribe_wav_test_{}.wav", uuid::Uuid::new_v4()));
         let samples = vec![0.0f32, 0.5, -0.5, 1.0, -1.0];
         write_wav(&samples, 16_000, &path).unwrap();
         let reader = hound::WavReader::open(&path).unwrap();

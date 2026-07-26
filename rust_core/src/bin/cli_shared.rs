@@ -7,7 +7,7 @@ use rust_core::stt::WhisperEngine;
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "trascribe",
+    name = "transcribe",
     about = "Batch-transcribe audio files from the command line"
 )]
 pub struct Args {

@@ -366,8 +366,8 @@ rust_core/                 Rust engine (compiled as staticlib/cdylib/lib)
     memory.rs                Memory-pressure detection
     error.rs                 Central error type (Trareon TranscribeError)
     bin/gen_fixtures.rs      Synthetic WAV fixtures for hardware-free tests
-    bin/trascribe.rs         Main CLI for batch transcription
-    bin/trascribe_cli.rs     Compatibility alias for the CLI
+    bin/transcribe.rs         Main CLI for batch transcription
+    bin/transcribe_cli.rs     Compatibility alias for the CLI
 
 test/                       Flutter widget/unit tests
 scripts/                    Build, package, and benchmark scripts

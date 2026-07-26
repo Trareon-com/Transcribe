@@ -15,9 +15,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
-import 'package:trascribe/src/rust/api.dart' as rust_api;
-import 'package:trascribe/src/rust/audio.dart' as rust_audio;
-import 'package:trascribe/src/rust/frb_generated.dart';
+import 'package:transcribe/src/rust/api.dart' as rust_api;
+import 'package:transcribe/src/rust/audio.dart' as rust_audio;
+import 'package:transcribe/src/rust/frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 void main() {

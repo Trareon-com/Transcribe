@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:trascribe/screens/setup_wizard_screen.dart';
-import 'package:trascribe/services/bridge_service.dart';
-import 'package:trascribe/state/models.dart';
-import 'package:trascribe/state/privacy_report_model.dart';
-import 'package:trascribe/state/settings_model.dart';
-import 'package:trascribe/src/rust/audio/device.dart' as rust_device;
-import 'package:trascribe/src/rust/session.dart' as rust_session;
-import 'package:trascribe/src/rust/export.dart' as rust_export;
-import 'package:trascribe/src/rust/stt/file.dart' as rust_stt_file;
+import 'package:transcribe/screens/setup_wizard_screen.dart';
+import 'package:transcribe/services/bridge_service.dart';
+import 'package:transcribe/state/models.dart';
+import 'package:transcribe/state/privacy_report_model.dart';
+import 'package:transcribe/state/settings_model.dart';
+import 'package:transcribe/src/rust/audio/device.dart' as rust_device;
+import 'package:transcribe/src/rust/session.dart' as rust_session;
+import 'package:transcribe/src/rust/export.dart' as rust_export;
+import 'package:transcribe/src/rust/stt/file.dart' as rust_stt_file;
 
 class _FakeBridge implements RustBridge {
   AppSettings savedSettings = AppSettings.defaults();

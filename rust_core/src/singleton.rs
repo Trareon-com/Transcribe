@@ -4,23 +4,23 @@
 use std::fs;
 use std::path::PathBuf;
 
-use crate::error::{TrascribeError, TrascribeResult};
+use crate::error::{TranscribeError, TranscribeResult};
 
-fn lock_path() -> TrascribeResult<PathBuf> {
+fn lock_path() -> TranscribeResult<PathBuf> {
     let dir = dirs::config_dir()
-        .ok_or_else(|| TrascribeError::InvalidInput("no config directory available".into()))?
+        .ok_or_else(|| TranscribeError::InvalidInput("no config directory available".into()))?
         .join("TrareonTranscribe");
-    Ok(dir.join("trascribe.lock"))
+    Ok(dir.join("transcribe.lock"))
 }
 
 /// Returns true if another live instance already holds the lock (a PID
 /// file exists and that PID is still running). A stale lock file (process
 /// no longer alive) is treated as not-running and can be reclaimed.
-pub fn is_another_instance_running() -> TrascribeResult<bool> {
+pub fn is_another_instance_running() -> TranscribeResult<bool> {
     is_another_instance_running_at(&lock_path()?)
 }
 
-fn is_another_instance_running_at(path: &PathBuf) -> TrascribeResult<bool> {
+fn is_another_instance_running_at(path: &PathBuf) -> TranscribeResult<bool> {
     let Ok(content) = fs::read_to_string(path) else {
         return Ok(false);
     };
@@ -32,26 +32,26 @@ fn is_another_instance_running_at(path: &PathBuf) -> TrascribeResult<bool> {
 
 /// Acquire the lock for the current process. Errors if another live
 /// instance already holds it.
-pub fn acquire_lock() -> TrascribeResult<()> {
+pub fn acquire_lock() -> TranscribeResult<()> {
     acquire_lock_at(&lock_path()?)
 }
 
-fn acquire_lock_at(path: &PathBuf) -> TrascribeResult<()> {
+fn acquire_lock_at(path: &PathBuf) -> TranscribeResult<()> {
     if is_another_instance_running_at(path)? {
-        return Err(TrascribeError::InvalidInput(
+        return Err(TranscribeError::InvalidInput(
             "another instance of Trareon Transcribe is already running".into(),
         ));
     }
     if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent).map_err(TrascribeError::from)?;
+        fs::create_dir_all(parent).map_err(TranscribeError::from)?;
     }
-    fs::write(path, std::process::id().to_string()).map_err(TrascribeError::from)
+    fs::write(path, std::process::id().to_string()).map_err(TranscribeError::from)
 }
 
-pub fn release_lock() -> TrascribeResult<()> {
+pub fn release_lock() -> TranscribeResult<()> {
     let path = lock_path()?;
     if path.exists() {
-        fs::remove_file(path).map_err(TrascribeError::from)?;
+        fs::remove_file(path).map_err(TranscribeError::from)?;
     }
     Ok(())
 }
@@ -89,7 +89,7 @@ mod tests {
     use super::*;
 
     fn temp_lock_path() -> PathBuf {
-        std::env::temp_dir().join(format!("trascribe_lock_test_{}.lock", uuid::Uuid::new_v4()))
+        std::env::temp_dir().join(format!("transcribe_lock_test_{}.lock", uuid::Uuid::new_v4()))
     }
 
     #[test]

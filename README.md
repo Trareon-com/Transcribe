@@ -93,7 +93,7 @@ Each export format runs in its own thread for parallel processing.
 
 ### CLI & Batch Processing
 
-- **`trascribe` CLI** — Batch-transcribe audio files without the UI.
+- **`transcribe` CLI** — Batch-transcribe audio files without the UI.
 - **`gen_fixtures`** — Generate synthetic WAV fixtures for hardware-free testing.
 - **Batch file upload** — Drag-and-drop audio files for multi-file transcription.
 
@@ -170,7 +170,7 @@ rust_core/                Rust engine
 │   ├── session.rs        Session registry, auto-split, recovery
 │   ├── settings.rs       Persistence layer
 │   └── singleton.rs      Single-instance PID lock
-└── bin/                  CLI tools (trascribe, gen_fixtures, device_probe)
+└── bin/                  CLI tools (transcribe, gen_fixtures, device_probe)
 ```
 
 See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the complete layout, data flow diagrams, and bridge implementation details.
@@ -239,8 +239,8 @@ Both scripts: build Rust release → build Flutter release → sign → package 
 
 ```bash
 cd rust_core
-cargo run --bin trascribe -- \
-  --batch '*.mp3' --output ./transcripts/ --model models/ggml-base.bin
+cargo run --bin transcribe -- \
+  --batch "*.mp3" --output ./transcripts/ --model models/ggml-base.bin
 ```
 
 ---
@@ -283,7 +283,7 @@ Any GGUF-format Whisper model. `base` (142 MB) and `large-v3-turbo-q4_k_m` (474 
 
 ### Can I transcribe pre-recorded files?
 
-Yes. Drag-and-drop audio/video files onto the Library screen, or use the `trascribe` CLI for batch processing. Supported: MP3, AAC, MP4, OGG, FLAC, WAV, MOV, MKV (via Symphonia).
+Yes. Drag-and-drop audio/video files onto the Library screen, or use the `transcribe` CLI for batch processing. Supported: MP3, AAC, MP4, OGG, FLAC, WAV, MOV, MKV (via Symphonia).
 
 ### How does speaker diarization work?
 

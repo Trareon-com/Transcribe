@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import '../state/session_model.dart';
 
 /// Channel for communicating with the macOS native hotkey monitor.
-const _channel = MethodChannel('com.trascribe.global_hotkey');
+const _channel = MethodChannel('com.transcribe.global_hotkey');
 
 /// Handles global keyboard shortcuts (Ctrl+Shift+R, Ctrl+Shift+P) that work
 /// even when the app is minimized or in the background.

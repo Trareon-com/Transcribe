@@ -1,6 +1,6 @@
 //! Power-user CLI alias kept for compatibility.
 //!
-//! Usage: `trascribe-cli --batch "*.mp3" --output ./transkrip/ --model models/ggml-tiny.bin`
+//! Usage: `transcribe-cli --batch "*.mp3" --output ./transkrip/ --model models/ggml-tiny.bin`
 
 mod cli_shared;
 

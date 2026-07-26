@@ -15,7 +15,7 @@ use ort::value::Tensor;
 
 use webrtc_vad::{SampleRate, Vad, VadMode};
 
-use crate::error::{TrascribeError, TrascribeResult};
+use crate::error::{TranscribeError, TranscribeResult};
 
 /// Frame size WebRTC VAD accepts at 16kHz (10ms, 20ms, or 30ms frames).
 pub const FRAME_SAMPLES_10MS: usize = 160;
@@ -106,10 +106,10 @@ pub struct SileroDetector {
 }
 
 impl SileroDetector {
-    pub fn new(model_path: impl Into<std::path::PathBuf>) -> TrascribeResult<Self> {
+    pub fn new(model_path: impl Into<std::path::PathBuf>) -> TranscribeResult<Self> {
         let model_path = model_path.into();
         if !model_path.exists() {
-            return Err(TrascribeError::Model(format!(
+            return Err(TranscribeError::Model(format!(
                 "Silero VAD model not found at {}",
                 model_path.display()
             )));
@@ -118,9 +118,9 @@ impl SileroDetector {
         {
             ort::init().commit();
             let session = ort::session::Session::builder()
-                .map_err(|e| TrascribeError::Model(format!("Silero VAD init failed: {e}")))?
+                .map_err(|e| TranscribeError::Model(format!("Silero VAD init failed: {e}")))?
                 .commit_from_file(&model_path)
-                .map_err(|e| TrascribeError::Model(format!("Silero VAD load failed: {e}")))?;
+                .map_err(|e| TranscribeError::Model(format!("Silero VAD load failed: {e}")))?;
             return Ok(Self {
                 session,
                 state: [0.0; 256],
@@ -134,9 +134,9 @@ impl SileroDetector {
     }
 
     #[cfg(feature = "silero-onnx")]
-    fn run_probability(&mut self, frame_i16: &[i16]) -> TrascribeResult<f32> {
+    fn run_probability(&mut self, frame_i16: &[i16]) -> TranscribeResult<f32> {
         if frame_i16.len() != 512 {
-            return Err(TrascribeError::InvalidInput(format!(
+            return Err(TranscribeError::InvalidInput(format!(
                 "Silero VAD expects 512 samples, got {}",
                 frame_i16.len()
             )));
@@ -146,20 +146,20 @@ impl SileroDetector {
             .map(|s| *s as f32 / i16::MAX as f32)
             .collect();
         let input = Tensor::from_array(([1usize, 512], audio.into_boxed_slice()))
-            .map_err(|e| TrascribeError::Model(format!("Silero input tensor failed: {e}")))?;
+            .map_err(|e| TranscribeError::Model(format!("Silero input tensor failed: {e}")))?;
         let state = Tensor::from_array(([2usize, 1, 128], self.state.to_vec().into_boxed_slice()))
-            .map_err(|e| TrascribeError::Model(format!("Silero state tensor failed: {e}")))?;
+            .map_err(|e| TranscribeError::Model(format!("Silero state tensor failed: {e}")))?;
         let sr = Tensor::from_array(([], vec![self.sample_rate].into_boxed_slice()))
-            .map_err(|e| TrascribeError::Model(format!("Silero sample-rate tensor failed: {e}")))?;
+            .map_err(|e| TranscribeError::Model(format!("Silero sample-rate tensor failed: {e}")))?;
         let outputs = self
             .session
             .run(ort::inputs![input, state, sr])
-            .map_err(|e| TrascribeError::Model(format!("Silero inference failed: {e}")))?;
+            .map_err(|e| TranscribeError::Model(format!("Silero inference failed: {e}")))?;
         let prob = outputs
             .get("output")
             .and_then(|v| v.try_extract_tensor::<f32>().ok())
             .and_then(|tensor| tensor.view().as_slice().and_then(|s| s.first().copied()))
-            .ok_or_else(|| TrascribeError::Model("Silero output missing probability".into()))?;
+            .ok_or_else(|| TranscribeError::Model("Silero output missing probability".into()))?;
         Ok(prob)
     }
 
@@ -201,7 +201,7 @@ pub struct DualVad {
 }
 
 impl DualVad {
-    pub fn new(config: VadConfig) -> TrascribeResult<Self> {
+    pub fn new(config: VadConfig) -> TranscribeResult<Self> {
         let mut vad = Vad::new_with_rate_and_mode(SampleRate::Rate16kHz, config.webrtc_mode.into());
         // webrtc-vad crate takes ownership; touch it once to ensure it's usable.
         let _ = vad.is_voice_segment(&[0i16; FRAME_SAMPLES_10MS]);
@@ -236,9 +236,9 @@ impl DualVad {
     ///
     /// The confirmation detector is [`Send`] so it can go into a scoped thread;
     /// WebRTC's `Vad` holds a `*mut` C pointer and must stay on the main thread.
-    pub fn is_speech(&mut self, frame: &[i16]) -> TrascribeResult<bool> {
+    pub fn is_speech(&mut self, frame: &[i16]) -> TranscribeResult<bool> {
         if frame.len() != FRAME_SAMPLES_10MS {
-            return Err(TrascribeError::InvalidInput(format!(
+            return Err(TranscribeError::InvalidInput(format!(
                 "VAD frame must be {FRAME_SAMPLES_10MS} samples, got {}",
                 frame.len()
             )));
@@ -249,13 +249,13 @@ impl DualVad {
         std::thread::scope(|s| {
             // Confirmation detector runs on a parallel thread.
             let confirmation_handle =
-                s.spawn(|| -> TrascribeResult<bool> { Ok(confirmation.is_speech(frame)) });
+                s.spawn(|| -> TranscribeResult<bool> { Ok(confirmation.is_speech(frame)) });
 
             // WebRTC runs inline on the current thread (Vad is not Send).
             let webrtc_result = self
                 .webrtc
                 .is_voice_segment(frame)
-                .map_err(|_| TrascribeError::InvalidInput("webrtc-vad rejected frame".into()));
+                .map_err(|_| TranscribeError::InvalidInput("webrtc-vad rejected frame".into()));
 
             let confirmation_result = confirmation_handle.join().unwrap_or(Ok(false));
 

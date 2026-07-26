@@ -88,7 +88,7 @@ git push origin v1.0.0
 # 2. CI builds automatically (watch Actions tab)
 
 # 3. Download artifacts from CI, verify checksums
-sha256sum -c trascribe-*.sha256
+sha256sum -c transcribe-*.sha256
 
 # 4. Upload to Lynk.ID + Gumroad
 

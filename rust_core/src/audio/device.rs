@@ -3,7 +3,7 @@
 use cpal::traits::{DeviceTrait, HostTrait};
 use serde::Serialize;
 
-use crate::error::TrascribeError;
+use crate::error::TranscribeError;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct AudioDeviceInfo {
@@ -14,19 +14,19 @@ pub struct AudioDeviceInfo {
     pub sample_rates: Vec<u32>,
 }
 
-pub fn list_input_devices() -> Result<Vec<AudioDeviceInfo>, TrascribeError> {
+pub fn list_input_devices() -> Result<Vec<AudioDeviceInfo>, TranscribeError> {
     let host = cpal::default_host();
     let default_name = host.default_input_device().and_then(|d| d.name().ok());
 
     let devices = host
         .input_devices()
-        .map_err(|e| TrascribeError::AudioDevice(e.to_string()))?;
+        .map_err(|e| TranscribeError::AudioDevice(e.to_string()))?;
 
     let mut out = Vec::new();
     for device in devices {
         let name = device
             .name()
-            .map_err(|e| TrascribeError::AudioDevice(e.to_string()))?;
+            .map_err(|e| TranscribeError::AudioDevice(e.to_string()))?;
         let is_default = default_name.as_deref() == Some(name.as_str());
 
         let (channels, sample_rates) = match device.supported_input_configs() {
@@ -53,19 +53,19 @@ pub fn list_input_devices() -> Result<Vec<AudioDeviceInfo>, TrascribeError> {
     Ok(out)
 }
 
-pub fn list_output_devices() -> Result<Vec<AudioDeviceInfo>, TrascribeError> {
+pub fn list_output_devices() -> Result<Vec<AudioDeviceInfo>, TranscribeError> {
     let host = cpal::default_host();
     let default_name = host.default_output_device().and_then(|d| d.name().ok());
 
     let devices = host
         .output_devices()
-        .map_err(|e| TrascribeError::AudioDevice(e.to_string()))?;
+        .map_err(|e| TranscribeError::AudioDevice(e.to_string()))?;
 
     let mut out = Vec::new();
     for device in devices {
         let name = device
             .name()
-            .map_err(|e| TrascribeError::AudioDevice(e.to_string()))?;
+            .map_err(|e| TranscribeError::AudioDevice(e.to_string()))?;
         let is_default = default_name.as_deref() == Some(name.as_str());
 
         let (channels, sample_rates) = match device.supported_output_configs() {
@@ -96,14 +96,14 @@ pub fn list_output_devices() -> Result<Vec<AudioDeviceInfo>, TrascribeError> {
 /// (BlackHole on macOS, WASAPI loopback exposed as an output device on
 /// Windows). Returns an error the caller should surface as "install
 /// BlackHole" / wizard guidance rather than a crash.
-pub fn get_loopback_device(name_hint: &str) -> Result<AudioDeviceInfo, TrascribeError> {
+pub fn get_loopback_device(name_hint: &str) -> Result<AudioDeviceInfo, TranscribeError> {
     let mut devices = list_input_devices()?;
     devices.extend(list_output_devices()?);
     devices
         .into_iter()
         .find(|d| d.name.to_lowercase().contains(&name_hint.to_lowercase()))
         .ok_or_else(|| {
-            TrascribeError::AudioDevice(format!("no loopback device matching '{name_hint}' found"))
+            TranscribeError::AudioDevice(format!("no loopback device matching '{name_hint}' found"))
         })
 }
 

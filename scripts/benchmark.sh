@@ -36,7 +36,7 @@ if command -v cargo &>/dev/null && [ -f "rust_core/Cargo.toml" ]; then
         if [ -f "$MODEL" ]; then
             START=$SECONDS
             cd rust_core
-            RESULT=$(cargo run --bin trascribe --quiet -- \
+            RESULT=$(cargo run --bin transcribe --quiet -- \
                 --batch /tmp/test_en.wav \
                 --model "$MODEL" \
                 --format txt \

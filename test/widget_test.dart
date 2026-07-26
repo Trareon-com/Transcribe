@@ -2,14 +2,14 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:trascribe/main.dart';
-import 'package:trascribe/services/bridge_service.dart';
-import 'package:trascribe/state/models.dart';
-import 'package:trascribe/state/settings_model.dart';
-import 'package:trascribe/src/rust/audio/device.dart' as rust_device;
-import 'package:trascribe/src/rust/session.dart' as rust_session;
-import 'package:trascribe/src/rust/export.dart' as rust_export;
-import 'package:trascribe/src/rust/stt/file.dart' as rust_stt_file;
+import 'package:transcribe/main.dart';
+import 'package:transcribe/services/bridge_service.dart';
+import 'package:transcribe/state/models.dart';
+import 'package:transcribe/state/settings_model.dart';
+import 'package:transcribe/src/rust/audio/device.dart' as rust_device;
+import 'package:transcribe/src/rust/session.dart' as rust_session;
+import 'package:transcribe/src/rust/export.dart' as rust_export;
+import 'package:transcribe/src/rust/stt/file.dart' as rust_stt_file;
 
 /// Timer-free test double
 class _NoopBridge implements RustBridge {
@@ -78,7 +78,7 @@ void main() {
       overrides: [
         rustBridgeProvider.overrideWithValue(_NoopBridge()),
       ],
-      child: const TrascribeApp(),
+      child: const TranscribeApp(),
     );
   }
 
@@ -225,7 +225,7 @@ void main() {
       theme: AppThemeMode.dark,
       defaultModel: 'small',
       defaultMode: SessionMode.webinar,
-      libraryPath: '/tmp/trascribe',
+      libraryPath: '/tmp/transcribe',
       vadEnabled: false,
       language: 'en',
     );
@@ -234,7 +234,7 @@ void main() {
     final reloaded = await bridge.loadSettings();
     expect(reloaded.theme, AppThemeMode.dark);
     expect(reloaded.defaultModel, 'small');
-    expect(reloaded.libraryPath, '/tmp/trascribe');
+    expect(reloaded.libraryPath, '/tmp/transcribe');
     expect(reloaded.vadEnabled, isFalse);
     expect(reloaded.language, 'en');
   });
