@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -106,12 +108,11 @@ class SettingsScreen extends ConsumerWidget {
                 value: settings.vadEnabled,
                 onChanged: notifier.setVadEnabled,
               ),
-              _SettingsSwitch(
+              _SettingsTile(
                 icon: Icons.spatial_audio_outlined,
                 label: 'Echo-dedupe',
-                subtitle: 'Hapus duplikasi suara di mode Rapat Online',
-                value: settings.echoDedupeEnabled,
-                onChanged: notifier.setEchoDedupeEnabled,
+                subtitle: 'Aktif otomatis di mode Rapat Online',
+                trailing: Icon(Icons.info_outline, color: colors.textTertiary, size: 18),
               ),
               _SettingsSwitch(
                 icon: Icons.timer_outlined,
@@ -188,6 +189,7 @@ class SettingsScreen extends ConsumerWidget {
       if (!context.mounted) return;
       Navigator.of(context).pop();
       if (info.isUpdateAvailable) {
+        final downloadUrl = info.downloadUrl;
         await showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
@@ -195,7 +197,13 @@ class SettingsScreen extends ConsumerWidget {
             content: Text('Versi ${info.latestVersion} tersedia.\nVersi saat ini: ${info.currentVersion}'),
             actions: [
               TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Nanti')),
-              FilledButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('OK')),
+              FilledButton(
+                onPressed: () {
+                  Navigator.of(ctx).pop();
+                  if (downloadUrl != null) _openUrl(downloadUrl);
+                },
+                child: const Text('Unduh'),
+              ),
             ],
           ),
         );
@@ -207,6 +215,19 @@ class SettingsScreen extends ConsumerWidget {
     } catch (e) {
       if (!context.mounted) return;
       Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Gagal memeriksa pembaruan: $e')),
+      );
+    }
+  }
+
+  void _openUrl(String url) {
+    if (Platform.isMacOS) {
+      Process.run('open', [url]);
+    } else if (Platform.isWindows) {
+      Process.run('cmd', ['/c', 'start', url]);
+    } else {
+      Process.run('xdg-open', [url]);
     }
   }
 }

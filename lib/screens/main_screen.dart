@@ -185,10 +185,18 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         const SingleActivator(LogicalKeyboardKey.keyR, control: true): () =>
             _toggleStartStop(context, ref),
         const SingleActivator(LogicalKeyboardKey.keyP, meta: true): () {
-          if (isPaused) notifier.resume();
+          if (isPaused) {
+            notifier.resume();
+          } else if (lifecycle == SessionLifecycle.recording) {
+            notifier.pause();
+          }
         },
         const SingleActivator(LogicalKeyboardKey.keyP, control: true): () {
-          if (isPaused) notifier.resume();
+          if (isPaused) {
+            notifier.resume();
+          } else if (lifecycle == SessionLifecycle.recording) {
+            notifier.pause();
+          }
         },
         const SingleActivator(LogicalKeyboardKey.keyL, meta: true): () =>
             Navigator.of(context).push(MaterialPageRoute(builder: (ctx) {
