@@ -11,7 +11,6 @@ import '../state/session_model.dart';
 import '../state/settings_model.dart';
 import '../src/rust/session.dart' as rust_session;
 import '../theme/app_colors.dart';
-import '../widgets/title_bar.dart';
 import '../widgets/transcript_view.dart';
 import 'library_screen.dart';
 import 'settings_screen.dart';
@@ -167,6 +166,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         lifecycle == SessionLifecycle.recording || lifecycle == SessionLifecycle.paused;
     final isPaused = lifecycle == SessionLifecycle.paused;
     final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final vuLevel = ref.watch(vuLevelProvider).valueOrNull;
 
     // Keep the title controller in sync with auto-detected session title
@@ -255,24 +255,68 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                   ),
                 ),
 
-              // Title bar (macOS-style with traffic lights)
-              TitleBar(
-                title: 'Trareon Transcribe',
-                isDark: Theme.of(context).brightness == Brightness.dark,
-                onToggleTheme: () {
-                  final notifier = ref.read(settingsProvider.notifier);
-                  notifier.toggleTheme();
-                },
-                onLibrary: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) {
-                      final lp = ref.read(settingsProvider).libraryPath;
-                      return LibraryScreen(libraryPath: resolveTilde(lp));
-                    },
-                  ),
+              // Minimal header row (native title bar dari OS yang handle window chrome)
+              Container(
+                height: 44,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: colors.headerBackground,
+                  border: Border(bottom: BorderSide(color: colors.divider, width: 0.5)),
                 ),
-                onSettings: () => Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                child: Row(
+                  children: [
+                    Image.asset('assets/logo.png', width: 20, height: 20,
+                        errorBuilder: (_, __, ___) => const SizedBox.shrink()),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Trareon Transcribe',
+                      style: TextStyle(
+                        color: colors.text,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: Icon(Icons.folder_outlined, size: 18),
+                      tooltip: 'Library',
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) {
+                            final lp = ref.read(settingsProvider).libraryPath;
+                            return LibraryScreen(libraryPath: resolveTilde(lp));
+                          },
+                        ),
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      color: colors.textSecondary,
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.settings_outlined, size: 18),
+                      tooltip: 'Pengaturan',
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      color: colors.textSecondary,
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                        size: 18,
+                      ),
+                      tooltip: isDark ? 'Mode Terang' : 'Mode Gelap',
+                      onPressed: () {
+                        final notifier = ref.read(settingsProvider.notifier);
+                        notifier.toggleTheme();
+                      },
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      color: colors.textSecondary,
+                    ),
+                  ],
                 ),
               ),
 
