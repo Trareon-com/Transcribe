@@ -121,7 +121,7 @@ Trareon Transcribe menyertakan **2 model bawaan** — tidak perlu unduh:
 
 Untuk pengguna yang ingin akurasi ID lebih tinggi, model fine-tune seperti `cahya/whisper-small-id` tersedia di HuggingFace. Saat ini model tersebut belum di-convert ke format GGUF — kontribusi dari komunitas sangat diterima! 🙌
 
-Untuk Trascribe, **model bawaan (base / large-v3-turbo-q4_k_m) sudah cukup akurat untuk ID** dengan WER 0-4%.
+Untuk Trareon Transcribe, **model bawaan (base / large-v3-turbo-q4_k_m) sudah cukup akurat untuk ID** dengan WER 0-4%.
 
 ### Progressive Transcription
 
