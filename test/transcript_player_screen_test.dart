@@ -4,6 +4,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:transcribe/screens/transcript_player_screen.dart';
 import 'package:transcribe/state/models.dart';
 
+/// Find text inside [RichText] widgets which [find.text] does not match.
+///
+/// Segment text in [TranscriptView] is rendered via [RichText] inside
+/// [_SegmentTile], so we need a custom predicate to locate it.
+Finder findRichText(String text) => find.byWidgetPredicate(
+      (widget) => widget is RichText && widget.text.toPlainText() == text,
+    );
+
 void main() {
   const segments = [
     TranscriptSegment(
@@ -30,7 +38,7 @@ void main() {
     );
 
     expect(find.text('Rapat Q3'), findsOneWidget);
-    expect(find.text('Halo semua'), findsOneWidget);
+    expect(findRichText('Halo semua'), findsOneWidget);
     expect(find.text('1.0x'), findsOneWidget);
   });
 
@@ -63,7 +71,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Halo semua'));
+    await tester.tap(findRichText('Halo semua'));
     await tester.pumpAndSettle();
 
     expect(find.text('Edit Transkrip'), findsOneWidget);
@@ -72,8 +80,8 @@ void main() {
     await tester.tap(find.text('Simpan'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Halo semua, selamat pagi'), findsOneWidget);
-    expect(find.text('Halo semua'), findsNothing);
+    expect(findRichText('Halo semua, selamat pagi'), findsOneWidget);
+    expect(findRichText('Halo semua'), findsNothing);
   });
 
   testWidgets('canceling edit dialog keeps original text', (WidgetTester tester) async {
@@ -87,14 +95,14 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Halo semua'));
+    await tester.tap(findRichText('Halo semua'));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).last, 'diubah tapi dibatalkan');
     await tester.tap(find.text('Batal'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Halo semua'), findsOneWidget);
+    expect(findRichText('Halo semua'), findsOneWidget);
   });
 
   testWidgets('editing a segment notifies listeners with updated segments', (
@@ -112,7 +120,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.text('Halo semua'));
+    await tester.tap(findRichText('Halo semua'));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byType(TextField).last, 'Halo semua, selamat pagi');
@@ -157,14 +165,14 @@ void main() {
       ),
     );
 
-    expect(find.text('Agenda pertama adalah budgeting'), findsOneWidget);
-    expect(find.text('Agenda kedua adalah roadmap'), findsOneWidget);
+    expect(findRichText('Agenda pertama adalah budgeting'), findsOneWidget);
+    expect(findRichText('Agenda kedua adalah roadmap'), findsOneWidget);
 
     await tester.enterText(find.byType(TextField).first, 'budgeting');
     await tester.pumpAndSettle();
 
-    expect(find.text('Agenda pertama adalah budgeting'), findsOneWidget);
-    expect(find.text('Agenda kedua adalah roadmap'), findsNothing);
+    expect(findRichText('Agenda pertama adalah budgeting'), findsOneWidget);
+    expect(findRichText('Agenda kedua adalah roadmap'), findsNothing);
     // Search count not shown in new design
   });
 }

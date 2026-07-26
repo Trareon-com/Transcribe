@@ -89,7 +89,7 @@ class _FakeBridge implements RustBridge {
 }
 
 void main() {
-  testWidgets('wizard walks through all 5 steps and calls onFinished', (WidgetTester tester) async {
+  testWidgets('wizard walks through all 3 steps and calls onFinished', (WidgetTester tester) async {
     var finished = false;
     final bridge = _FakeBridge();
     await tester.pumpWidget(
@@ -99,14 +99,14 @@ void main() {
       ),
     );
 
+    // Step 1: spec detection — wait for async detection to complete
+    await tester.pumpAndSettle();
     expect(find.text('1. Deteksi Spesifikasi'), findsOneWidget);
     expect(find.text('Selesai'), findsNothing);
 
     for (final expectedTitle in [
       '2. Pilih Model',
-      '3. Setup Audio',
-      '4. Unduh Model',
-      '5. Tone Test',
+      '3. Tone Test',
     ]) {
       await tester.tap(find.text('Lanjut'));
       await tester.pumpAndSettle();
@@ -127,6 +127,9 @@ void main() {
         child: MaterialApp(home: SetupWizardScreen(onFinished: () {})),
       ),
     );
+
+    // Wait for spec detection to settle, then back button should be disabled on step 1
+    await tester.pumpAndSettle();
 
     final backButton = tester.widget<TextButton>(find.widgetWithText(TextButton, 'Kembali'));
     expect(backButton.onPressed, isNull);
@@ -152,97 +155,35 @@ void main() {
       ),
     );
 
+    // Step 1 → Step 2 (wait for spec detection to finish)
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Lanjut'));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('small (~500 MB)'));
+    // Step 2: tap the bundled 'large-v3-turbo-q5' model card to change selection
+    await tester.tap(find.text('large-v3-turbo-Q5_0 — 🎯 Akurat'));
     await tester.pumpAndSettle();
 
-    expect(bridge.savedSettings.defaultModel, 'small');
+    expect(bridge.savedSettings.defaultModel, 'large-v3-turbo-q5');
   });
 
-  testWidgets('downloading a model calls bridge and records a privacy report event', (
-    WidgetTester tester,
-  ) async {
-    final bridge = _FakeBridge();
+  testWidgets(
+    'downloading a model calls bridge and records a privacy report event',
+    (WidgetTester tester) async {
+      // Models are now bundled — download step no longer exists in the wizard.
+      // This functionality has been removed from the UI.
+    },
+    skip: true,
+  );
 
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [rustBridgeProvider.overrideWithValue(bridge)],
-        child: const MaterialApp(
-          home: SetupWizardScreen(onFinished: _noop),
-        ),
-      ),
-    );
-
-    // Step 1 → Step 2
-    await tester.tap(find.text('Lanjut'));
-    await tester.pumpAndSettle();
-
-    // Step 2: select 'base' model (not bundled) so download button appears
-    await tester.tap(find.text('base (~150 MB)'));
-    await tester.pumpAndSettle();
-
-    // Step 2 → Step 3
-    await tester.tap(find.text('Lanjut'));
-    await tester.pumpAndSettle();
-
-    // Step 3 → Step 4
-    await tester.tap(find.text('Lanjut'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Unduh model'), findsOneWidget);
-
-    await tester.tap(find.text('Unduh model'));
-    await tester.pumpAndSettle();
-    await tester.pumpAndSettle();
-
-    expect(bridge.downloadModelCalls.length, 1);
-    expect(bridge.downloadModelCalls.single.$2, 'base');
-
-    final container = ProviderScope.containerOf(
-      tester.element(find.byType(SetupWizardScreen)),
-      listen: false,
-    );
-    final report = container.read(privacyReportProvider);
-
-    expect(report.networkCallCount, 1);
-    expect(report.events.single, contains('Download model "base"'));
-
-    // After download completes, onRecordDownload advances to step 5
-    await tester.pumpAndSettle();
-    expect(find.text('Selesai'), findsOneWidget);
-  });
-
-  testWidgets('navigating past download step without clicking does not trigger bridge or privacy report', (
-    WidgetTester tester,
-  ) async {
-    final bridge = _FakeBridge();
-
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: [rustBridgeProvider.overrideWithValue(bridge)],
-        child: const MaterialApp(
-          home: SetupWizardScreen(onFinished: _noop),
-        ),
-      ),
-    );
-
-    for (var i = 0; i < 4; i++) {
-      await tester.tap(find.text('Lanjut'));
-      await tester.pumpAndSettle();
-    }
-
-    expect(bridge.downloadModelCalls, isEmpty);
-
-    final container = ProviderScope.containerOf(
-      tester.element(find.byType(SetupWizardScreen)),
-      listen: false,
-    );
-    final report = container.read(privacyReportProvider);
-
-    expect(report.networkCallCount, 0);
-  });
+  testWidgets(
+    'navigating past download step without clicking does not trigger bridge or privacy report',
+    (WidgetTester tester) async {
+      // Models are now bundled — download step no longer exists in the wizard.
+      // This functionality has been removed from the UI.
+    },
+    skip: true,
+  );
 }
 
 void _noop() {}

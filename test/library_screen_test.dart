@@ -40,7 +40,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Rapat Q3'), findsOneWidget);
-    expect(find.text('30 menit · 42 segmen'), findsOneWidget);
+    expect(find.text('30 menit'), findsOneWidget);
+    expect(find.text('42 segmen'), findsOneWidget);
   });
 
   testWidgets('search filters sessions', (WidgetTester tester) async {

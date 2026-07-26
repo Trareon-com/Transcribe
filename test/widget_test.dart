@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -92,9 +93,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Mulai'), findsOneWidget);
-    expect(find.text('Webinar'), findsWidgets);
-    expect(find.text('Rapat Online'), findsWidgets);
-    expect(find.text('Rapat Offline'), findsWidgets);
+    expect(find.text('Otomatis'), findsOneWidget);
+    expect(find.text('Mikrofon'), findsWidgets);
+    expect(find.text('Pengeras Suara'), findsWidgets);
   });
 
   testWidgets('starting a session switches button to Stop', (WidgetTester tester) async {
@@ -109,7 +110,7 @@ void main() {
     await tester.tap(find.text('Mulai'));
     await tester.pump();
 
-    expect(find.text('Stop'), findsOneWidget);
+    expect(find.text('Berhenti'), findsOneWidget);
   });
 
   testWidgets('settings icon navigates to settings screen', (WidgetTester tester) async {
@@ -121,7 +122,7 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Pengaturan'));
+    await tester.tap(find.byTooltip('Pengaturan'));
     await tester.pumpAndSettle();
 
     expect(find.text('Tema'), findsOneWidget);
@@ -136,11 +137,11 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Pengaturan'));
+    await tester.tap(find.byTooltip('Pengaturan'));
     await tester.pumpAndSettle();
     await tester.drag(find.byType(ListView), const Offset(0, -400));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Privacy Report'));
+    await tester.tap(find.text('Laporan Privasi'));
     await tester.pumpAndSettle();
 
     expect(find.text('0 network calls since launch'), findsOneWidget);
@@ -155,7 +156,10 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Shortcuts'));
+    // Toggle shortcuts panel via keyboard shortcut (Cmd+/)
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.metaLeft);
+    await tester.sendKeyEvent(LogicalKeyboardKey.slash);
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.metaLeft);
     await tester.pumpAndSettle();
 
     expect(find.text('Pintasan keyboard'), findsWidgets);
@@ -172,7 +176,7 @@ void main() {
 
     await tester.tap(find.text('Mulai'));
     await tester.pump();
-    await tester.tap(find.text('Stop'));
+    await tester.tap(find.text('Berhenti'));
     await tester.pumpAndSettle();
 
     expect(find.text('Berhenti merekam?'), findsNothing);
@@ -188,7 +192,7 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Export'), findsOneWidget);
+    expect(find.text('Ekspor'), findsOneWidget);
   });
 
   testWidgets('audio indicators show MIC and SPK labels', (WidgetTester tester) async {
@@ -200,11 +204,11 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('MIC'), findsWidgets);
-    expect(find.text('SPK'), findsWidgets);
+    expect(find.text('Mikrofon'), findsWidgets);
+    expect(find.text('Pengeras Suara'), findsWidgets);
   });
 
-  testWidgets('footer shows diarization info', (WidgetTester tester) async {
+  testWidgets('footer shows recording timer when active', (WidgetTester tester) async {
     tester.view.physicalSize = const Size(1440, 900);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -213,7 +217,8 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('Diarisasi aktif'), findsOneWidget);
+    // Timer not shown when idle — only when recording/paused
+    expect(find.textContaining('Trareon Transcribe'), findsOneWidget);
   });
 
   test('RustBridgeMock persists settings roundtrip in memory', () async {

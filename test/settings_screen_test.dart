@@ -89,8 +89,14 @@ void main() {
     expect(find.text('Model default'), findsWidgets);
     expect(find.text('Bahasa'), findsWidgets);
     expect(find.text('VAD (deteksi suara)'), findsOneWidget);
-    expect(find.text('Echo-dedupe'), findsOneWidget);
-    expect(find.text('Privacy Report'), findsOneWidget);
+    expect(find.text('Echo Dedupe'), findsOneWidget);
+
+    // Scroll down to the "Sistem & Informasi" section (below viewport in lazy ListView)
+    final listView = find.byType(ListView);
+    await tester.drag(listView, const Offset(0, -600));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Laporan Privasi'), findsOneWidget);
     expect(find.text('Statistik Penggunaan'), findsOneWidget);
   });
 
