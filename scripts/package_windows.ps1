@@ -3,7 +3,7 @@
 # Per ADR-12/ADR-8: signing uses a self-signed certificate (free, no CA),
 # which still triggers a Windows SmartScreen warning on first run — this
 # is documented for users at download time rather than hidden. Signing
-# only runs when TRASCRIBE_PFX_PATH + TRASCRIBE_PFX_PASSWORD are set
+# only runs when TRANSCRIBE_PFX_PATH + TRANSCRIBE_PFX_PASSWORD are set
 # (e.g. from a CI secret); without them, this script still produces an
 # unsigned build so local packaging works out of the box.
 #
@@ -11,7 +11,7 @@
 #   $cert = New-SelfSignedCertificate -Type CodeSigning `
 #     -Subject "CN="Trareon Transcribe" (self-signed)" -CertStoreLocation Cert:\CurrentUser\My
 #   $pwd = ConvertTo-SecureString -String "changeit" -Force -AsPlainText
-#   Export-PfxCertificate -Cert $cert -FilePath trascribe.pfx -Password $pwd
+#   Export-PfxCertificate -Cert $cert -FilePath transcribe.pfx -Password $pwd
 
 param(
     [string]$Version = ""
@@ -25,7 +25,7 @@ if ([string]::IsNullOrEmpty($Version)) {
     $Version = ($pubspec -split ":\s*")[1].Split("+")[0]
 }
 
-$AppName = "trascribe"
+$AppName = "transcribe"
 $RustDir = "rust_core"
 $BuildDir = "build\windows\x64\runner\Release"
 $DistDir = "dist"
@@ -73,15 +73,15 @@ Copy-Item -Path "models\ggml-large-v3-turbo-q4_k_m.gguf" -Destination $ModelsDes
 Write-Host "    → base (142 MB) bundled"
 Write-Host "    → large-v3-turbo-q4_k_m (474 MB) bundled"
 
-$PfxPath = $env:TRASCRIBE_PFX_PATH
-$PfxPassword = $env:TRASCRIBE_PFX_PASSWORD
+$PfxPath = $env:TRANSCRIBE_PFX_PATH
+$PfxPassword = $env:TRANSCRIBE_PFX_PASSWORD
 
 if ($PfxPath -and $PfxPassword) {
     Write-Host "==> Signing $BuildDir\$AppName.exe"
     & signtool sign /f $PfxPath /p $PfxPassword /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 "$BuildDir\$AppName.exe"
     & signtool verify /pa "$BuildDir\$AppName.exe"
 } else {
-    Write-Host "==> Skipping signing (TRASCRIBE_PFX_PATH/TRASCRIBE_PFX_PASSWORD not set) — unsigned build"
+    Write-Host "==> Skipping signing (TRANSCRIBE_PFX_PATH/TRANSCRIBE_PFX_PASSWORD not set) — unsigned build"
 }
 
 New-Item -ItemType Directory -Force -Path $DistDir | Out-Null
