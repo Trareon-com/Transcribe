@@ -15,3 +15,4 @@ pub mod settings;
 pub mod singleton;
 pub mod stt;
 pub mod vad;
+pub mod watchdog;
