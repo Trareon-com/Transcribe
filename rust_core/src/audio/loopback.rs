@@ -141,7 +141,9 @@ pub(crate) mod macos {
                 SCStreamOutputType::Audio,
             )
             .map_or(Ok(()), |e| {
-                Err(TranscribeError::AudioDevice(format!("ScreenCaptureKit: add handler failed: {e}")))
+                Err(TranscribeError::AudioDevice(format!(
+                    "ScreenCaptureKit: add handler failed: {e}"
+                )))
             })?;
 
         stream.start_capture().map_err(|e| {
