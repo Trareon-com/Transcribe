@@ -24,9 +24,7 @@ pub enum WatchdogEvent {
         found_names: Vec<String>,
     },
     /// All previously-lost devices are back (wake / reconnect).
-    DeviceReconnected {
-        names: Vec<String>,
-    },
+    DeviceReconnected { names: Vec<String> },
     /// Periodic heartbeat — everything is normal.
     Healthy,
 }
@@ -69,7 +67,9 @@ pub fn start_watchdog(
                 }
                 (Ok(names), false) => {
                     // Was lost, now reconnected
-                    let _ = event_tx.send(WatchdogEvent::DeviceReconnected { names });
+                    let _ = event_tx.send(WatchdogEvent::DeviceReconnected {
+                        names: names.clone(),
+                    });
                     was_healthy = true;
                 }
                 (Ok(_), true) => {
@@ -129,11 +129,7 @@ fn check_device_health(monitor_hints: &[String]) -> Result<Vec<String>, Trascrib
 fn list_known_device_names() -> Vec<String> {
     let inputs = list_input_devices().unwrap_or_default();
     let outputs = list_output_devices().unwrap_or_default();
-    inputs
-        .into_iter()
-        .chain(outputs)
-        .map(|d| d.name)
-        .collect()
+    inputs.into_iter().chain(outputs).map(|d| d.name).collect()
 }
 
 #[cfg(test)]
@@ -154,10 +150,7 @@ mod tests {
     fn watchdog_receives_healthy_events() {
         let (rx, tx) = start_watchdog(1, vec![]);
         // Should receive at least a Healthy or DeviceLost event within 3 secs
-        let events: Vec<WatchdogEvent> = rx
-            .try_iter()
-            .take(3)
-            .collect();
+        let events: Vec<WatchdogEvent> = rx.try_iter().take(3).collect();
         drop(tx);
         // On a machine with audio devices, we expect Healthy
         // On a CI runner without audio, DeviceLost is also valid

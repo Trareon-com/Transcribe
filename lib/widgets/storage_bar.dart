@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
@@ -13,19 +11,6 @@ class StorageBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-
-    // Best-effort disk usage via Directory.statSync on home
-    final home = Directory(Platform.environment['HOME'] ?? '/');
-    double usedGb = 0;
-    double freeGb = 0;
-    double totalGb = 0;
-    try {
-      final stat = home.statSync();
-      totalGb = (stat.size / (1024 * 1024 * 1024)).roundToDouble();
-      // Can't get per-folder size cheaply, use platform-specific total
-      // We'll just show sessions count + free space
-      freeGb = 0;
-    } catch (_) {}
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
@@ -48,7 +33,7 @@ class StorageBar extends StatelessWidget {
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
-              '${totalSessions > 0 ? "📁 $totalSessions" : "📂 Kosong"}',
+              totalSessions > 0 ? "📁 $totalSessions" : "📂 Kosong",
               style: TextStyle(color: colors.textSecondary, fontSize: 11),
             ),
           ),

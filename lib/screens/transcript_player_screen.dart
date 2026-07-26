@@ -274,9 +274,7 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
   }
 
   Future<void> _exportTranscript(BuildContext context) async {
-    final bridge = context.findAncestorWidgetOfExactType<MaterialApp>() != null
-        ? null // fallback — won't work without provider
-        : null;
+    // Bridge calls go through Riverpod providers
     // Build a temporary SessionSummary from current data
     final summary = SessionSummary(
       id: widget.title,

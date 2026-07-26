@@ -269,7 +269,7 @@ class _SegmentTile extends StatelessWidget {
           onTap: onEdit != null ? () => _openEditDialog(context) : null,
           borderRadius: BorderRadius.circular(8),
           child: Padding(
-            padding: const EdgeInsets.only(left: isActive ? 12 : 16, right: 4, top: 8, bottom: 8),
+            padding: EdgeInsets.only(left: isActive ? 12 : 16, right: 4, top: 8, bottom: 8),
             child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

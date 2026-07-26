@@ -234,7 +234,7 @@ pub fn poll_events(session_id: &str) -> Result<Vec<SessionEvent>, TrascribeError
     let mut reg = registry()
         .lock()
         .map_err(|_| TrascribeError::Transcription("session registry lock poisoned".into()))?;
-    let mut events = {
+    let events = {
         let state = reg
             .get_mut(session_id)
             .ok_or_else(|| TrascribeError::SessionNotFound(session_id.to_string()))?;
@@ -350,7 +350,9 @@ fn recovery_dir() -> Result<PathBuf, TrascribeError> {
     if let Some(path) = RECOVERY_DIR_OVERRIDE.with(|slot| slot.borrow().clone()) {
         return Ok(path);
     }
-    Ok(std::env::temp_dir().join("TrareonTranscribe").join("recovery"))
+    Ok(std::env::temp_dir()
+        .join("TrareonTranscribe")
+        .join("recovery"))
 }
 
 fn recovery_path(session_id: &str) -> Result<PathBuf, TrascribeError> {

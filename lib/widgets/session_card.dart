@@ -30,7 +30,7 @@ class SessionCard extends StatelessWidget {
     final h = (seconds / 3600).floor();
     final m = ((seconds % 3600) / 60).floor();
     if (h > 0) return '${h}j ${m}m';
-    return '${m} menit';
+    return '$m menit';
   }
 
   @override

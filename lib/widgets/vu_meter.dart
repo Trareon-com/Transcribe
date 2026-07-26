@@ -15,7 +15,6 @@ class VuMeter extends ConsumerWidget {
     final session = ref.watch(sessionProvider);
     final micEnabled = session.config.micEnabled;
     final speakerEnabled = session.config.speakerEnabled;
-    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
 
     final mic = micEnabled ? (vu.valueOrNull?.micLevel ?? 0.0) : 0.0;
     final speaker = speakerEnabled ? (vu.valueOrNull?.speakerLevel ?? 0.0) : 0.0;
