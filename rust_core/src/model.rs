@@ -68,6 +68,13 @@ pub const KNOWN_MODELS: &[(&str, &str, u32, bool, &str)] = &[
         false,
         "1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69",
     ),
+    (
+        "large-v3-turbo-q5",
+        "ggml-large-v3-turbo-q5_0.bin",
+        4,
+        false,
+        "394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2",
+    ),
 ];
 
 #[flutter_rust_bridge::frb(ignore)]

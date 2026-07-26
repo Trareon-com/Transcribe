@@ -111,8 +111,9 @@ Trareon Transcribe uses [whisper.cpp](https://github.com/ggerganov/whisper.cpp) 
 | **base** | 142 MB | 10s 🟡 | ⭐⭐ | Mulai terbaca, banyak salah dengar |
 | **small** | 466 MB | 21s 🟠 | ⭐⭐⭐ | Kata kunci terbaca, masih ada noise |
 | **medium** | 1.5 GB | 35s 🔴 | ⭐⭐⭐⭐ | **"webinar teknologi kecerdasan buatan"** ✅ hampir sempurna |
-| **large-v3-turbo** | 1.6 GB | 56s 🔴 | ⭐⭐⭐⭐ | Akurasi tinggi, sama baiknya dengan medium |
-| **large-v3** | 2.9 GB | 69s 🔴 | ⭐⭐⭐⭐ | Akurasi tertinggi, tapi paling lambat |
+| **large-v3-turbo-q5** | **548 MB** | 🟡 estimated ~40-50s | ⭐⭐⭐⭐⭐ | **🏆 Rekomendasi! Size -65%** |
+| **large-v3-turbo** | 1.6 GB | 56s 🔴 | ⭐⭐⭐⭐⭐ | Sama akurat, lebih besar |
+| **large-v3** | 2.9 GB | 69s 🔴 | ⭐⭐⭐⭐⭐ | Akurasi tertinggi, tapi paling lambat |
 
 ### 🇬🇧 Bahasa Inggris (sample 7.4 detik)
 
@@ -145,11 +146,12 @@ Cara kerja:
 4. Setelah selesai, hasil transkrip **di-refine otomatis**
 5. User tidak perlu menunggu — dapat hasil cepat + akurat dalam satu workflow
 
-### Auto-recommendation
+### Auto-recommendation (updated with Q5_0)
 The setup wizard automatically suggests a model based on your hardware:
-- ≤ 4 GB RAM → **base** (progressive mode recommended: base → small)
-- 4–8 GB RAM → **small** (progressive mode recommended: tiny → large-turbo)
-- 8+ GB RAM → **medium** or **large-v3-turbo** (progressive mode recommended: tiny → large-turbo)
+- ≤ 4 GB RAM → **base** (progressive mode: base → small)
+- 4–8 GB RAM → **small** (progressive mode: tiny → large-turbo-q5)
+- 8+ GB RAM → **large-v3-turbo-q5** 🏆 (progressive mode: tiny → large-turbo-q5)
+- 16+ GB RAM → **large-v3-turbo-q5** (or F16 for maximum quality)
 
 ---
 

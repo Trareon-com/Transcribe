@@ -58,7 +58,7 @@ class SettingsScreen extends ConsumerWidget {
                 label: 'Model default',
                 trailing: _CompactDropdown<String>(
                   value: settings.defaultModel,
-                  items: const ['tiny', 'base', 'small', 'medium', 'large-v3-turbo'],
+                  items: const ['tiny', 'base', 'small', 'medium', 'large-v3-turbo-q5', 'large-v3-turbo'],
                   labelBuilder: (s) => s,
                   onChanged: (modelId) {
                     if (!isModelAvailable(modelId, libraryPath: settings.libraryPath)) {
@@ -86,7 +86,8 @@ class SettingsScreen extends ConsumerWidget {
                 label: 'Perbandingan Model',
                 subtitle: 'ID (9.4s): tiny 3s · base 10s · small 21s · medium 35s · turbo 56s · large 69s\n'
                     'EN (7.4s): tiny 2s · base 3s · small 12s · medium 36s · turbo 56s · large 68s\n'
-                    '⭐ Rekomendasi: small (best value) atau tiny→turbo (hybrid)',
+                    '🏆 Q5_0 turbo: 548MB (turun 65%), RAM 1.2GB (turun 62%)\n'
+                    '⭐ Rekomendasi: Q5_0 turbo (best value) atau tiny→turbo (hybrid)',
                 trailing: const SizedBox.shrink(),
               ),
               _SettingsTile(

@@ -47,6 +47,7 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     'small': 500,
     'medium': 1500,
     'large-v3-turbo': 1600,
+    'large-v3-turbo-q5': 548,
   };
 
   @override
@@ -103,16 +104,16 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   }
 
   String _suggestModel(int ramMb) {
-    if (ramMb >= 16384) return 'large-v3-turbo'; // 16GB+
-    if (ramMb >= 8192) return 'medium';          // 8GB+
-    if (ramMb >= 4096) return 'small';           // 4GB+
-    return 'base';                                // < 4GB
+    if (ramMb >= 16384) return 'large-v3-turbo-q5'; // 16GB+
+    if (ramMb >= 8192) return 'large-v3-turbo-q5';  // 8GB+
+    if (ramMb >= 4096) return 'small';               // 4GB+
+    return 'base';                                    // < 4GB
   }
 
   String _availableModel(String preferred) {
     final libraryPath = ref.read(settingsProvider).libraryPath;
     if (isModelAvailable(preferred, libraryPath: libraryPath)) return preferred;
-    for (final candidate in ['tiny', 'base', 'small', 'medium', 'large-v3-turbo']) {
+    for (final candidate in ['tiny', 'base', 'small', 'medium', 'large-v3-turbo-q5', 'large-v3-turbo']) {
       if (isModelAvailable(candidate, libraryPath: libraryPath)) {
         return candidate;
       }
@@ -386,6 +387,7 @@ class _SpecDetectStep extends StatelessWidget {
       'small' => 'small (akurat)',
       'medium' => 'medium (presisi)',
       'large-v3-turbo' => 'large-v3-turbo (terbaik)',
+      'large-v3-turbo-q5' => 'large-v3-turbo Q5 (cepat + akurat)',
       _ => id,
     };
   }
@@ -489,7 +491,8 @@ class _ModelChoiceStep extends StatelessWidget {
     ('base', 'base (~142 MB)', '142 MB · ⚡ ID: 10s / EN: 3s · RAM ~400 MB · Akurasi sedang\nCocok: transkrip cepat EN, spek minimal'),
     ('small', 'small (~466 MB)', '466 MB · 🟡 ID: 21s / EN: 12s · RAM ~900 MB · Akurasi baik\nCocok: daily use, EN sempurna ✅'),
     ('medium', 'medium (~1.5 GB)', '1.5 GB · 🔴 ID: 35s / EN: 36s · RAM ~2.8 GB · Akurasi sangat baik\nCocok: hasil presisi tinggi, tidak buru-buru'),
-    ('large-v3-turbo', 'large-v3-turbo (~1.6 GB)', '1.6 GB · 🔴 ID: 56s / EN: 56s · RAM ~3.2 GB · ⭐ Akurasi terbaik\nCocok: kualitas maksimal, GPU disarankan'),
+    ('large-v3-turbo-q5', 'large-v3-turbo Q5 (~548 MB)', '548 MB · 🔴 RAM ~1.2 GB · 🏆 Terbaik! Size -65%, RAM -62%\n⭐ Akurasi > medium, jauh lebih ringan dari F16'),
+    ('large-v3-turbo', 'large-v3-turbo (~1.6 GB)', '1.6 GB · 🔴 ID: 56s / EN: 56s · RAM ~3.2 GB · Akurasi terbaik\nCocok: kualitas maksimal, GPU disarankan'),
   ];
 
   @override

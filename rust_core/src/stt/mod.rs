@@ -100,6 +100,7 @@ impl WhisperEngine {
         params.set_print_realtime(false);
         params.set_print_timestamps(false);
         params.set_language(language.or(Some("auto")));
+        params.set_audio_ctx(512);
 
         state
             .full(params, samples)
