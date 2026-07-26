@@ -151,6 +151,7 @@ void main() {
     );
     addTearDown(container.dispose);
 
+    // Initial state uses AppSettings.defaults() (model='tiny')
     expect(container.read(sessionProvider).config.modelPath,
         endsWith('models/ggml-tiny.bin'));
 
