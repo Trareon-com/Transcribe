@@ -485,11 +485,11 @@ class _ModelChoiceStep extends StatelessWidget {
   const _ModelChoiceStep({required this.selected, required this.onChanged});
 
   static const _models = [
-    ('tiny', 'tiny (~75 MB)', '75 MB · ⚡ 0.3× real-time · RAM ~260 MB · Akurasi rendah'),
-    ('base', 'base (~150 MB)', '150 MB · ~0.5× real-time · RAM ~400 MB · Akurasi sedang'),
-    ('small', 'small (~500 MB)', '465 MB · 0.5× real-time · RAM ~900 MB · Akurasi baik'),
-    ('medium', 'medium (~1.5 GB)', '1.5 GB · RAM ~2.8 GB · Akurasi sangat baik'),
-    ('large-v3-turbo', 'large-v3-turbo (~1.6 GB)', '1.6 GB · RAM ~3.2 GB · ⭐ Akurasi terbaik (GPU disarankan)'),
+    ('tiny', 'tiny (~75 MB)', '75 MB · ⚡ ID: 3s / EN: 2s · RAM ~260 MB · Akurasi rendah\nCocok: real-time cepat, spek rendah'),
+    ('base', 'base (~142 MB)', '142 MB · ⚡ ID: 10s / EN: 3s · RAM ~400 MB · Akurasi sedang\nCocok: transkrip cepat EN, spek minimal'),
+    ('small', 'small (~466 MB)', '466 MB · 🟡 ID: 21s / EN: 12s · RAM ~900 MB · Akurasi baik\nCocok: daily use, EN sempurna ✅'),
+    ('medium', 'medium (~1.5 GB)', '1.5 GB · 🔴 ID: 35s / EN: 36s · RAM ~2.8 GB · Akurasi sangat baik\nCocok: hasil presisi tinggi, tidak buru-buru'),
+    ('large-v3-turbo', 'large-v3-turbo (~1.6 GB)', '1.6 GB · 🔴 ID: 56s / EN: 56s · RAM ~3.2 GB · ⭐ Akurasi terbaik\nCocok: kualitas maksimal, GPU disarankan'),
   ];
 
   @override

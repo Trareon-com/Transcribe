@@ -76,10 +76,17 @@ class SettingsScreen extends ConsumerWidget {
                 ),
               ),
               _SettingsTile(
+                icon: Icons.speed_outlined,
+                label: 'Progressive Mode (coming soon)',
+                subtitle: 'Hasil cepat tiny (3s) → refine otomatis large-turbo di background',
+                trailing: Icon(Icons.construction_outlined, color: colors.textTertiary, size: 18),
+              ),
+              _SettingsTile(
                 icon: Icons.info_outline,
                 label: 'Perbandingan Model',
-                subtitle: 'tiny (75MB) ⚡ · base (150MB) · small (465MB) · medium (1.5GB) · large-v3 (1.6GB) ⭐\n'
-                    'Semakin besar model → akurasi naik, kecepatan turun. Lihat README untuk detail.',
+                subtitle: 'ID (9.4s): tiny 3s · base 10s · small 21s · medium 35s · turbo 56s · large 69s\n'
+                    'EN (7.4s): tiny 2s · base 3s · small 12s · medium 36s · turbo 56s · large 68s\n'
+                    '⭐ Rekomendasi: small (best value) atau tiny→turbo (hybrid)',
                 trailing: const SizedBox.shrink(),
               ),
               _SettingsTile(

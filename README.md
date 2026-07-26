@@ -99,25 +99,57 @@ Each export format runs in its own thread for parallel processing.
 
 ---
 
-## Model Comparison
+## Model Performance
 
-Trareon Transcribe uses [whisper.cpp](https://github.com/ggerganov/whisper.cpp) GGML/GGUF models. Bigger models mean better accuracy but slower performance and higher memory usage.
+Trareon Transcribe uses [whisper.cpp](https://github.com/ggerganov/whisper.cpp) GGML/GGUF models. Below are **real benchmarks** measured on an Intel i3-7100T (4 threads, 3.4 GHz) with **release build** and `--language id` / `--language en`.
 
-| Model | Size | RAM Usage | Speed (9.5s audio) | Accuracy (ID) | Best For |
-|-------|:----:|:---------:|:-------------------:|:-------------:|----------|
-| **tiny** | 75 MB | ~260 MB | ⚡ 0.3× real-time | Low | Real-time monitoring, low-spec machines |
-| **base** | 150 MB | ~400 MB | ⚡ ~0.5× real-time | Medium | Balanced speed/accuracy |
-| **small** | 465 MB | ~900 MB | 🐢 ~0.5× real-time | Good | Daily use, decent accuracy |
-| **medium** | 1.5 GB | ~2.8 GB | 🐢 ~0.2× real-time | Very Good | High-accuracy transcription |
-| **large-v3-turbo** | 1.6 GB | ~3.2 GB | 🐢 ~0.15× real-time | Excellent | Best accuracy, GPU recommended |
+### 🇮🇩 Bahasa Indonesia (sample 9.4 detik)
 
-> **Note:** Speed tests measured on CPU (no GPU) with debug build. Release builds are ~2–4× faster. Indonesian language accuracy improves significantly with small+ models.
+| Model | Ukuran | ⏱️ Waktu | Akurasi | Hasil |
+|:-----:|:------:|:--------:|:-------:|-------|
+| **tiny** | 75 MB | **3s** 🟢 | ⭐⭐ | Beberapa kata benar, struktur kalimat kacau |
+| **base** | 142 MB | 10s 🟡 | ⭐⭐ | Mulai terbaca, banyak salah dengar |
+| **small** | 466 MB | 21s 🟠 | ⭐⭐⭐ | Kata kunci terbaca, masih ada noise |
+| **medium** | 1.5 GB | 35s 🔴 | ⭐⭐⭐⭐ | **"webinar teknologi kecerdasan buatan"** ✅ hampir sempurna |
+| **large-v3-turbo** | 1.6 GB | 56s 🔴 | ⭐⭐⭐⭐ | Akurasi tinggi, sama baiknya dengan medium |
+| **large-v3** | 2.9 GB | 69s 🔴 | ⭐⭐⭐⭐ | Akurasi tertinggi, tapi paling lambat |
+
+### 🇬🇧 Bahasa Inggris (sample 7.4 detik)
+
+| Model | Ukuran | ⏱️ Waktu | Akurasi | Hasil |
+|:-----:|:------:|:--------:|:-------:|-------|
+| **tiny** | 75 MB | **2s** 🟢 | ⭐⭐⭐ | "Web in Art of K" — lumayan untuk ukurannya |
+| **base** | 142 MB | **3s** 🟢 | ⭐⭐⭐⭐ | 90% benar, cocok untuk transkrip cepat |
+| **small** | 466 MB | 12s 🟡 | ⭐⭐⭐⭐⭐ | **"machine learning and deep learning"** ✅ sempurna |
+| **medium** | 1.5 GB | 36s 🔴 | ⭐⭐⭐⭐⭐ | ✅ Sempurna |
+| **large-v3-turbo** | 1.6 GB | 56s 🔴 | ⭐⭐⭐⭐⭐ | ✅ Sempurna |
+| **large-v3** | 2.9 GB | 69s 🔴 | ⭐⭐⭐⭐⭐ | ✅ Sempurna |
+
+### 🎯 Target 3-5 Detik
+
+Untuk mencapai transkripsi dalam **3-5 detik**, hanya model **tiny** dan **base** yang memenuhi di CPU ini. Tapi akurasinya terbatas, terutama untuk bahasa Indonesia.
+
+**Solusi: Progressive Transcription (Hybrid)**
+```
+🎯 Real-time (3-5 detik) → Model TINY → Tampilkan hasil cepat
+   ↓
+🔧 Background (30-60 detik) → Model LARGE-TURBO → Refine otomatis
+   ↓
+🔄 UI terupdate dengan hasil yang lebih akurat
+```
+
+Cara kerja:
+1. Rekaman selesai → **tiny/base** langsung transkrip dalam 3-5 detik
+2. Hasil cepat ditampilkan ke user
+3. Di **background**, model **large-v3-turbo** memproses ulang audio yang sama
+4. Setelah selesai, hasil transkrip **di-refine otomatis**
+5. User tidak perlu menunggu — dapat hasil cepat + akurat dalam satu workflow
 
 ### Auto-recommendation
 The setup wizard automatically suggests a model based on your hardware:
-- ≤ 4 GB RAM → **tiny**
-- 4–8 GB RAM → **base** or **small**
-- 8+ GB RAM → **medium** or **large-v3-turbo**
+- ≤ 4 GB RAM → **base** (progressive mode recommended: base → small)
+- 4–8 GB RAM → **small** (progressive mode recommended: tiny → large-turbo)
+- 8+ GB RAM → **medium** or **large-v3-turbo** (progressive mode recommended: tiny → large-turbo)
 
 ---
 
