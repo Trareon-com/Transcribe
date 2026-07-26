@@ -1,13 +1,29 @@
 # Final Master Checklist — P0 (Pre-Release)
 
 ## Code Quality Gates
-- [x] `cargo test` — 95+ tests passing
+- [x] `cargo test` — all passing
 - [x] `cargo clippy -- -D warnings` — 0 warnings
 - [x] `cargo audit` — 0 vulnerabilities (HIGH+)
 - [x] `cargo deny check` — 0 license issues
 - [x] `flutter analyze` — 0 errors/warnings
-- [x] `flutter test` — 51 tests passing
+- [x] `flutter test` — **49 tests passing** (CI green for first time on commit 71fda3f)
 - [x] `cargo fmt --check` — clean
+
+## Critical Bugs Fixed (2026-07-26)
+- [x] Export format dialog now passes selected formats to Rust engine
+- [x] Library delete undo defers disk deletion by 5s (cancel via undo)
+- [x] Pause/resume sync with Rust backend (drain mpsc, skip Dart forwarding)
+- [x] CI `flutter test` — setup_wizard initState must not modify provider during tree build
+- [x] CI `session_model_test` — create temp stub model for `_sanitizeDefaultModel`
+- [x] O(n) indexOf replaced with tuple-pair precomputation in TranscriptView
+
+## Distribution
+- [ ] Lynk.ID product page created
+- [ ] Gumroad backup page created
+- [ ] macOS notarization (requires $99/yr Apple Developer account)
+- [ ] Windows code signing (EV certificate recommended)
+- [ ] Screenshots taken and added to `assets/screenshots/`
+- [ ] Lynk.ID + Gumroad URLs added to DISTRIBUTION.md
 
 ## Security (STRIDE per blueprint §86.1)
 - [x] Zero network call during transcription — verified via Privacy Report screen

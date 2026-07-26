@@ -38,11 +38,14 @@ jobs:
     name: Build macOS DMG
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2.23.0
         with:
-          flutter-version: "3.27"
+          channel: stable
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2.9.1
+        with:
+          workspaces: rust_core
 
       - name: Build macOS DMG
         run: |
@@ -59,11 +62,14 @@ jobs:
     name: Build Windows ZIP
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2.23.0
         with:
-          flutter-version: "3.27"
+          channel: stable
       - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2.9.1
+        with:
+          workspaces: rust_core
 
       - name: Build Windows ZIP
         run: |

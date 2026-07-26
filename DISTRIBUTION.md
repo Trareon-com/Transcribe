@@ -31,7 +31,14 @@ bash scripts/package_macos.sh "1.0.0"
 .\scripts\package_windows.ps1 -Version "1.0.0"
 ```
 
-## CI Release Workflow
+## CI & Release Workflow
+
+Trascribe's CI pipeline (GitHub Actions) runs on every push and pull request:
+- **Rust**: `cargo fmt --check`, `cargo clippy -D warnings`, `cargo test`, `cargo audit`, `cargo deny`
+- **Flutter**: `flutter analyze`, `flutter test`, builds for macOS/Windows/Linux  
+- **Smoke tests**: macOS DMG and Windows ZIP packaging verified on every push
+
+CI status: [![CI](https://github.com/Trareon-com/Transcribe/actions/workflows/ci.yml/badge.svg)](https://github.com/Trareon-com/Transcribe/actions/workflows/ci.yml)
 
 Pushing a `v*` tag triggers `.github/workflows/release.yml`:
 1. Source tarball (GitHub Releases — for transparency, no binaries)
