@@ -59,10 +59,18 @@ cp rust_core/target/universal/librust_core.dylib "$FRAMEWORKS/"
 RESOURCES="$APP_PATH/Contents/Resources"
 echo "==> Bundling models into $RESOURCES/models"
 mkdir -p "$RESOURCES/models"
-cp models/ggml-base.bin "$RESOURCES/models/"
-cp models/ggml-large-v3-turbo-q5_0.bin "$RESOURCES/models/"
-echo "    → base (142 MB) bundled"
-echo "    → large-v3-turbo-q5 (548 MB) bundled"
+if [ -f models/ggml-base.bin ]; then
+  cp models/ggml-base.bin "$RESOURCES/models/"
+  echo "    → base (142 MB) bundled"
+else
+  echo "    ⚠️ models/ggml-base.bin not found — skipping"
+fi
+if [ -f models/ggml-large-v3-turbo-q5_0.bin ]; then
+  cp models/ggml-large-v3-turbo-q5_0.bin "$RESOURCES/models/"
+  echo "    → large-v3-turbo-q5 (548 MB) bundled"
+else
+  echo "    ⚠️ models/ggml-large-v3-turbo-q5_0.bin not found — skipping"
+fi
 
 # ── Ad-hoc signing ────────────────────────────────────────────────────
 echo "==> Ad-hoc signing $APP_PATH"

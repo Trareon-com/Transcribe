@@ -68,10 +68,18 @@ if (-not (Test-Path $DllDest)) {
 # resolve in a packaged build.
 $ModelsDestDir = Join-Path $BuildDir "models"
 New-Item -ItemType Directory -Force -Path $ModelsDestDir | Out-Null
-Copy-Item -Path "models\ggml-base.bin" -Destination $ModelsDestDir -Force
-Copy-Item -Path "models\ggml-large-v3-turbo-q5_0.bin" -Destination $ModelsDestDir -Force
-Write-Host "    → base (142 MB) bundled"
-Write-Host "    → large-v3-turbo-q5 (548 MB) bundled"
+if (Test-Path "models\ggml-base.bin") {
+    Copy-Item -Path "models\ggml-base.bin" -Destination $ModelsDestDir -Force
+    Write-Host "    → base (142 MB) bundled"
+} else {
+    Write-Host "    ⚠️ models\ggml-base.bin not found — skipping"
+}
+if (Test-Path "models\ggml-large-v3-turbo-q5_0.bin") {
+    Copy-Item -Path "models\ggml-large-v3-turbo-q5_0.bin" -Destination $ModelsDestDir -Force
+    Write-Host "    → large-v3-turbo-q5 (548 MB) bundled"
+} else {
+    Write-Host "    ⚠️ models\ggml-large-v3-turbo-q5_0.bin not found — skipping"
+}
 
 $PfxPath = $env:TRANSCRIBE_PFX_PATH
 $PfxPassword = $env:TRANSCRIBE_PFX_PASSWORD
