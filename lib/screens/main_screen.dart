@@ -281,6 +281,21 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                     _QualityToggle(),
                     const Spacer(),
                     IconButton(
+                      icon: Icon(Icons.upload_file_outlined, size: 18),
+                      tooltip: 'Upload File',
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) {
+                            final lp = ref.read(settingsProvider).libraryPath;
+                            return LibraryScreen(libraryPath: resolveTilde(lp));
+                          },
+                        ),
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      color: colors.textSecondary,
+                    ),
+                    IconButton(
                       icon: Icon(Icons.folder_outlined, size: 18),
                       tooltip: 'Library',
                       onPressed: () => Navigator.of(context).push(
