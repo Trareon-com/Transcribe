@@ -1,15 +1,13 @@
-
-<p align="center">
-  <br/>
-  <img src="https://img.shields.io/badge/Trascribe-100%25%20Offline%20Meeting%20Transcriber-8A2BE2?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTIgMWEzIDMgMCAwIDAtMyAzdjhhMyAzIDAgMCAwIDYgMFY0YTMgMyAwIDAgMC0zLTN6Ii8+PHBhdGggZD0iTTE5IDEwdjJhNyA3IDAgMCAxLTE0IDB2LTIiLz48bGluZSB4MT0iMTIiIHkxPSIxOSIgeDI9IjEyIiB5Mj0iMjMiLz48bGluZSB4MT0iOCIgeTE9IjIzIiB4Mj0iMTYiIHkyPSIyMyIvPjwvc3ZnPg==" alt="Trascribe"/>
-  <br/>
-</p>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/Trascribe-100%25-Offline%20Transcriber-00796B?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTIgMWEzIDMgMCAwIDAtMyAzdjhhMyAzIDAgMCAwIDYgMFY0YTMgMyAwIDAgMC0zLTN6Ii8+PHBhdGggZD0iTTE5IDEwdjJhNyA3IDAgMCAxLTE0IDB2LTIiLz48bGluZSB4MT0iMTIiIHkxPSIxOSIgeDI9IjEyIiB5Mj0iMjMiLz48bGluZSB4MT0iOCIgeTE9IjIzIiB4Mj0iMTYiIHkyPSIyMyIvPjwvc3ZnPg=="/>
+  <img alt="Trascribe" src="https://img.shields.io/badge/Trascribe-100%25-Offline%20Transcriber-00796B?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmYiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNMTIgMWEzIDMgMCAwIDAtMyAzdjhhMyAzIDAgMCAwIDYgMFY0YTMgMyAwIDAgMC0zLTN6Ii8+PHBhdGggZD0iTTE5IDEwdjJhNyA3IDAgMCAxLTE0IDB2LTIiLz48bGluZSB4MT0iMTIiIHkxPSIxOSIgeDI9IjEyIiB5Mj0iMjMiLz48bGluZSB4MT0iOCIgeTE9IjIzIiB4Mj0iMTYiIHkyPSIyMyIvPjwvc3ZnPg=="/>
+</picture>
 
 <h1 align="center">Trascribe</h1>
 
 <p align="center">
-  <strong>100% offline mic + speaker meeting transcription for macOS and Windows.</strong><br/>
-  Zero network calls during transcription. No cloud STT. No telemetry.
+  <strong>100% offline microphone + speaker transcription for macOS, Windows, and Linux.</strong><br/>
+  Zero network calls during transcription. Your audio never leaves your machine.
 </p>
 
 <p align="center">
@@ -17,10 +15,7 @@
     <img src="https://github.com/Trareon-com/Transcribe/actions/workflows/ci.yml/badge.svg" alt="CI"/>
   </a>
   <a href="LICENSE">
-    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"/>
-  </a>
-  <a href="https://lynk.id">
-    <img src="https://img.shields.io/badge/distribution-Lynk.ID%20%245-8A2BE2" alt="Lynk.ID $5"/>
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"/>
   </a>
   <a href="https://www.rust-lang.org/">
     <img src="https://img.shields.io/badge/Rust-1.80+-orange" alt="Rust 1.80+"/>
@@ -29,125 +24,169 @@
     <img src="https://img.shields.io/badge/Flutter-3.27+-blue" alt="Flutter 3.27+"/>
   </a>
   <a href="https://github.com/ggerganov/whisper.cpp">
-    <img src="https://img.shields.io/badge/whisper.cpp-backed-FF6F00" alt="whisper.cpp"/>
+    <img src="https://img.shields.io/badge/engine-whisper.cpp-FF6F00" alt="whisper.cpp"/>
   </a>
   <br/>
   <a href="ARCHITECTURE.md">Architecture</a> •
   <a href="CHANGELOG.md">Changelog</a> •
   <a href="CONTRIBUTING.md">Contributing</a> •
-  <a href="SECURITY.md">Security</a> •
-  <a href="DISTRIBUTION.md">Distribution</a>
+  <a href="SECURITY.md">Security</a>
 </p>
+
+---
+
+Trascribe is a desktop application that transcribes meetings, lectures, interviews, and any other audio source — 100% offline. It captures both microphone input and system speaker output simultaneously, runs speech-to-text locally via Whisper, and exports transcripts in multiple formats. No cloud services, no telemetry, no network calls during transcription.
 
 ---
 
 ## Features
 
-- **100% offline** — Zero network calls during transcription. Your audio never leaves your machine.
-- **Dual audio capture** — Simultaneously captures microphone and system speaker audio for complete meeting coverage.
-- **Dual-stage VAD** — WebRTC VAD gate + confirmation detector for accurate speech segment boundaries.
-- **whisper.cpp engine** — Local speech-to-text via `whisper-rs`, supporting all GGUF models from `tiny` to `large-v3-turbo`.
-- **Multi-speaker diarization** — Acoustic feature clustering for speaker separation in transcripts.
-- **Echo deduplication** — Intelligent dedupe (MIC vs SPK similarity) prevents duplicate transcription of the same speech.
+### Privacy & Offline
+
+- **100% offline transcription** — No audio data ever leaves your machine. Zero network calls during active transcription.
+- **No telemetry** — No analytics, no crash reporting, no background network activity.
+- **Privacy Report** — Built-in screen showing all network activity (only model downloads ever appear).
+- **No account required** — No sign-up, no login, no cloud dependency.
+
+### Audio Capture
+
+- **Dual capture** — Simultaneously records microphone and system speaker audio for complete meeting coverage.
+- **Dual-stage VAD** — WebRTC VAD gate + confirmation detector for accurate speech boundaries.
+- **VU meter** — Real-time audio level indicators for both MIC and SPK channels.
+- **Platform loopback** — WASAPI loopback (Windows), CoreAudio Process Taps (macOS 14.4+), PipeWire (Linux).
+
+### Speech-to-Text
+
+- **whisper.cpp engine** — Local STT via `whisper-rs`, supporting all GGUF models from `tiny` (~75 MB) to `large-v3-turbo`.
+- **Multi-speaker diarization** — Acoustic feature clustering separates speakers in transcripts.
+- **Echo deduplication** — Cross-source dedupe (MIC vs SPK similarity) prevents duplicate transcription.
 - **Priority queue** — Mic segments processed before speaker segments for responsive live transcription.
-- **Auto-split sessions** — Sessions automatically split by time and memory pressure thresholds.
-- **Resumable model downloads** — Large Whisper models download with SHA256 verification and resume support.
-- **Rich export formats** — Markdown, TXT, JSON, SRT, VTT, HTML, DOCX, and WAV.
-- **Parallel export** — Each export format runs in its own thread for speed.
-- **Chunked file processing** — Large files transcoded in 30-second chunks.
-- **In-memory session registry** — Manage multiple transcription sessions with search, soft-delete (with undo), and playback.
-- **Built-in transcript player** — Seek, speed control, and inline editing of transcript text.
-- **CLI mode** — `trascribe-cli` for batch-transcribing files from the command line without the UI.
-- **Privacy Report** — See exactly what data stays local and what (if anything) ever touched the network.
-- **Usage dashboard** — Track transcription time, word counts, and session history.
-- **First-run setup wizard** — 5-step guided configuration with premium dark glassmorphism design.
-- **Light / dark / system theme** — Full Riverpod-managed theme switching.
-- **Keyboard shortcuts** — In-app shortcuts panel with minimize-to-tray support.
-- **WCAG 2.2 AA accessibility** — Semantics labels, keyboard focus traversal, minimum 24×24pt tap targets across all widgets.
-- **Auto-stop timer** — Configurable inactivity timeout stops recording after N minutes of silence.
+- **Auto-split sessions** — Sessions split automatically by time (hourly) and memory pressure thresholds.
 
-> See the [CHANGELOG](CHANGELOG.md) for the full development history and known gaps.
+### Export
 
-## Screenshots
+| Format | Description |
+|--------|-------------|
+| Markdown | Timestamped transcript with speaker labels |
+| TXT | Plain text, speaker-concatenated |
+| JSON | Structured segment data for programmatic use |
+| SRT | Subtitle format with sequence numbering |
+| VTT | WebVTT subtitle format |
+| HTML | Self-contained styled transcript page |
+| DOCX | Microsoft Word document |
+| WAV | Recorded audio alongside transcript |
 
-| Main Screen | Recording Active | Settings |
-|:---:|:---:|:---:|
-| ![Main Screen](assets/screenshots/trascribe_main_screen.png) | ![Recording Active](assets/screenshots/trascribe_recording_active.png) | ![Settings](assets/screenshots/trascribe_settings_screen.png) |
+Each export format runs in its own thread for parallel processing.
 
-| Setup Wizard | Privacy Report | Usage Dashboard |
-|:---:|:---:|:---:|
-| ![Setup Wizard Step 3](assets/screenshots/trascribe_step3_audio.png) | ![Privacy Report](assets/screenshots/trascribe_privacy_report.png) | ![Usage Dashboard](assets/screenshots/trascribe_usage_dashboard.png) |
+### User Interface
 
-| Model Selection | Transcript Player | Tone Test |
-|:---:|:---:|:---:|
-| ![Model Download](assets/screenshots/trascribe_step4_download.png) | ![Transcript Playing](assets/screenshots/trascribe_tone_test_playing.png) | ![Tone Test](assets/screenshots/trascribe_step5_tone.png) |
+- **Live transcript view** — Real-time text display with auto-scroll, search, and copy.
+- **Pause/resume** — Toggle recording without ending the session.
+- **Session library** — Browse, search, delete (with undo), and re-export past sessions.
+- **Transcript player** — Seek, speed control, inline editing of transcript text.
+- **Mode selector** — Webinar (speaker only), Rapat Online (mic + speaker), Offline (mic only).
+- **First-run setup wizard** — 5-step guided configuration: spec detection, model selection, audio setup, model download, tone test.
+- **Light / dark / system theme** — Full theme switching managed via Riverpod.
+- **Keyboard shortcuts** — Cmd+R (start/stop), Cmd+P (pause/resume), Cmd+L (library), Cmd+, (settings), Cmd+/ (shortcuts panel).
+- **Minimize to tray** — Recording continues when window is hidden.
+- **WCAG 2.2 AA accessibility** — Semantics labels, keyboard focus traversal, minimum 24×24pt tap targets.
 
-*Screenshots will be added to `assets/screenshots/` before release. These reflect the pre-1.0 development UI.*
+### CLI & Batch Processing
+
+- **`trascribe` CLI** — Batch-transcribe audio files without the UI.
+- **`gen_fixtures`** — Generate synthetic WAV fixtures for hardware-free testing.
+- **Batch file upload** — Drag-and-drop audio files for multi-file transcription.
 
 ---
 
-## Architecture Overview
+## Screenshots
 
-Trascribe is a **Flutter UI over a Rust engine**, connected via [flutter_rust_bridge](https://cjycode.com/flutter_rust_bridge/) (FRB) V2. The Rust engine (`rust_core`) handles all audio pipeline work — device enumeration via `cpal`, dual-stage VAD (WebRTC gate + confirmation), `whisper-rs` STT inference, echo deduplication, session management, and multi-format export — entirely offline. The Flutter layer manages the UI state with Riverpod, polling the Rust event queue every 100ms for transcript and VU events. No audio data ever traverses the network; model downloads are the only legitimate network activity and are SHA256-verified. See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the full layout and data flow diagram.
+> Screenshots will be added to `assets/screenshots/` before the first public release. The current UI reflects pre-1.0 development — visual polish and final layout adjustments are ongoing.
+
+| Main Screen | Recording | Settings |
+|:---:|:---:|:---:|
+| *(pending)* | *(pending)* | *(pending)* |
+
+---
+
+## Architecture
+
+```
+lib/                      Flutter UI (Dart)
+├── screens/              Full-page screens
+├── widgets/              Reusable UI components
+├── state/                Riverpod notifiers + data models
+├── services/             Bridge interface + implementations
+├── src/rust/             FRB-generated Dart bindings
+└── theme/                Color tokens + ThemeData
+
+rust_core/                Rust engine
+├── src/
+│   ├── api.rs            Public FFI surface (FRB entry point)
+│   ├── audio/            Device enumeration, ring buffer, config
+│   ├── vad/              Dual-stage VAD
+│   ├── stt/              whisper-rs wrapper + batch transcription
+│   ├── dedupe/           Echo deduplication
+│   ├── export/           Multi-format export writers
+│   ├── decode/           Audio decode + resample (Symphonia + rubato)
+│   ├── model.rs          Catalog, SHA256 verification, resumable download
+│   ├── session.rs        Session registry, auto-split, recovery
+│   ├── settings.rs       Persistence layer
+│   └── singleton.rs      Single-instance PID lock
+└── bin/                  CLI tools (trascribe, gen_fixtures, device_probe)
+```
+
+See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the complete layout, data flow diagrams, and bridge implementation details.
+
+---
 
 ## Tech Stack
 
 | Layer | Technology |
-|-------|-----------|
-| **UI** | Flutter 3.27+ (Dart), Riverpod, flutter_rust_bridge v2.12 |
-| **Engine** | Rust 1.80+ (edition 2021) |
-| **STT** | whisper.cpp via `whisper-rs` 0.14 (any GGUF model) |
+|-------|------------|
+| **UI** | Flutter 3.27+ (Dart), Riverpod, flutter_rust_bridge 2.12 |
+| **Engine** | Rust 1.80+, edition 2021 |
+| **STT** | whisper.cpp via `whisper-rs` 0.14 |
 | **Audio capture** | `cpal` 0.15 |
-| **Audio decode** | Symphonia + rubato (pure Rust, no ffmpeg dependency) |
+| **Audio decode** | Symphonia + rubato (pure Rust, no ffmpeg) |
 | **VAD** | WebRTC VAD (`webrtc-vad` 0.4) + confirmation stage |
 | **Export** | Markdown, TXT, JSON, SRT, VTT, HTML, DOCX (`docx-rs`), WAV (`hound`) |
-| **Model download** | `reqwest` with SHA256 verification + resume |
-| **Distribution** | Lynk.ID ($5) — macOS DMG (ad-hoc signed), Windows ZIP (self-signed) |
+| **Model download** | `reqwest` with SHA256 verification + resume support |
 
-## Quick Start
+---
+
+## Getting Started
 
 ### Prerequisites
 
 - [Flutter](https://flutter.dev/) 3.27+ (stable channel)
-- [Rust](https://www.rust-lang.org/) 1.80+ with `cmake` on PATH (whisper.cpp is compiled from source)
-- **macOS**: Xcode + CocoaPods for building the macOS target
-- **Windows**: Visual Studio Build Tools for building the Windows target
+- [Rust](https://www.rust-lang.org/) 1.80+ with `cmake` on PATH
+- **macOS**: Xcode 15+ with Command Line Tools
+- **Windows**: Visual Studio 2022 Build Tools (Desktop development with C++ workload)
+- **Linux**: `pkg-config`, `libasound2-dev`, `libgtk-3-dev`, `liblzma-dev`, `ninja-build`, `clang`
 
-### Build and Run
+### Build & Run (Development)
 
 ```bash
-# 1. Clone the repository
+# Clone
 git clone https://github.com/Trareon-com/Transcribe.git
 cd Transcribe
 
-# 2. Install Flutter dependencies
+# Flutter dependencies
 flutter pub get
 
-# 3. Build the Rust engine
+# Build Rust engine
 cd rust_core
 cargo build --release --lib
 cd ..
 
-# 4. Build and run the Flutter app
-flutter run -d macos   # or: flutter run -d windows
+# Run
+flutter run -d macos     # macOS
+flutter run -d windows   # Windows
+flutter run -d linux     # Linux
 ```
 
-### Batch Transcribe via CLI
-
-```bash
-cd rust_core
-cargo run --bin trascribe -- \
-  --batch "*.mp3" --output ./transcripts/ --model models/ggml-tiny.bin
-```
-
-### Generate Test Fixtures (no real mic / model required)
-
-```bash
-cd rust_core
-cargo run --bin gen_fixtures -- ../test/fixtures
-```
-
-### Build a Distributable Package
+### Build Distributable Package
 
 ```bash
 # macOS
@@ -159,29 +198,39 @@ bash scripts/package_macos.sh "1.0.0"
 
 Both scripts: build Rust release → build Flutter release → sign → package → generate SHA256 checksum → output to `dist/`.
 
+### CLI Batch Transcription
+
+```bash
+cd rust_core
+cargo run --bin trascribe -- \
+  --batch "*.mp3" --output ./transcripts/ --model models/ggml-tiny.bin
+```
+
 ---
 
-## Distribution
+## Platform Support
 
-Trascribe source code is **MIT licensed** and publicly available on GitHub. Pre-built binary installers are distributed through **Lynk.ID** for **$5**.
-
-| Platform | Installer | Signing |
-|----------|-----------|---------|
-| macOS | `.dmg` | Ad-hoc signed (`codesign --sign -`) |
-| Windows | `.zip` | Self-signed (makecert) |
-
-**Important**: See [`DISTRIBUTION.md`](DISTRIBUTION.md) for full details on signing status, Lynk.ID product page checklist, model bundling, release workflow, and the hotfix protocol.
+| Feature | macOS | Windows | Linux |
+|---------|-------|---------|-------|
+| Live capture (mic + speaker) | ✅ | ✅ | ✅ |
+| STT (Whisper) | ✅ | ✅ | ✅ |
+| File transcription | ✅ | ✅ | ✅ |
+| All export formats | ✅ | ✅ | ✅ |
+| CLI mode | ✅ | ✅ | ✅ |
+| CI build | ✅ | ✅ | ✅ |
+| Packaging script | ✅ (DMG) | ✅ (ZIP) | — |
+| Distribution channel | Lynk.ID ($5) | Lynk.ID ($5) | — |
+| Notarization / signing | Ad-hoc | Self-signed | — |
 
 ---
 
 ## Known Limitations
 
-- **No notarization (macOS)** — Ad-hoc signing means Gatekeeper shows "Apple cannot verify this app" on first launch. Users can right-click → Open to bypass once; subsequent launches are silent.
-- **SmartScreen warning (Windows)** — Self-signed certificate triggers "Windows protected your PC" on first run until sufficient reputation is established.
-- **No auto-update (v1)** — Users check manually via Help → Check for Updates. Full auto-update with Ed25519 binary signature is planned for v2.
-- **Large model downloads require internet** — The `tiny` model (~75MB) is bundled; larger models (base/small/medium/large-v3-turbo) download on-demand via HTTPS.
-- **Live audio capture** — Real hardware validation is still in progress, especially end-to-end testing with target microphones and speakers.
-- **Lynk.ID product page** — Not yet live (see DISTRIBUTION.md for the checklist).
+- **macOS Gatekeeper** — Ad-hoc signing shows "Apple cannot verify this app" on first launch. Right-click → Open to bypass once.
+- **Windows SmartScreen** — Self-signed certificate triggers "Windows protected your PC" on first run until reputation is established.
+- **No auto-update (v1)** — Users check manually via Help → Check for Updates. Ed25519-signed auto-update planned for v2.
+- **Model downloads require internet** — `tiny` (~75 MB) bundled; larger models download on-demand via HTTPS (SHA256-verified).
+- **Live audio capture** — End-to-end hardware validation across target microphones/speakers is ongoing.
 
 ---
 
@@ -189,55 +238,55 @@ Trascribe source code is **MIT licensed** and publicly available on GitHub. Pre-
 
 ### Does Trascribe send my audio to the cloud?
 
-**No.** Trascribe is 100% offline. During transcription — both live capture and file transcription — the application makes **zero network calls**. The only network activity is downloading an optional Whisper model you explicitly select (HTTPS, checksum-verified).
+**No.** Trascribe is 100% offline. During transcription — both live capture and file transcription — the application makes zero network calls. The only network activity is downloading an optional Whisper model (HTTPS, SHA256-verified).
 
-### What models does Trascribe support?
+### What models are supported?
 
-Any GGUF-format Whisper model. The `tiny` model (~75 MB) is bundled with the installer. Larger models (`base`, `small`, `medium`, `large-v3-turbo`) are downloaded on-demand with SHA256 verification and resume support if interrupted.
-
-### Which platforms are supported?
-
-**macOS** and **Windows** are actively supported and tested. Linux builds as part of CI but does not yet have packaging scripts or a distribution channel.
-
-### What export formats are available?
-
-Markdown, plain text (TXT), JSON, SRT, VTT, HTML, DOCX, and WAV. Each format exports in its own thread for speed.
-
-### How does speaker diarization work?
-
-Trascribe uses acoustic feature clustering to separate speakers based on voice characteristics. This is done entirely locally — no cloud services or speaker enrollment required.
+Any GGUF-format Whisper model. `tiny` (~75 MB) is bundled. `base`, `small`, `medium`, and `large-v3-turbo` download on-demand with resume support.
 
 ### Can I transcribe pre-recorded files?
 
-Yes. Drag and drop audio files onto the library screen, or use the `trascribe` CLI for batch file processing. Supported formats include MP3, AAC, MP4, OGG, FLAC, and WAV (via Symphonia).
+Yes. Drag-and-drop audio/video files onto the Library screen, or use the `trascribe` CLI for batch processing. Supported: MP3, AAC, MP4, OGG, FLAC, WAV, MOV, MKV (via Symphonia).
+
+### How does speaker diarization work?
+
+Acoustic feature clustering separates speakers based on voice characteristics — entirely local, no cloud services required.
+
+### Is telemetry collected?
+
+**No.** There is no telemetry, analytics, or crash reporting. Any future opt-in diagnostics will be documented in [SECURITY.md](SECURITY.md) before release and will never transmit audio or transcript content.
+
+### How do I update?
+
+v1: manual check via Help → Check for Updates. Auto-update with Ed25519 binary verification is planned for v2.
 
 ### How do I bypass the Gatekeeper / SmartScreen warning?
 
-- **macOS**: Right-click (or Ctrl+click) the app → Open → Click "Open" in the dialog. Subsequent launches work normally.
-- **Windows**: Click "More info" → "Run anyway". The warning disappears once SmartScreen builds enough reputation.
+- **macOS**: Right-click (or Ctrl+click) the app → Open → Click "Open". Subsequent launches work normally.
+- **Windows**: Click "More info" → "Run anyway".
 
-### Is telemetry or crash reporting collected?
+---
 
-**No.** There is no telemetry, no analytics, and no crash reporting enabled by default. Any future opt-in diagnostics will be documented in [SECURITY.md](SECURITY.md) before release and will never transmit audio or transcript content.
+## Project Status
 
-### How do I update Trascribe?
+Trascribe is in **pre-1.0 development**. The engine, UI, and CI pipeline are functional and tested, but the application has not yet undergone a public beta. Key milestones remaining before 1.0:
 
-In v1, check for updates manually via Help → Check for Updates. A full auto-update system with Ed25519 binary signature verification is planned for v2.
-
-### Can I contribute?
-
-Absolutely! See [`CONTRIBUTING.md`](CONTRIBUTING.md) for setup instructions, code style guidelines, PR process, and CI gate requirements.
+- [ ] Live audio capture E2E validation across target hardware
+- [ ] Screenshots for README
+- [ ] Lynk.ID product page setup
+- [ ] macOS notarization
+- [ ] Windows code signing
+- [ ] Public beta release
 
 ---
 
 ## Security
 
-See [`SECURITY.md`](SECURITY.md) for the full security policy, including:
+See [`SECURITY.md`](SECURITY.md) for:
 - Core privacy guarantee (zero network calls during transcription)
 - Vulnerability reporting process (GitHub Security Advisory or email)
 - Development security practices (`cargo audit`, `cargo deny`, clippy gates)
-- Supported versions and fix timelines
 
 ## License
 
-MIT — see [`LICENSE`](LICENSE) for the full text. Copyright © 2026 Trareon.com.
+MIT — see [`LICENSE`](LICENSE) for the full text. Copyright © 2026 [Trareon.com](https://trareon.com).

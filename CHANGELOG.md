@@ -5,9 +5,16 @@ follows [Keep a Changelog](https://keepachangelog.com/); this project is
 pre-1.0 so versions aren't cut yet — entries are grouped by development
 phase instead.
 
-## Unreleased
+## [0.1.0] — 2026-07-26
+
+### Fixed
+- CI `flutter test` failure: `session_model_test` now creates a temp directory with
+  a stub model file so `_sanitizeDefaultModel` resolves correctly on CI runners
+  without pre-downloaded models.
+- Fixed branch in CI badge URL (README.md).
 
 ### Added
+
 - Repo scaffold, CI (cargo fmt/clippy/test/audit/deny + flutter
   analyze/test), Dependabot, SECURITY.md, performance benchmark scripts
 - Rust engine core: audio device enumeration, ring buffer, dual-stage VAD

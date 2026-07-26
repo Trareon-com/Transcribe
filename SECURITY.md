@@ -51,4 +51,4 @@ is pre-1.0.
   `pubspec.lock` are committed and never deleted.
 - This policy is reviewed at least every 6 months.
 
-Last reviewed: 2026-07-25.
+Last reviewed: 2026-07-26.
