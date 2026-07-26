@@ -613,34 +613,7 @@ class _FooterBar extends StatelessWidget {
             const SizedBox(width: 16),
           ],
 
-          // Minimize to tray
-          GestureDetector(
-            onTap: () => windowManager.hide(),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.keyboard_arrow_down, color: colors.textTertiary, size: 16),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Minimize ke tray',
-                    style: TextStyle(color: colors.textTertiary, fontSize: 12),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
           const Spacer(),
-
-          // Diarization info
-          Icon(Icons.person_outline, color: colors.textTertiary, size: 14),
-          const SizedBox(width: 6),
-          Text(
-            'Diarisasi aktif • Pembicara dipisahkan otomatis (MIC / SPK)',
-            style: TextStyle(color: colors.textTertiary, fontSize: 11),
-          ),
         ],
       ),
     );

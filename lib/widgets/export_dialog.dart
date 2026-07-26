@@ -108,6 +108,27 @@ Future<bool> showExportDialog(
   );
   if (outputDir == null || !context.mounted) return false;
 
+  // Tampilkan loading dialog selama export
+  if (context.mounted) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(ctx).extension<AppColorSet>()?.surface ?? AppColors.light.surface,
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 24, height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2.5),
+            ),
+            const SizedBox(width: 16),
+            Text('Mengekspor ${selected.length} format...'),
+          ],
+        ),
+      ),
+    );
+  }
+
   final formats = <rust_export.ExportFormat>[
     if (selected.contains('md')) rust_export.ExportFormat.markdown,
     if (selected.contains('txt')) rust_export.ExportFormat.txt,
@@ -124,6 +145,8 @@ Future<bool> showExportDialog(
       title: session.title,
       formats: formats,
     );
+    // Tutup loading dialog
+    if (context.mounted) Navigator.of(context, rootNavigator: true).pop();
     if (!context.mounted) return false;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -134,6 +157,8 @@ Future<bool> showExportDialog(
     return true;
   } catch (e) {
     if (!context.mounted) return false;
+    // Tutup loading dialog
+    Navigator.of(context, rootNavigator: true).pop();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('Export gagal: $e'),
