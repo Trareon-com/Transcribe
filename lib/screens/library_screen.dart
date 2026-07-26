@@ -13,6 +13,7 @@ import '../widgets/file_upload_zone.dart';
 import '../widgets/session_card.dart';
 import '../widgets/storage_bar.dart';
 import 'transcript_player_screen.dart';
+import '../widgets/export_dialog.dart';
 
 class LibraryScreen extends ConsumerStatefulWidget {
   /// Optional seed list used in tests to bypass the async disk load.

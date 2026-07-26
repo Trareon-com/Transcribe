@@ -89,7 +89,7 @@ pub(crate) mod macos {
     fn try_sck_capture(
         samples_tx: &mpsc::Sender<Vec<f32>>,
     ) -> Result<AudioCapture, TranscribeError> {
-        use screencapturekit::cm::{AudioBufferList, AudioBufferRef, CMSampleBuffer};
+        use screencapturekit::cm::CMSampleBuffer;
         use screencapturekit::prelude::*;
 
         let content = SCShareableContent::get().map_err(|e| {
@@ -129,7 +129,7 @@ pub(crate) mod macos {
                     }
                     if let Some(list) = sample.audio_buffer_list() {
                         for buf in list.iter() {
-                            let ptr = buf.data() as *const f32;
+                            let ptr = buf.data().as_ptr() as *const f32;
                             let len = buf.data_byte_size() as usize / 4;
                             if !ptr.is_null() && len > 0 {
                                 let samples = unsafe { std::slice::from_raw_parts(ptr, len) };
@@ -140,8 +140,8 @@ pub(crate) mod macos {
                 },
                 SCStreamOutputType::Audio,
             )
-            .map_err(|e| {
-                TranscribeError::AudioDevice(format!("ScreenCaptureKit: add handler failed: {e}"))
+            .map_or(Ok(()), |e| {
+                Err(TranscribeError::AudioDevice(format!("ScreenCaptureKit: add handler failed: {e}")))
             })?;
 
         stream.start_capture().map_err(|e| {
