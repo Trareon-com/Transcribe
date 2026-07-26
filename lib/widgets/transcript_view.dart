@@ -104,7 +104,7 @@ class _TranscriptViewState extends State<TranscriptView> {
     final m = ((secs % 3600) / 60).floor();
     final s = (secs % 60).floor();
     if (h > 0) {
-      return '${h}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+      return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
     }
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
@@ -321,7 +321,7 @@ class _SegmentTile extends StatelessWidget {
     final m = ((secs % 3600) / 60).floor();
     final s = (secs % 60).floor();
     if (h > 0) {
-      return '${h}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+      return '$h:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
     }
     return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
