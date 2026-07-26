@@ -126,23 +126,31 @@ fn start_capture(
     source: &str,
     language: Option<String>,
 ) -> Result<Option<CaptureChannel>, TrascribeError> {
-    // A missing device id means the session has not completed audio setup yet.
-    // Keep the state machine usable in CI and let the setup wizard provide the
-    // explicit device before enabling hardware capture.
-    if !enabled || device_name.is_none() {
+    if !enabled {
         return Ok(None);
     }
-
     let (samples_tx, samples_rx) = mpsc::channel();
     // Speaker (loopback) uses platform-specific capture (WASAPI / CoreAudio
     // Process Tap / PulseAudio monitor). Mic uses the standard cpal input path.
-    let capture = if source == "spk" {
-        crate::audio::loopback::start_loopback(device_name, samples_tx)?
+    let capture = match if source == "spk" {
+        crate::audio::loopback::start_loopback(device_name, samples_tx)
     } else {
-        AudioCapture::start(device_name, samples_tx)?
+        AudioCapture::start(device_name, samples_tx)
+    } {
+        Ok(c) => c,
+        Err(e) => {
+            tracing::warn!(source, %e, "skipping capture — device unavailable");
+            return Ok(None);
+        }
     };
     let (events_tx, events_rx) = mpsc::channel();
-    let worker = LiveWorker::spawn(model_path, source, language, samples_rx, events_tx)?;
+    let worker = match LiveWorker::spawn(model_path, source, language, samples_rx, events_tx) {
+        Ok(w) => w,
+        Err(e) => {
+            tracing::warn!(source, %e, "skipping capture — pipeline init failed");
+            return Ok(None);
+        }
+    };
     Ok(Some(CaptureChannel {
         _capture: capture,
         _worker: worker,

@@ -34,7 +34,7 @@ pub fn start_loopback(
 }
 
 // ---------------------------------------------------------------------------
-// macOS — BlackHole via cpal, fallback to ffmpeg avfoundation
+// macOS — ScreenCaptureKit (primary, zero-setup), BlackHole/ffmpeg (fallback)
 // ---------------------------------------------------------------------------
 #[cfg(target_os = "macos")]
 pub(crate) mod macos {
@@ -49,18 +49,118 @@ pub(crate) mod macos {
         device_hint: Option<String>,
         samples_tx: mpsc::Sender<Vec<f32>>,
     ) -> Result<AudioCapture, TrascribeError> {
+        // ScreenCaptureKit: zero-setup system audio on macOS 13+
+        // Skip if user explicitly requested a specific device (e.g. BlackHole)
+        let wants_sck = device_hint
+            .as_deref()
+            .map(|h| h.is_empty() || h.eq_ignore_ascii_case("default"))
+            .unwrap_or(true);
+
+        if wants_sck {
+            match try_sck_capture(&samples_tx) {
+                Ok(capture) => {
+                    tracing::info!("using ScreenCaptureKit for system audio");
+                    return Ok(capture);
+                }
+                Err(e) => {
+                    tracing::warn!("ScreenCaptureKit unavailable: {e}, falling back");
+                }
+            }
+        }
+
+        // Fallback: BlackHole 2ch via cpal (or requested device)
         let device_name = device_hint
             .filter(|s| !s.is_empty())
             .or_else(|| Some("BlackHole 2ch".to_string()));
 
-        // Try cpal with BlackHole first (if installed)
         let cpal_result = AudioCapture::start(device_name.clone(), samples_tx.clone());
         if cpal_result.is_ok() {
             return cpal_result;
         }
 
-        // Fallback: ffmpeg avfoundation system audio capture
-        // ffmpeg -f avfoundation -i ":default" -ac 1 -ar 16000 -f f32le pipe:1
+        // Final fallback: ffmpeg avfoundation
+        ffmpeg_fallback(samples_tx)
+    }
+
+    /// ScreenCaptureKit-based system audio capture — no driver install needed.
+    /// Requires macOS 13.0+ and one-time "Screen & System Audio Recording" permission.
+    fn try_sck_capture(
+        samples_tx: &mpsc::Sender<Vec<f32>>,
+    ) -> Result<AudioCapture, TrascribeError> {
+        use screencapturekit::cm::{AudioBufferRef, AudioBufferList, CMSampleBuffer};
+        use screencapturekit::prelude::*;
+
+        let content = SCShareableContent::get().map_err(|e| {
+            TrascribeError::AudioDevice(format!(
+                "ScreenCaptureKit: cannot list content — grant Screen & System Audio Recording permission in System Settings ({e})"
+            ))
+        })?;
+        let display = content.displays().first().ok_or_else(|| {
+            TrascribeError::AudioDevice("ScreenCaptureKit: no display found".into())
+        })?;
+
+        let filter = SCContentFilter::create()
+            .with_display(display)
+            .with_excluding_windows(&[])
+            .build();
+
+        // Minimal video config (2×2) — we only need audio.
+        // The purple recording indicator only appears for video captures,
+        // not audio-only SCStream (per Apple documentation).
+        let config = SCStreamConfiguration::new()
+            .with_width(2)
+            .with_height(2)
+            .with_captures_audio(true)
+            .with_sample_rate(16_000)
+            .with_channel_count(1)
+            .with_excludes_current_process_audio(true);
+
+        let mut stream = SCStream::new(&filter, &config);
+        let tx = samples_tx.clone();
+
+        // Closure-based audio handler — fires on ScreenCaptureKit's internal queue
+        stream
+            .add_output_handler(
+                move |sample: CMSampleBuffer, of_type: SCStreamOutputType| {
+                    if of_type != SCStreamOutputType::Audio {
+                        return;
+                    }
+                    if let Some(list) = sample.audio_buffer_list() {
+                        for buf in list.iter() {
+                            let ptr = buf.m_data() as *const f32;
+                            let len = buf.m_data_byte_size() as usize / 4;
+                            if !ptr.is_null() && len > 0 {
+                                let samples =
+                                    unsafe { std::slice::from_raw_parts(ptr, len) };
+                                let _ = tx.send(samples.to_vec());
+                            }
+                        }
+                    }
+                },
+                SCStreamOutputType::Audio,
+            )
+            .map_err(|e| {
+                TrascribeError::AudioDevice(format!("ScreenCaptureKit: add handler failed: {e}"))
+            })?;
+
+        stream.start_capture().map_err(|e| {
+            TrascribeError::AudioDevice(format!("ScreenCaptureKit: start failed: {e}"))
+        })?;
+
+        let (stop_tx, stop_rx) = mpsc::channel::<()>();
+        let thread = std::thread::spawn(move || {
+            let _ = stop_rx.recv();
+            let _ = stream.stop_capture();
+        });
+
+        Ok(AudioCapture::new(stop_tx, thread))
+    }
+
+    /// ffmpeg avfoundation fallback for macOS versions < 13 or when
+    /// ScreenCaptureKit permission is unavailable.
+    fn ffmpeg_fallback(
+        samples_tx: mpsc::Sender<Vec<f32>>,
+    ) -> Result<AudioCapture, TrascribeError> {
         let (stop_tx, stop_rx) = mpsc::channel::<()>();
         let (ready_tx, ready_rx) = mpsc::channel::<Result<(), TrascribeError>>();
 
@@ -92,10 +192,9 @@ pub(crate) mod macos {
                         ))
                     })?;
 
-                let stdout = child
-                    .stdout
-                    .take()
-                    .ok_or_else(|| TrascribeError::AudioDevice("no stdout from ffmpeg".into()))?;
+                let stdout = child.stdout.take().ok_or_else(|| {
+                    TrascribeError::AudioDevice("no stdout from ffmpeg".into())
+                })?;
 
                 let _ = ready_tx.send(Ok(()));
                 let mut reader = std::io::BufReader::new(stdout);
@@ -113,7 +212,9 @@ pub(crate) mod macos {
                                 .chunks(4)
                                 .filter_map(|c| {
                                     if c.len() == 4 {
-                                        Some(f32::from_le_bytes([c[0], c[1], c[2], c[3]]))
+                                        Some(f32::from_le_bytes([
+                                            c[0], c[1], c[2], c[3],
+                                        ]))
                                     } else {
                                         None
                                     }

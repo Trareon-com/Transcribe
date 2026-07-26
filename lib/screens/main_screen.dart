@@ -11,6 +11,7 @@ import '../state/session_model.dart';
 import '../state/settings_model.dart';
 import '../src/rust/session.dart' as rust_session;
 import '../theme/app_colors.dart';
+import '../widgets/stream_toggle.dart';
 import '../widgets/transcript_view.dart';
 import 'library_screen.dart';
 import 'settings_screen.dart';
@@ -467,21 +468,21 @@ class _ControlBar extends StatelessWidget {
                   ),
                   const SizedBox(width: 12),
 
-                  // MIC indicator
-                  _AudioIndicator(
-                    icon: Icons.mic,
-                    label: 'MIC',
+                  // MIC toggle interaktif
+                  StreamToggle(
+                    label: 'Mic',
                     enabled: session.config.micEnabled,
-                    level: vuMicLevel,
+                    accent: colors.primary,
+                    onChanged: (enabled) => notifier.toggleMic(enabled),
                   ),
                   const SizedBox(width: 8),
 
-                  // SPK indicator
-                  _AudioIndicator(
-                    icon: Icons.speaker,
-                    label: 'SPK',
+                  // SPK toggle interaktif
+                  StreamToggle(
+                    label: 'Speaker',
                     enabled: session.config.speakerEnabled,
-                    level: vuSpeakerLevel,
+                    accent: colors.primary,
+                    onChanged: (enabled) => notifier.toggleSpeaker(enabled),
                   ),
                   const SizedBox(width: 12),
 
@@ -518,122 +519,6 @@ class _ControlBar extends StatelessWidget {
                   ),
                 ],
               ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Compact mode selector
-class _ModeSelectorCompact extends StatelessWidget {
-  final SessionMode selected;
-  final ValueChanged<SessionMode> onChanged;
-
-  const _ModeSelectorCompact({required this.selected, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-    return Container(
-      height: 36,
-      decoration: BoxDecoration(
-        color: colors.chipBackground,
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: colors.border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: SessionMode.values.map((mode) {
-          final isSelected = mode == selected;
-          return GestureDetector(
-            onTap: () => onChanged(mode),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: isSelected ? colors.primary : Colors.transparent,
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                mode.label,
-                style: TextStyle(
-                  color: isSelected ? Colors.white : colors.text,
-                  fontSize: 12,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-}
-
-/// Audio indicator with icon + label + level bar
-class _AudioIndicator extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool enabled;
-  final double level;
-
-  const _AudioIndicator({
-    required this.icon,
-    required this.label,
-    required this.enabled,
-    required this.level,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-    return Container(
-      height: 36,
-      padding: const EdgeInsets.symmetric(horizontal: 10),
-      decoration: BoxDecoration(
-        color: enabled ? colors.chipBackground : colors.chipBackground.withValues(alpha: 0.5),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: colors.border),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: enabled ? colors.primary : colors.textTertiary,
-          ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              color: enabled ? colors.primary : colors.textTertiary,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Level bars
-          SizedBox(
-            width: 60,
-            height: 16,
-            child: Row(
-              children: List.generate(8, (i) {
-                final barLevel = (i + 1) / 8;
-                final isActive = enabled && level >= barLevel;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 2),
-                  child: Container(
-                    width: 5,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: isActive ? colors.primary : colors.border,
-                      borderRadius: BorderRadius.circular(1),
-                    ),
-                  ),
-                );
-              }),
             ),
           ),
         ],

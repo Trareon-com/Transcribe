@@ -28,7 +28,9 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>Trareon Transcribe memerlukan akses ke mikrofon untuk merekam dan mentranskripsikan percakapan secara langsung.</string>
+		<key>NSMicrophoneUsageDescription</key>
+		<string>Trareon Transcribe memerlukan akses ke mikrofon untuk merekam dan mentranskripsikan percakapan secara langsung.</string>
+		<key>NSScreenCaptureUsageDescription</key>
+		<string>Trareon Transcribe memerlukan akses untuk merekam suara system (speaker) agar dapat mentranskripsikan rapat dan webinar secara otomatis.</string>
 </dict>
 </plist>

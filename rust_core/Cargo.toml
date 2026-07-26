@@ -69,6 +69,12 @@ features = ["openmp"]
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
 
+[target.'cfg(target_os = "macos")'.dependencies]
+screencapturekit = "8"
+
+# Linux: fallback to ffmpeg/parec — PipeWire native can be added later
+# when libpipewire-0.3-dev is available in the build environment
+
 [target.'cfg(windows)'.dependencies]
 windows-sys = { version = "0.52", features = [
     "Win32_System_Threading",
