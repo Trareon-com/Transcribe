@@ -5,6 +5,7 @@ import '../state/audio_stream_model.dart';
 import '../state/session_model.dart';
 import '../theme/app_colors.dart';
 
+/// Animated audio level bar with smooth transitions & distinct mic/spk colors.
 class VuMeter extends ConsumerWidget {
   const VuMeter({super.key});
 
@@ -26,15 +27,15 @@ class VuMeter extends ConsumerWidget {
           label: 'MIC',
           level: mic,
           enabled: micEnabled,
-          color: colors.primary,
+          color: const Color(0xFF2E7D32), // green — mic
         )),
-        const SizedBox(width: 12),
+        const SizedBox(width: 8),
         Expanded(child: _AudioBar(
           icon: Icons.speaker,
           label: 'SPK',
           level: speaker,
           enabled: speakerEnabled,
-          color: colors.primary,
+          color: const Color(0xFFE65100), // orange — speaker
         )),
       ],
     );
@@ -80,14 +81,21 @@ class _AudioBar extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(2),
-              child: LinearProgressIndicator(
-                value: level.clamp(0.0, 1.0),
-                minHeight: 6,
-                color: enabled ? color : colors.border,
-                backgroundColor: colors.border.withValues(alpha: 0.3),
-              ),
+            child: TweenAnimationBuilder<double>(
+              tween: Tween(begin: 0, end: level.clamp(0.0, 1.0)),
+              duration: const Duration(milliseconds: 80),
+              curve: Curves.easeOut,
+              builder: (context, value, _) {
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: LinearProgressIndicator(
+                    value: value,
+                    minHeight: 6,
+                    color: enabled ? color : colors.border,
+                    backgroundColor: colors.border.withValues(alpha: 0.3),
+                  ),
+                );
+              },
             ),
           ),
         ],

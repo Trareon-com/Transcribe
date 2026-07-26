@@ -12,7 +12,10 @@ import '../src/rust/export.dart' as rust_export;
 import '../state/models.dart';
 import '../state/settings_model.dart';
 import '../theme/app_colors.dart';
+import '../widgets/export_dialog.dart';
 import '../widgets/file_upload_zone.dart';
+import '../widgets/session_card.dart';
+import '../widgets/storage_bar.dart';
 import 'transcript_player_screen.dart';
 
 class SessionSummary {
@@ -281,11 +284,14 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                               ? Center(child: Text('Tidak ada sesi cocok', style: TextStyle(color: colors.textSecondary)))
                               : ListView.separated(
                                   padding: const EdgeInsets.symmetric(horizontal: 12),
-                                  itemCount: filtered.length,
+                                  itemCount: filtered.length + 1, // +1 for storage bar
                                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                                   itemBuilder: (context, index) {
-                                    final session = filtered[index];
-                                    return _SessionCard(
+                                    if (index == 0) {
+                                      return StorageBar(totalSessions: _sessions.length);
+                                    }
+                                    final session = filtered[index - 1];
+                                    return SessionCardFromSummary(
                                       session: session,
                                       onDelete: () => _deleteSession(session),
                                       onExport: () => _exportSession(session),
@@ -314,178 +320,6 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _SessionCard extends StatelessWidget {
-  final SessionSummary session;
-  final VoidCallback onDelete;
-  final VoidCallback onExport;
-  final VoidCallback onTap;
-
-  const _SessionCard({
-    required this.session,
-    required this.onDelete,
-    required this.onExport,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-    final minutes = (session.durationSeconds / 60).floor();
-
-    return Card(
-      color: colors.surface,
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: BorderSide(color: colors.border),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: colors.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(Icons.mic_outlined, color: colors.primary, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      session.title,
-                      style: TextStyle(color: colors.text, fontWeight: FontWeight.w600, fontSize: 14),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '$minutes menit · ${session.segmentsCount} segmen',
-                      style: TextStyle(color: colors.textTertiary, fontSize: 12),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                icon: Icon(Icons.upload_outlined, size: 18, color: colors.textTertiary),
-                tooltip: 'Export',
-                onPressed: onExport,
-              ),
-              IconButton(
-                icon: Icon(Icons.delete_outline, size: 18, color: colors.textTertiary),
-                tooltip: 'Hapus',
-                onPressed: onDelete,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Shows a format-selection dialog then writes the session to a user-chosen folder.
-Future<void> showExportDialog(
-  BuildContext context,
-  SessionSummary session, {
-  required RustBridge bridge,
-  String defaultOutputDir = '',
-}) async {
-  final selected = <String>{'md'};
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (dialogCtx) => StatefulBuilder(
-      builder: (dialogCtx, setState) {
-        final colors = Theme.of(dialogCtx).extension<AppColorSet>() ?? AppColors.light;
-        return AlertDialog(
-          backgroundColor: colors.surface,
-          title: Text('Export "${session.title}"', style: TextStyle(color: colors.text)),
-          content: SizedBox(
-            width: double.maxFinite,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  for (final format in const [
-                    ('md', 'Markdown'), ('txt', 'TXT'), ('json', 'JSON'),
-                    ('srt', 'SRT'), ('vtt', 'VTT'),
-                  ])
-                    CheckboxListTile(
-                      title: Text(format.$2, style: TextStyle(color: colors.text)),
-                      value: selected.contains(format.$1),
-                      activeColor: colors.primary,
-                      onChanged: (checked) {
-                        setState(() {
-                          if (checked == true) {
-                            selected.add(format.$1);
-                          } else {
-                            selected.remove(format.$1);
-                          }
-                        });
-                      },
-                    ),
-                ],
-              ),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogCtx).pop(false),
-              child: Text('Batal', style: TextStyle(color: colors.textSecondary)),
-            ),
-            FilledButton(
-              onPressed: selected.isEmpty ? null : () => Navigator.of(dialogCtx).pop(true),
-              child: const Text('Pilih Folder'),
-            ),
-          ],
-        );
-      },
-    ),
-  );
-
-  if (confirmed != true || !context.mounted) return;
-
-  final outputDir = await FilePicker.platform.getDirectoryPath(
-    dialogTitle: 'Pilih folder ekspor',
-    initialDirectory: defaultOutputDir.isNotEmpty ? defaultOutputDir : null,
-  );
-  if (outputDir == null || !context.mounted) return;
-
-  final formats = [
-    if (selected.contains('md')) rust_export.ExportFormat.markdown,
-    if (selected.contains('txt')) rust_export.ExportFormat.txt,
-    if (selected.contains('json')) rust_export.ExportFormat.json,
-    if (selected.contains('srt')) rust_export.ExportFormat.srt,
-    if (selected.contains('vtt')) rust_export.ExportFormat.vtt,
-  ];
-
-  try {
-    await bridge.exportSession(
-      segments: session.segments,
-      outputDir: outputDir,
-      title: session.title,
-      formats: formats,
-    );
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Export berhasil ke: $outputDir')),
-    );
-  } catch (e) {
-    if (!context.mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Export gagal: $e')),
     );
   }
 }

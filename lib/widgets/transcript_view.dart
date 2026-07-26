@@ -8,7 +8,16 @@ class TranscriptView extends StatefulWidget {
   final List<TranscriptSegment> segments;
   final void Function(int index, String newText)? onEdit;
 
-  const TranscriptView({super.key, required this.segments, this.onEdit});
+  /// If non-null, the segment at this index is visually highlighted
+  /// as the "currently playing" segment in the player.
+  final int? activeSegmentIndex;
+
+  const TranscriptView({
+    super.key,
+    required this.segments,
+    this.onEdit,
+    this.activeSegmentIndex,
+  });
 
   @override
   State<TranscriptView> createState() => _TranscriptViewState();
@@ -199,6 +208,7 @@ class _TranscriptViewState extends State<TranscriptView> {
                   final (originalIndex, seg) = items[index];
                   return _SegmentTile(
                     segment: seg,
+                    isActive: widget.activeSegmentIndex != null && originalIndex == widget.activeSegmentIndex,
                     onEdit: widget.onEdit == null
                         ? null
                         : (newText) => widget.onEdit!(originalIndex, newText),
@@ -215,9 +225,10 @@ class _TranscriptViewState extends State<TranscriptView> {
 
 class _SegmentTile extends StatelessWidget {
   final TranscriptSegment segment;
+  final bool isActive;
   final ValueChanged<String>? onEdit;
 
-  const _SegmentTile({required this.segment, this.onEdit});
+  const _SegmentTile({required this.segment, this.isActive = false, this.onEdit});
 
   String _formatTime(double secs) {
     final m = (secs / 60).floor();
@@ -231,12 +242,22 @@ class _SegmentTile extends StatelessWidget {
 
     return Semantics(
       label: '${segment.speaker} pada ${_formatTime(segment.timestamp)}: ${segment.text}',
-      child: InkWell(
-        onTap: onEdit != null ? () => _openEditDialog(context) : null,
-        borderRadius: BorderRadius.circular(8),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-          child: Row(
+      child: Container(
+        decoration: isActive
+            ? BoxDecoration(
+                color: colors.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border(
+                  left: BorderSide(color: colors.primary, width: 3),
+                ),
+              )
+            : null,
+        child: InkWell(
+          onTap: onEdit != null ? () => _openEditDialog(context) : null,
+          borderRadius: BorderRadius.circular(8),
+          child: Padding(
+            padding: const EdgeInsets.only(left: isActive ? 12 : 16, right: 4, top: 8, bottom: 8),
+            child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Speaker label
@@ -293,6 +314,7 @@ class _SegmentTile extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

@@ -11,6 +11,7 @@ import '../state/session_model.dart';
 import '../state/settings_model.dart';
 import '../src/rust/session.dart' as rust_session;
 import '../theme/app_colors.dart';
+import '../widgets/title_bar.dart';
 import '../widgets/transcript_view.dart';
 import 'library_screen.dart';
 import 'settings_screen.dart';
@@ -254,11 +255,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                   ),
                 ),
 
-              // Header bar
-              _HeaderBar(
-                session: session,
-                isActive: isActive,
-                isPaused: isPaused,
+              // Title bar (macOS-style with traffic lights)
+              TitleBar(
+                title: 'Trareon Transcribe',
+                isDark: Theme.of(context).brightness == Brightness.dark,
+                onToggleTheme: () {
+                  final notifier = ref.read(settingsProvider.notifier);
+                  notifier.toggleTheme();
+                },
                 onLibrary: () => Navigator.of(context).push(
                   MaterialPageRoute(
                     builder: (_) {
@@ -270,7 +274,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 onSettings: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const SettingsScreen()),
                 ),
-                onShortcuts: () => setState(() => _showShortcuts = !_showShortcuts),
               ),
 
               // Control bar

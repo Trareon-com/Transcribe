@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 
+import '../services/bridge_service.dart';
 import '../state/models.dart';
 import '../theme/app_colors.dart';
+import '../widgets/export_dialog.dart';
 import '../widgets/transcript_view.dart';
 
 class TranscriptPlayerScreen extends StatefulWidget {
@@ -136,6 +138,12 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
         .toDouble()
         .clamp(1.0, double.infinity);
 
+    // Find the active segment index based on current playback position
+    final activeIndex = _positionSeconds > 0
+        ? _segments.lastIndexWhere(
+            (s) => s.timestamp <= _positionSeconds && (s.timestamp + s.duration) > _positionSeconds)
+        : -1;
+
     return Scaffold(
       backgroundColor: colors.background,
       appBar: AppBar(
@@ -155,6 +163,7 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
             child: TranscriptView(
               segments: _segments,
               onEdit: _editSegment,
+              activeSegmentIndex: activeIndex >= 0 ? activeIndex : null,
             ),
           ),
 
@@ -235,11 +244,57 @@ class _TranscriptPlayerScreenState extends State<TranscriptPlayerScreen> {
                     ),
                   ],
                 ),
+
+                // Export button row
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    OutlinedButton.icon(
+                      icon: const Icon(Icons.upload_outlined, size: 16),
+                      label: const Text('Export', style: TextStyle(fontSize: 13)),
+                      onPressed: () => _exportTranscript(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: colors.primary,
+                        side: BorderSide(color: colors.primary.withValues(alpha: 0.3)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _exportTranscript(BuildContext context) async {
+    final bridge = context.findAncestorWidgetOfExactType<MaterialApp>() != null
+        ? null // fallback — won't work without provider
+        : null;
+    // Build a temporary SessionSummary from current data
+    final summary = SessionSummary(
+      id: widget.title,
+      title: widget.title,
+      date: DateTime.now().toIso8601String().substring(0, 10),
+      segmentsCount: _segments.length,
+      segments: _segments,
+      durationSeconds: widget.durationSeconds,
+    );
+    // Try to find RustBridge from ancestor provider
+    if (!context.mounted) return;
+    // Show export dialog using the stored segments
+    final defaultDir = '/Users/\$USER/Documents/Trascribe';
+    await showExportDialog(
+      context,
+      summary,
+      bridge: RustBridgeMock(),
+      defaultOutputDir: defaultDir,
     );
   }
 }
