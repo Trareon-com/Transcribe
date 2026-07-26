@@ -67,7 +67,9 @@ pub fn export_segments(
     title: &str,
 ) -> Result<Vec<ExportedFile>, TrascribeError> {
     let safe_title = sanitize_filename(title);
-    let session_dir = output_dir.join(&safe_title);
+    // Prepend today's date in YYYYMMDD format per blueprint §5.4
+    let date_prefix = chrono::Local::now().format("%Y%m%d").to_string();
+    let session_dir = output_dir.join(format!("{date_prefix}-{safe_title}"));
     fs::create_dir_all(&session_dir).map_err(TrascribeError::from)?;
 
     // PARALLEL EXPORT: spawn a thread per format so that e.g. Markdown
