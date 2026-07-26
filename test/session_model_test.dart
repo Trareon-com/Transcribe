@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -130,13 +132,18 @@ void main() {
   });
 
   test('session provider syncs loaded settings while idle', () async {
+    final tempDir = await Directory.systemTemp.createTemp('trascribe-session-test-');
+    addTearDown(() => tempDir.deleteSync(recursive: true));
+    File('${tempDir.path}/ggml-medium.bin').writeAsStringSync('stub');
+
     final bridge = _NoopBridge(
-      settings: const AppSettings(
+      settings: AppSettings(
         theme: AppThemeMode.light,
         defaultModel: 'medium',
         defaultMode: SessionMode.webinar,
-        libraryPath: '~/Documents/Trascribe',
+        libraryPath: tempDir.path,
         vadEnabled: true,
+        autoStopMinutes: 10,
       ),
     );
     final container = ProviderContainer(
@@ -147,11 +154,14 @@ void main() {
     expect(container.read(sessionProvider).config.modelPath,
         endsWith('models/ggml-tiny.bin'));
 
-    await Future<void>.delayed(Duration.zero);
-    await Future<void>.delayed(Duration.zero);
+    SessionUiState session = container.read(sessionProvider);
+    for (var i = 0; i < 20; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      session = container.read(sessionProvider);
+      if (session.config.modelPath == 'models/ggml-medium.bin') break;
+    }
 
-    final session = container.read(sessionProvider);
-    expect(session.config.modelPath, 'models/ggml-medium.bin');
+    expect(session.config.modelPath, '${tempDir.path}/ggml-medium.bin');
     expect(session.config.mode, SessionMode.webinar);
   });
 }
