@@ -1,8 +1,19 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+
+int _computeBytesSync(String path) {
+  int total = 0;
+  try {
+    for (final e in Directory(path).listSync(recursive: true)) {
+      if (e is File) total += e.statSync().size;
+    }
+  } catch (_) {}
+  return total;
+}
 
 /// Shows session count and real disk usage for the library directory.
 class StorageBar extends StatefulWidget {
@@ -33,15 +44,10 @@ class _StorageBarState extends State<StorageBar> {
     }
   }
 
-  Future<int> _computeUsedBytes(String? libraryPath) async {
-    if (libraryPath == null) return 0;
-    final dir = Directory(libraryPath);
-    if (!dir.existsSync()) return 0;
-    int total = 0;
-    await for (final entity in dir.list(recursive: true)) {
-      if (entity is File) total += await entity.length();
-    }
-    return total;
+  Future<int> _computeUsedBytes(String? libraryPath) {
+    if (libraryPath == null) return Future.value(0);
+    if (!Directory(libraryPath).existsSync()) return Future.value(0);
+    return compute(_computeBytesSync, libraryPath);
   }
 
   String _formatBytes(int bytes) {

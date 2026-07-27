@@ -42,6 +42,7 @@ class _TranscriptPlayerScreenState extends ConsumerState<TranscriptPlayerScreen>
   StreamSubscription<PlayerState>? _playerStateSub;
   Duration? _duration;
   String? _error;
+  Timer? _persistDebounce;
 
   static const _speedOptions = [0.5, 1.0, 1.25, 1.5, 2.0];
 
@@ -86,7 +87,7 @@ class _TranscriptPlayerScreenState extends ConsumerState<TranscriptPlayerScreen>
       _segments[index] = _segments[index].copyWith(text: newText);
     });
     widget.onSegmentsChanged?.call(List.unmodifiable(_segments));
-    _persistSegments();
+    _schedulePersist();
   }
 
   void _renameSpeaker(String oldLabel, String newLabel) {
@@ -97,7 +98,12 @@ class _TranscriptPlayerScreenState extends ConsumerState<TranscriptPlayerScreen>
           .toList();
     });
     widget.onSegmentsChanged?.call(List.unmodifiable(_segments));
-    _persistSegments();
+    _schedulePersist();
+  }
+
+  void _schedulePersist() {
+    _persistDebounce?.cancel();
+    _persistDebounce = Timer(const Duration(milliseconds: 400), _persistSegments);
   }
 
   Future<void> _persistSegments() async {
@@ -165,6 +171,7 @@ class _TranscriptPlayerScreenState extends ConsumerState<TranscriptPlayerScreen>
 
   @override
   void dispose() {
+    _persistDebounce?.cancel();
     _positionSub?.cancel();
     _playerStateSub?.cancel();
     _player.dispose();
