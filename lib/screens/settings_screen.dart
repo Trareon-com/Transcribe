@@ -118,7 +118,7 @@ class SettingsScreen extends ConsumerWidget {
             _SettingsSwitch(
               icon: Icons.graphic_eq_outlined,
               label: 'VAD (deteksi suara)',
-              subtitle: 'Filter noise sekitar, hanya rekam saat ada suara',
+              subtitle: 'Filter noise sekitar, hanya rekam saat ada suara. Berlaku mulai sesi berikutnya.',
               value: settings.vadEnabled,
               onChanged: notifier.setVadEnabled,
             ),

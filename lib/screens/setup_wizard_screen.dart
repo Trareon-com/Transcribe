@@ -548,27 +548,35 @@ class _AudioSetupStepState extends ConsumerState<_AudioSetupStep> {
   Future<void> _loadDevices() async {
     setState(() => _loading = true);
     final bridge = ref.read(rustBridgeProvider);
+    final settings = ref.read(settingsProvider);
     final inputs = await bridge.listAudioDevices();
     final outputs = await bridge.listOutputAudioDevices();
     if (mounted) {
-      final mic = inputs.isNotEmpty
-          ? inputs.firstWhere((d) => d.isDefault, orElse: () => inputs.first).name
-          : null;
-      final speaker = outputs
-          .firstWhere(
-            (d) => d.name.toLowerCase().contains('blackhole') ||
-                d.name.toLowerCase().contains('loopback'),
-            orElse: () => outputs.isNotEmpty
-                ? outputs.first
-                : AudioDeviceInfo(
-                    name: 'Default',
-                    deviceId: '',
-                    isDefault: true,
-                    channels: 2,
-                    sampleRates: Uint32List(0),
-                  ),
-          )
-          .name;
+      // Pre-populate from saved prefs if available, otherwise auto-detect.
+      final savedMic = settings.micDeviceId;
+      final savedSpeaker = settings.speakerDeviceId;
+      final mic = savedMic != null && inputs.any((d) => d.name == savedMic)
+          ? savedMic
+          : (inputs.isNotEmpty
+              ? inputs.firstWhere((d) => d.isDefault, orElse: () => inputs.first).name
+              : null);
+      final speaker = savedSpeaker != null && outputs.any((d) => d.name == savedSpeaker)
+          ? savedSpeaker
+          : outputs
+              .firstWhere(
+                (d) => d.name.toLowerCase().contains('blackhole') ||
+                    d.name.toLowerCase().contains('loopback'),
+                orElse: () => outputs.isNotEmpty
+                    ? outputs.first
+                    : AudioDeviceInfo(
+                        name: 'Default',
+                        deviceId: '',
+                        isDefault: true,
+                        channels: 2,
+                        sampleRates: Uint32List(0),
+                      ),
+              )
+              .name;
       setState(() {
         _loading = false;
         _inputDevices = inputs;
@@ -576,10 +584,10 @@ class _AudioSetupStepState extends ConsumerState<_AudioSetupStep> {
         _selectedMic = mic;
         _selectedSpeaker = speaker;
       });
-      // Persist the auto-detected defaults so settings reflect the discovered devices.
+      // Only auto-save if no preference was already stored.
       final notifier = ref.read(settingsProvider.notifier);
-      if (mic != null) await notifier.setMicDeviceName(mic);
-      await notifier.setSpeakerDeviceName(speaker);
+      if (savedMic == null && mic != null) await notifier.setMicDeviceName(mic);
+      if (savedSpeaker == null) await notifier.setSpeakerDeviceName(speaker);
     }
   }
 

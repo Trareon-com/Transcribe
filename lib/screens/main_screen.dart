@@ -714,8 +714,11 @@ class _QualityToggle extends ConsumerWidget {
     final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
     final isAkurat = settings.defaultModel == 'large-v3-turbo-q5';
 
+    final targetModel = isAkurat ? 'base' : 'large-v3-turbo-q5';
+    final targetAvailable = isModelAvailable(targetModel, libraryPath: settings.libraryPath);
+
     return GestureDetector(
-      onTap: () => notifier.setDefaultModel(isAkurat ? 'base' : 'large-v3-turbo-q5'),
+      onTap: targetAvailable ? () => notifier.setDefaultModel(targetModel) : null,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
@@ -723,16 +726,19 @@ class _QualityToggle extends ConsumerWidget {
           borderRadius: BorderRadius.circular(6),
           border: Border.all(color: colors.border),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(isAkurat ? '🎯' : '⚡', style: const TextStyle(fontSize: 12)),
-            const SizedBox(width: 4),
-            Text(
-              isAkurat ? 'Akurat' : 'Cepat',
-              style: TextStyle(color: colors.textSecondary, fontSize: 12),
-            ),
-          ],
+        child: Opacity(
+          opacity: targetAvailable ? 1.0 : 0.4,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(isAkurat ? '🎯' : '⚡', style: const TextStyle(fontSize: 12)),
+              const SizedBox(width: 4),
+              Text(
+                isAkurat ? 'Akurat' : 'Cepat',
+                style: TextStyle(color: colors.textSecondary, fontSize: 12),
+              ),
+            ],
+          ),
         ),
       ),
     );
