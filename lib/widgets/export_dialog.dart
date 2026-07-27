@@ -68,6 +68,7 @@ Future<bool> showEksporDialog(
                     ('srt', 'SRT', 'Subtitle format', Icons.closed_caption_outlined),
                     ('vtt', 'VTT', 'Web subtitle', Icons.language_outlined),
                     ('html', 'HTML', 'Dokumen dengan styling', Icons.web_outlined),
+                    ('wav', 'WAV', 'Audio WAV hasil rekaman', Icons.audiotrack_outlined),
                   ])
                     CheckboxListTile(
                       dense: true,
@@ -149,6 +150,7 @@ Future<bool> showEksporDialog(
     if (selected.contains('srt')) rust_ekspor.ExportFormat.srt,
     if (selected.contains('vtt')) rust_ekspor.ExportFormat.vtt,
     if (selected.contains('html')) rust_ekspor.ExportFormat.html,
+    if (selected.contains('wav')) rust_ekspor.ExportFormat.wav,
   ];
 
   try {

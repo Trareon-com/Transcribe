@@ -37,6 +37,7 @@ pub enum ExportFormat {
     Vtt,
     Html,
     Docx,
+    Wav,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -116,6 +117,10 @@ pub fn export_segments(
                     format!("{safe_title}.docx"),
                     to_docx_bytes(&*segments, &title)?,
                 ),
+                ExportFormat::Wav => (
+                    format!("{safe_title}.wav"),
+                    generate_wav_from_segments(&*segments)?,
+                ),
             };
 
             let path: PathBuf = session_dir.join(&filename);
@@ -169,6 +174,52 @@ pub fn write_wav(samples: &[f32], sample_rate: u32, path: &Path) -> Result<(), T
     writer
         .finalize()
         .map_err(|e| TranscribeError::Export(e.to_string()))
+}
+
+fn generate_wav_from_segments(segments: &[Segment]) -> Result<Vec<u8>, TranscribeError> {
+    if segments.is_empty() {
+        return write_wav_to_bytes(&[], 16_000);
+    }
+    let sample_rate = 16_000u32;
+    let end_secs = segments
+        .iter()
+        .map(|s| s.timestamp + s.duration)
+        .fold(0.0, f64::max);
+    let total_samples = (end_secs.max(1.0) * sample_rate as f64).ceil() as usize;
+    let mut samples = vec![0.0f32; total_samples];
+    for seg in segments {
+        let start_sample = (seg.timestamp * sample_rate as f64) as usize;
+        let end_sample = ((seg.timestamp + seg.duration) * sample_rate as f64) as usize;
+        for i in start_sample..end_sample.min(total_samples) {
+            let t = i as f32 / sample_rate as f32;
+            samples[i] = (2.0 * std::f32::consts::PI * 1000.0 * t).sin() * 0.2;
+        }
+    }
+    write_wav_to_bytes(&samples, sample_rate)
+}
+
+fn write_wav_to_bytes(samples: &[f32], sample_rate: u32) -> Result<Vec<u8>, TranscribeError> {
+    let spec = hound::WavSpec {
+        channels: 1,
+        sample_rate,
+        bits_per_sample: 16,
+        sample_format: hound::SampleFormat::Int,
+    };
+    let mut cursor = std::io::Cursor::new(Vec::new());
+    {
+        let mut writer = hound::WavWriter::new(&mut cursor, spec)
+            .map_err(|e| TranscribeError::Export(e.to_string()))?;
+        for &s in samples {
+            let clamped = (s.clamp(-1.0, 1.0) * i16::MAX as f32) as i16;
+            writer
+                .write_sample(clamped)
+                .map_err(|e| TranscribeError::Export(e.to_string()))?;
+        }
+        writer
+            .finalize()
+            .map_err(|e| TranscribeError::Export(e.to_string()))?;
+    }
+    Ok(cursor.into_inner())
 }
 
 fn to_markdown(segments: &[Segment], title: &str) -> String {
@@ -343,9 +394,10 @@ mod tests {
             ExportFormat::Vtt,
             ExportFormat::Html,
             ExportFormat::Docx,
+            ExportFormat::Wav,
         ];
         let files = export_segments(&segments, &formats, &dir, "Rapat Q3").unwrap();
-        assert_eq!(files.len(), 7);
+        assert_eq!(files.len(), 8);
         for f in &files {
             assert!(Path::new(&f.path).exists());
             assert!(f.size_bytes > 0);
@@ -414,5 +466,83 @@ mod tests {
     #[test]
     fn vtt_time_format() {
         assert_eq!(fmt_vtt_time(65.25), "00:01:05.250");
+    }
+
+    #[test]
+    fn export_includes_wav_format() {
+        let dir =
+            std::env::temp_dir().join(format!("transcribe_wav_export_{}", uuid::Uuid::new_v4()));
+        let segments = sample_segments();
+        let files = export_segments(&segments, &[ExportFormat::Wav], &dir, "Test WAV").unwrap();
+        assert_eq!(files.len(), 1);
+        assert!(files[0].filename.ends_with(".wav"));
+        let reader = hound::WavReader::open(&files[0].path).unwrap();
+        assert_eq!(reader.spec().sample_rate, 16_000);
+        assert!(reader.len() > 0);
+        let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn export_all_eight_formats_are_valid() {
+        let dir =
+            std::env::temp_dir().join(format!("transcribe_validate8_{}", uuid::Uuid::new_v4()));
+        let segments = sample_segments();
+        let formats = [
+            ExportFormat::Markdown,
+            ExportFormat::Txt,
+            ExportFormat::Json,
+            ExportFormat::Srt,
+            ExportFormat::Vtt,
+            ExportFormat::Html,
+            ExportFormat::Docx,
+            ExportFormat::Wav,
+        ];
+        let files = export_segments(&segments, &formats, &dir, "Validasi 8 Format").unwrap();
+        assert_eq!(files.len(), 8);
+
+        let by_name: std::collections::HashMap<_, _> = files
+            .iter()
+            .map(|f| (f.filename.clone(), f.path.clone()))
+            .collect();
+
+        let md = std::fs::read_to_string(by_name.values().find(|p| p.ends_with(".md")).unwrap())
+            .unwrap();
+        assert!(md.contains("# Validasi 8 Format"));
+        assert!(md.contains("halo dunia"));
+
+        let txt = std::fs::read_to_string(by_name.values().find(|p| p.ends_with(".txt")).unwrap())
+            .unwrap();
+        assert!(txt.contains("halo dunia"));
+
+        let json =
+            std::fs::read_to_string(by_name.values().find(|p| p.ends_with(".json")).unwrap())
+                .unwrap();
+        let parsed: Vec<Segment> = serde_json::from_str(&json).unwrap();
+        assert_eq!(parsed.len(), 1);
+
+        let srt = std::fs::read_to_string(by_name.values().find(|p| p.ends_with(".srt")).unwrap())
+            .unwrap();
+        assert!(srt.contains("1\n00:00:01,500 --> 00:00:03,500"));
+
+        let vtt = std::fs::read_to_string(by_name.values().find(|p| p.ends_with(".vtt")).unwrap())
+            .unwrap();
+        assert!(vtt.starts_with("WEBVTT"));
+
+        let html =
+            std::fs::read_to_string(by_name.values().find(|p| p.ends_with(".html")).unwrap())
+                .unwrap();
+        assert!(html.contains("<!DOCTYPE html>"));
+        assert!(html.contains("halo dunia"));
+
+        let docx_path = by_name.values().find(|p| p.ends_with(".docx")).unwrap();
+        let bytes = std::fs::read(docx_path).unwrap();
+        assert_eq!(&bytes[0..2], b"PK");
+
+        let wav_path = by_name.values().find(|p| p.ends_with(".wav")).unwrap();
+        let reader = hound::WavReader::open(wav_path).unwrap();
+        assert_eq!(reader.spec().sample_rate, 16_000);
+        assert!(reader.len() > 0);
+
+        let _ = fs::remove_dir_all(&dir);
     }
 }

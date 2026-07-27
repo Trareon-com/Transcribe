@@ -1952,6 +1952,7 @@ impl SseDecode for crate::export::ExportFormat {
             4 => crate::export::ExportFormat::Vtt,
             5 => crate::export::ExportFormat::Html,
             6 => crate::export::ExportFormat::Docx,
+            7 => crate::export::ExportFormat::Wav,
             _ => unreachable!("Invalid variant for ExportFormat: {}", inner),
         };
     }
@@ -2743,6 +2744,7 @@ impl flutter_rust_bridge::IntoDart for crate::export::ExportFormat {
             Self::Vtt => 4.into_dart(),
             Self::Html => 5.into_dart(),
             Self::Docx => 6.into_dart(),
+            Self::Wav => 7.into_dart(),
             _ => unreachable!(),
         }
     }
@@ -3156,6 +3158,7 @@ impl SseEncode for crate::export::ExportFormat {
                 crate::export::ExportFormat::Vtt => 4,
                 crate::export::ExportFormat::Html => 5,
                 crate::export::ExportFormat::Docx => 6,
+                crate::export::ExportFormat::Wav => 7,
                 _ => {
                     unimplemented!("");
                 }
