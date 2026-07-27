@@ -192,10 +192,10 @@ class TranscriptSegment {
     required this.isPartial,
   });
 
-  TranscriptSegment copyWith({String? text}) {
+  TranscriptSegment copyWith({String? speaker, String? text}) {
     return TranscriptSegment(
       source: source,
-      speaker: speaker,
+      speaker: speaker ?? this.speaker,
       text: text ?? this.text,
       timestamp: timestamp,
       duration: duration,

@@ -87,6 +87,16 @@ class _TranscriptPlayerScreenState extends ConsumerState<TranscriptPlayerScreen>
     widget.onSegmentsChanged?.call(List.unmodifiable(_segments));
   }
 
+  void _renameSpeaker(String oldLabel, String newLabel) {
+    setState(() {
+      _segments = _segments
+          .map((s) =>
+              s.speaker == oldLabel ? s.copyWith(speaker: newLabel) : s)
+          .toList();
+    });
+    widget.onSegmentsChanged?.call(List.unmodifiable(_segments));
+  }
+
   String _formatTime(double secs) {
     final m = (secs / 60).floor();
     final s = (secs % 60).floor();
@@ -165,6 +175,7 @@ class _TranscriptPlayerScreenState extends ConsumerState<TranscriptPlayerScreen>
             child: TranscriptView(
               segments: _segments,
               onEdit: _editSegment,
+              onRenameSpeaker: _renameSpeaker,
               activeSegmentIndex: activeIndex >= 0 ? activeIndex : null,
             ),
           ),

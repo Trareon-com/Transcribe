@@ -282,6 +282,14 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     state = state.copyWith(segments: edited);
   }
 
+  void renameSpeaker(String oldLabel, String newLabel) {
+    state = state.copyWith(
+      segments: state.segments
+          .map((s) => s.speaker == oldLabel ? s.copyWith(speaker: newLabel) : s)
+          .toList(),
+    );
+  }
+
   void setMode(SessionMode mode) {
     // Update mode AND apply mode's default mic/speaker toggles
     // (Blueprint: Webinar=Mic OFF/SPK ON, Online=Both ON, Offline=Mic ON/SPK OFF)

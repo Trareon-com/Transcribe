@@ -353,7 +353,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
               Expanded(
                 child: Stack(
                   children: [
-                    TranscriptView(segments: session.segments),
+                    TranscriptView(
+                      segments: session.segments,
+                      onRenameSpeaker: (oldLabel, newLabel) {
+                        ref
+                            .read(sessionProvider.notifier)
+                            .renameSpeaker(oldLabel, newLabel);
+                      },
+                    ),
                     if (_showShortcuts)
                       Positioned(
                         bottom: 0,
