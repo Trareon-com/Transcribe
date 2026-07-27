@@ -9,7 +9,7 @@ class MainFlutterWindow: NSWindow {
     self.setFrame(windowFrame, display: true)
     // The session toolbar (title field, mode selector, MIC/SPK indicators,
     // Mulai/Export buttons) overflows below this width — see main_screen.dart.
-    self.contentMinSize = NSSize(width: 860, height: 560)
+    self.contentMinSize = NSSize(width: 860, height: 700)
 
     RegisterGeneratedPlugins(registry: flutterViewController)
 
