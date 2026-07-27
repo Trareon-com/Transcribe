@@ -57,7 +57,7 @@ class SettingsScreen extends ConsumerWidget {
               label: 'Model default',
               trailing: _CompactDropdown<String>(
                 value: settings.defaultModel,
-                items: const ['tiny', 'base', 'small', 'medium', 'large-v3-turbo-q5', 'large-v3-turbo'],
+                items: const ['tiny', 'base', 'small', 'medium', 'large-v3-turbo'],
                 labelBuilder: (s) => s,
                 onChanged: (modelId) {
                   if (!isModelAvailable(modelId, libraryPath: settings.libraryPath)) {

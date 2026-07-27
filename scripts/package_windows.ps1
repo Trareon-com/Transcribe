@@ -76,7 +76,7 @@ if (Test-Path "models\ggml-base.bin") {
 }
 if (Test-Path "models\ggml-large-v3-turbo-q5_0.bin") {
     Copy-Item -Path "models\ggml-large-v3-turbo-q5_0.bin" -Destination $ModelsDestDir -Force
-    Write-Host "    → large-v3-turbo-q5 (548 MB) bundled"
+    Write-Host "    → large-v3-turbo (548 MB) bundled"
 } else {
     Write-Host "    ⚠️ models\ggml-large-v3-turbo-q5_0.bin not found — skipping"
 }

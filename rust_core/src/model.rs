@@ -14,6 +14,7 @@ use crate::error::TranscribeError;
 #[derive(Debug, Clone, Serialize)]
 pub struct ModelInfo {
     pub id: String,
+    pub filename: String,
     pub name: String,
     pub url: String,
     pub sha256: String,
@@ -63,16 +64,9 @@ pub const KNOWN_MODELS: &[(&str, &str, u32, bool, &str)] = &[
     ),
     (
         "large-v3-turbo",
-        "ggml-large-v3-turbo.bin",
-        6,
-        false,
-        "1fc70f774d38eb169993ac391eea357ef47c88757ef72ee5943879b7e8e2bc69",
-    ),
-    (
-        "large-v3-turbo-q5",
         "ggml-large-v3-turbo-q5_0.bin",
         4,
-        true,
+        false,
         "394221709cd5ad1f40c46e6031ca61bce88931e6e088c188294c6d5a55ffa7e2",
     ),
 ];
@@ -86,6 +80,7 @@ pub fn list_available_models(models_dir: &Path) -> Vec<ModelInfo> {
             let size_bytes = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
             ModelInfo {
                 id: id.to_string(),
+                filename: filename.to_string(),
                 name: format!("{id} ({filename})"),
                 url: format!(
                     "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/{filename}"
@@ -127,6 +122,7 @@ pub fn resolve_model_info(models_dir: &Path, model_id: &str) -> Result<ModelInfo
     let size_bytes = std::fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
     Ok(ModelInfo {
         id: id.to_string(),
+        filename: filename.to_string(),
         name: format!("{id} ({filename})"),
         url: format!("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/{filename}"),
         sha256: sha256.to_string(),
@@ -432,6 +428,19 @@ mod tests {
         let request = build_resume_request(client.get("http://example.com/model.bin"), 0);
         let built = request.build().unwrap();
         assert!(built.headers().get("Range").is_none());
+    }
+
+    #[test]
+    fn large_v3_turbo_uses_q5_0_file() {
+        let dir = std::env::temp_dir();
+        let info = resolve_model_info(&dir, "large-v3-turbo").unwrap();
+        assert_eq!(info.filename, "ggml-large-v3-turbo-q5_0.bin");
+    }
+
+    #[test]
+    fn catalog_has_no_q5_alias() {
+        let ids: Vec<_> = KNOWN_MODELS.iter().map(|(id, ..)| *id).collect();
+        assert!(!ids.contains(&"large-v3-turbo-q5"));
     }
 
     #[tokio::test]

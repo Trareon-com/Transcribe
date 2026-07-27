@@ -14,6 +14,7 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
 class ModelInfo {
   final String id;
+  final String filename;
   final String name;
   final String url;
   final String sha256;
@@ -23,6 +24,7 @@ class ModelInfo {
 
   const ModelInfo({
     required this.id,
+    required this.filename,
     required this.name,
     required this.url,
     required this.sha256,
@@ -34,6 +36,7 @@ class ModelInfo {
   @override
   int get hashCode =>
       id.hashCode ^
+      filename.hashCode ^
       name.hashCode ^
       url.hashCode ^
       sha256.hashCode ^
@@ -47,6 +50,7 @@ class ModelInfo {
       other is ModelInfo &&
           runtimeType == other.runtimeType &&
           id == other.id &&
+          filename == other.filename &&
           name == other.name &&
           url == other.url &&
           sha256 == other.sha256 &&

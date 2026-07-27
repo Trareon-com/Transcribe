@@ -67,7 +67,7 @@ else
 fi
 if [ -f models/ggml-large-v3-turbo-q5_0.bin ]; then
   cp models/ggml-large-v3-turbo-q5_0.bin "$RESOURCES/models/"
-  echo "    → large-v3-turbo-q5 (548 MB) bundled"
+  echo "    → large-v3-turbo (548 MB) bundled"
 else
   echo "    ⚠️ models/ggml-large-v3-turbo-q5_0.bin not found — skipping"
 fi

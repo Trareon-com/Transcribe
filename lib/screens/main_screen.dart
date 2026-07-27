@@ -705,16 +705,16 @@ class _ShortcutRow extends StatelessWidget {
   }
 }
 
-/// Toggle kualitas: ⚡ Cepat (base) / 🎯 Akurat (large-v3-turbo-q5)
+/// Toggle kualitas: ⚡ Cepat (base) / 🎯 Akurat (large-v3-turbo)
 class _QualityToggle extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final notifier = ref.read(settingsProvider.notifier);
     final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-    final isAkurat = settings.defaultModel == 'large-v3-turbo-q5';
+    final isAkurat = settings.defaultModel == 'large-v3-turbo';
 
-    final targetModel = isAkurat ? 'base' : 'large-v3-turbo-q5';
+    final targetModel = isAkurat ? 'base' : 'large-v3-turbo';
     final targetAvailable = isModelAvailable(targetModel, libraryPath: settings.libraryPath);
 
     return GestureDetector(

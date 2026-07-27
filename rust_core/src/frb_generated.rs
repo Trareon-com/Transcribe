@@ -2146,6 +2146,7 @@ impl SseDecode for crate::model::ModelInfo {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_decode(deserializer: &mut flutter_rust_bridge::for_generated::SseDeserializer) -> Self {
         let mut var_id = <String>::sse_decode(deserializer);
+        let mut var_filename = <String>::sse_decode(deserializer);
         let mut var_name = <String>::sse_decode(deserializer);
         let mut var_url = <String>::sse_decode(deserializer);
         let mut var_sha256 = <String>::sse_decode(deserializer);
@@ -2154,6 +2155,7 @@ impl SseDecode for crate::model::ModelInfo {
         let mut var_isBundled = <bool>::sse_decode(deserializer);
         return crate::model::ModelInfo {
             id: var_id,
+            filename: var_filename,
             name: var_name,
             url: var_url,
             sha256: var_sha256,
@@ -2777,6 +2779,7 @@ impl flutter_rust_bridge::IntoDart for crate::model::ModelInfo {
     fn into_dart(self) -> flutter_rust_bridge::for_generated::DartAbi {
         [
             self.id.into_into_dart().into_dart(),
+            self.filename.into_into_dart().into_dart(),
             self.name.into_into_dart().into_dart(),
             self.url.into_into_dart().into_dart(),
             self.sha256.into_into_dart().into_dart(),
@@ -3316,6 +3319,7 @@ impl SseEncode for crate::model::ModelInfo {
     // Codec=Sse (Serialization based), see doc to use other codecs
     fn sse_encode(self, serializer: &mut flutter_rust_bridge::for_generated::SseSerializer) {
         <String>::sse_encode(self.id, serializer);
+        <String>::sse_encode(self.filename, serializer);
         <String>::sse_encode(self.name, serializer);
         <String>::sse_encode(self.url, serializer);
         <String>::sse_encode(self.sha256, serializer);

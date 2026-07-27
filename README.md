@@ -65,7 +65,7 @@
 
 ### Speech-to-Text
 
-- **Whisper STT engine** — Local speech-to-text via `whisper-rs`, supporting GGUF models from `tiny` (74 MB) to `large-v3-turbo-q5` (548 MB).
+- **Whisper STT engine** — Local speech-to-text via `whisper-rs`, supporting GGUF models from `tiny` (74 MB) to `large-v3-turbo` (548 MB).
 - **Progressive transcription** — Hasil cepat dengan model tiny/base → refine otomatis dengan large-turbo di background.
 - **Multi-speaker diarization** — Acoustic feature clustering separates speakers in transcripts with 8 distinct colors.
 - **Echo deduplication** — Cross-source dedupe (MIC vs SPK similarity) prevents duplicate transcription.
@@ -120,14 +120,14 @@ Trareon Transcribe menyertakan **2 model bawaan** — tidak perlu unduh:
 | Model | Ukuran | Kecepatan | Akurasi ID | Akurasi EN | Cocok Untuk |
 |:------|:------:|:---------:|:----------:|:----------:|:------------|
 | **base** ⚡ Cepat | **142 MB** | ⚡ 3-10s | **WER 0%** 🏆 | 90% | Transkrip cepat, akurasi ID maksimal |
-| **large-v3-turbo-q5** 🎯 Akurat | **548 MB** | 🟡 5-15s | WER 4% | **WER 3%** 🏆 | Akurasi global terbaik |
+| **large-v3-turbo** 🎯 Akurat | **548 MB** | 🟡 5-15s | WER 4% | **WER 3%** 🏆 | Akurasi global terbaik |
 
 ### 🧪 Word Error Rate (WER)
 
 | Model | 🇮🇩 ID | 🇬🇧 EN |
 |:------|:-----:|:-----:|
 | **base** | **0.00%** 🔥 | 10.34% |
-| **large-v3-turbo-q5** | 4.17% | **3.45%** 🔥 |
+| **large-v3-turbo** | 4.17% | **3.45%** 🔥 |
 
 > **Catatan:** WER diuji dengan Python/transformers (float32). Di Rust/GGUF (Q5_0 quantized), akurasi bisa turun ~1-2% tetapi kecepatan hingga **30× lebih cepat**.
 
@@ -135,7 +135,7 @@ Trareon Transcribe menyertakan **2 model bawaan** — tidak perlu unduh:
 
 Untuk pengguna yang ingin akurasi ID lebih tinggi, model fine-tune seperti `cahya/whisper-small-id` tersedia di HuggingFace. Saat ini model tersebut belum di-convert ke format GGUF — kontribusi dari komunitas sangat diterima! 🙌
 
-Model bawaan (base / large-v3-turbo-q5) sudah cukup akurat untuk ID dengan WER 0-4%.
+Model bawaan (base / large-v3-turbo) sudah cukup akurat untuk ID dengan WER 0-4%.
 
 ### Progressive Transcription
 
@@ -143,7 +143,7 @@ Untuk transkripsi real-time + akurat:
 ```
 🎯 3-5 detik → base → Tampilkan hasil cepat
    ↓
-🔧 Background → large-v3-turbo-q5 → Refine otomatis
+🔧 Background → large-v3-turbo → Refine otomatis
    ↓
 🔄 UI terupdate dengan hasil lebih akurat
 ```
@@ -308,7 +308,7 @@ cargo run --bin transcribe -- \
 - **macOS Gatekeeper** — Ad-hoc signing shows "Apple cannot verify this app" on first launch. Right-click → Open to bypass once.
 - **Windows SmartScreen** — Self-signed certificate triggers "Windows protected your PC" on first run.
 - **No auto-update (v1)** — Users check manually via Help → Check for Updates. Ed25519-signed auto-update planned for v2.
-- **Both models bundled** — `base` (142 MB) and `large-v3-turbo-q5` (548 MB) included in app.
+- **Both models bundled** — `base` (142 MB) and `large-v3-turbo` (548 MB) included in app.
 
 ---
 
@@ -320,7 +320,7 @@ cargo run --bin transcribe -- \
 
 ### What models are supported?
 
-Any GGUF-format Whisper model. `base` (142 MB) and `large-v3-turbo-q5` (548 MB) are bundled in the app. Also supports `tiny`, `small`, `medium`, `large-v3-turbo` via download.
+Any GGUF-format Whisper model. `base` (142 MB) and `large-v3-turbo` (548 MB) are bundled in the app. Also supports `tiny`, `small`, `medium` via download.
 
 ### Can I transcribe pre-recorded files?
 

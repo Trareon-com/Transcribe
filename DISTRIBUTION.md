@@ -103,7 +103,7 @@ sha256sum -c transcribe-*.sha256
 ## Model Bundling
 
 The `tiny` model (~75 MB) is bundled inside each installer so first-run
-download is optional. User-chosen larger models (base/small/medium/large-v3-turbo)
+download is optional. User-chosen larger models (small/medium/large-v3-turbo)
 are downloaded on-demand via HTTPS with SHA256 verification.
 
 Model cache location: `~/Library/Caches/TrareonTranscribe/models/` (macOS) /
