@@ -152,9 +152,9 @@ mod tests {
         // Should receive at least a Healthy or DeviceLost event within 3 secs
         let events: Vec<WatchdogEvent> = rx.try_iter().take(3).collect();
         drop(tx);
-        // On a machine with audio devices, we expect Healthy
-        // On a CI runner without audio, DeviceLost is also valid
-        assert!(!events.is_empty() || true, "watchdog should emit events");
+        // Watchdog started and stopped without panic — test passes
+        // Event content is environment-dependent (no audio on CI)
+        let _ = events;
     }
 
     #[test]

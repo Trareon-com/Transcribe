@@ -56,7 +56,7 @@ fn text_similarity(a: &str, b: &str) -> f64 {
 mod tests {
     use super::*;
 
-    fn seg(source: &str, text: &str, ts: f64) -> Segment {
+    fn seg(_source: &str, text: &str, ts: f64) -> Segment {
         Segment {
             source: "test".to_string(),
             speaker: "TEST".to_string(),
