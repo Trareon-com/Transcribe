@@ -11,6 +11,7 @@ import '../src/rust/audio/device.dart';
 import '../state/models.dart';
 import '../state/settings_model.dart';
 import '../theme/app_colors.dart';
+import '../widgets/model_download_dialog.dart';
 class SetupWizardScreen extends ConsumerStatefulWidget {
   final VoidCallback onFinished;
 
@@ -104,7 +105,19 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
     return 'base';
   }
 
-  void _next() {
+  Future<void> _next() async {
+    if (_step == _WizardStep.modelChoice) {
+      final libraryPath = ref.read(settingsProvider).libraryPath;
+      if (!isModelAvailable(_selectedModel, libraryPath: libraryPath)) {
+        final ok = await showModelDownloadDialog(
+          context: context,
+          bridge: ref.read(rustBridgeProvider),
+          modelId: _selectedModel,
+          modelsDir: resolveTilde(libraryPath),
+        );
+        if (!ok) return;
+      }
+    }
     if (_stepIndex < _steps.length - 1) {
       setState(() => _step = _steps[_stepIndex + 1]);
     } else {
@@ -370,7 +383,7 @@ class _SpecDetectStep extends StatelessWidget {
       icon: Icons.memory,
       title: '1. Deteksi Spesifikasi',
       description: detected
-          ? 'Sistem Anda siap! Model direkomendasikan berdasarkan spesifikasi.'
+          ? 'Spesifikasi sistem terdeteksi, model terbaik dipilih otomatis.'
           : 'Memeriksa sistem...',
       child: detected
           ? Container(
@@ -457,8 +470,8 @@ class _ModelChoiceStep extends StatelessWidget {
   const _ModelChoiceStep({required this.selected, required this.onChanged});
 
   static const _models = [
-    ('base', 'base — ⚡ Cepat', '142 MB · ✅ Termasuk di aplikasi\n🇮🇩 ID: Sempurna (WER 0%) · 🇬🇧 EN: 90%\nCocok: transkrip cepat, akurasi ID maksimal'),
-    ('large-v3-turbo', 'large-v3-turbo — 🎯 Akurat', '548 MB · Diunduh saat pertama kali\n🇮🇩 ID: ~96% · 🇬🇧 EN: ~97%\n🏆 Akurasi global terbaik — rekomendasi!'),
+    ('base', 'base — ⚡ Cepat', 'Termasuk di aplikasi, cocok untuk transkripsi langsung.'),
+    ('large-v3-turbo', 'large-v3-turbo — 🎯 Akurat', 'Diunduh otomatis saat dipilih, akurasi tertinggi.'),
   ];
 
   @override
@@ -600,7 +613,7 @@ class _AudioSetupStepState extends ConsumerState<_AudioSetupStep> {
     return _StepContent(
       icon: Icons.speaker_group_outlined,
       title: '3. Setup Audio',
-      description: 'Pilih perangkat input mikrofon dan output speaker.',
+      description: 'Perangkat audio terdeteksi secara otomatis. Sesuaikan jika perlu.',
       child: _loading
           ? const CircularProgressIndicator()
           : Column(
