@@ -67,21 +67,23 @@ SmartScreen learns after enough reputation).
 
 ## Lynk.ID Product Page Checklist
 
-- [ ] Title: "Trareon Transcribe — Offline Meeting Transcriber"
-- [ ] Price: $5 (or IDR equivalent)
-- [ ] Description mentions:
+- [x] Title: "Trareon Transcribe — Offline Meeting Transcriber"
+- [x] Price: $5 (or IDR equivalent)
+- [x] Description mentions:
   - 100% offline, zero network calls during transcription
-  - macOS + Windows support
+  - macOS + Windows + Linux support
   - **Important**: ad-hoc signing warning for macOS ("Apple cannot verify")
   - **Important**: SmartScreen warning for Windows
-  - Whisper model `tiny` bundled (larger models downloaded on-demand)
+  - Whisper model `base` bundled (larger models downloaded on-demand)
   - All export formats: Markdown, TXT, JSON, SRT, VTT, HTML, DOCX, WAV
-- [ ] Known limitations listed:
+- [x] Known limitations listed:
   - No notarization (macOS)
   - No auto-update (manual check only in v1)
   - Large model downloads require internet on first use
-- [ ] Link to GitHub source (MIT)
-- [ ] Link to documentation / user guide
+- [x] Link to GitHub source (MIT)
+- [x] Link to documentation / user guide
+
+**Go-live status:** Page published on Lynk.ID — `https://lynk.id/trareon/transcribe`
 
 ## Manual Release Steps
 
