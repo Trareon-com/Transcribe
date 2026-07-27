@@ -10,8 +10,8 @@ set -euo pipefail
 THRESHOLDS_FILE="scripts/benchmark_thresholds.conf"
 
 # Default thresholds (override via benchmark_thresholds.conf)
-STT_LATENCY_MS_WARN=3000
-STT_LATENCY_MS_BLOCK=10000
+STT_BASE_LATENCY_S_BLOCK=3
+STT_LARGE_LATENCY_S_BLOCK=30
 STARTUP_TIME_S_WARN=5
 STARTUP_TIME_S_BLOCK=15
 EXPORT_TIME_S_WARN=3
@@ -30,34 +30,58 @@ echo ""
 
 # 1. STT latency: time to transcribe a 5s WAV file
 if command -v cargo &>/dev/null && [ -f "rust_core/Cargo.toml" ]; then
-    echo "--- Benchmark: STT Latency (5s WAV) ---"
-    if [ -f /tmp/test_en.wav ]; then
-        MODEL="${MODEL_PATH:-${HOME}/Library/Caches/TrareonTranscribe/models/ggml-tiny.bin}"
-        if [ -f "$MODEL" ]; then
-            START=$SECONDS
-            cd rust_core
-            RESULT=$(cargo run --bin transcribe --quiet -- \
-                --batch /tmp/test_en.wav \
-                --model "$MODEL" \
-                --format txt \
-                --output /tmp/bench_stt 2>/dev/null)
-            DURATION=$((SECONDS - START))
-            echo "  Time: ${DURATION}s"
-            if [ "$DURATION" -gt "$STT_LATENCY_MS_BLOCK" ]; then
-                echo "  ❌ BLOCK: STT latency ${DURATION}s exceeds ${STT_LATENCY_MS_BLOCK}s"
-                FAILED=1
-            elif [ "$DURATION" -gt "$STT_LATENCY_MS_WARN" ]; then
-                echo "  ⚠️ WARN: STT latency ${DURATION}s exceeds ${STT_LATENCY_MS_WARN}s"
-            else
-                echo "  ✅ PASS"
-            fi
-            cd ..
+    echo "--- Benchmark: STT Latency ---"
+    TEST_WAV="/tmp/trareon_bench_5s.wav"
+    if [ ! -f "$TEST_WAV" ]; then
+        echo "Generating 5s test WAV..."
+        if [ -f "rust_core/src/bin/gen_fixtures.rs" ]; then
+            (cd rust_core && cargo run --bin gen_fixtures --quiet -- "$TEST_WAV" 5 16000) 2>/dev/null || \
+            python3 -c "
+import wave, math, struct
+with wave.open('$TEST_WAV', 'w') as w:
+    w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000)
+    for i in range(16000*5):
+        v = int(math.sin(2*math.pi*440*i/16000)*5000)
+        w.writeframesraw(struct.pack('<h', v))
+"
         else
-            echo "  ⚠️ SKIP: model not found at $MODEL"
+            python3 -c "
+import wave, math, struct
+with wave.open('$TEST_WAV', 'w') as w:
+    w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000)
+    for i in range(16000*5):
+        v = int(math.sin(2*math.pi*440*i/16000)*5000)
+        w.writeframesraw(struct.pack('<h', v))
+"
         fi
-    else
-        echo "  ⚠️ SKIP: test file /tmp/test_en.wav not found"
     fi
+
+    run_stt_bench() {
+        local model_id=$1
+        local threshold=$2
+        local model_file="${HOME}/Library/Caches/TrareonTranscribe/models/${model_id}"
+        if [ ! -f "$model_file" ]; then
+            echo "  ⚠️ SKIP: $model_file not found"
+            return
+        fi
+        START=$SECONDS
+        (cd rust_core && cargo run --bin transcribe --quiet -- \
+            --batch "$TEST_WAV" \
+            --model "$model_file" \
+            --format txt \
+            --output /tmp/bench_stt 2>/dev/null)
+        DURATION=$((SECONDS - START))
+        echo "  $model_id: ${DURATION}s (threshold: ${threshold}s)"
+        if [ "$DURATION" -gt "$threshold" ]; then
+            echo "  ❌ BLOCK: $model_id ${DURATION}s exceeds ${threshold}s"
+            FAILED=1
+        else
+            echo "  ✅ PASS"
+        fi
+    }
+
+    run_stt_bench "ggml-base.bin" "$STT_BASE_LATENCY_S_BLOCK"
+    run_stt_bench "ggml-large-v3-turbo-q5_0.bin" "$STT_LARGE_LATENCY_S_BLOCK"
     echo ""
 else
     echo "--- SKIP: STT benchmark (cargo not available or no Cargo.toml) ---"
