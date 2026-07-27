@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../services/bridge_service.dart';
+import '../services/dart_prefs.dart';
 import 'models.dart';
 
 final rustBridgeProvider = Provider<RustBridge>((ref) => RustEngineBridge());
@@ -17,12 +18,25 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   }
 
   Future<void> _load() async {
+    // Load Dart-only prefs (e.g. defaultExportFormat) alongside Rust settings.
+    await DartPrefs.instance.load();
     final loaded = await _bridge.loadSettings();
     if (_userActed) return;
     _userActed = true;
-    final sanitized = _sanitizeDefaultModel(loaded);
+    final withDartPrefs = AppSettings(
+      theme: loaded.theme,
+      defaultModel: loaded.defaultModel,
+      defaultMode: loaded.defaultMode,
+      libraryPath: loaded.libraryPath,
+      vadEnabled: loaded.vadEnabled,
+      language: loaded.language,
+      autoStopMinutes: loaded.autoStopMinutes,
+      defaultExportFormat:
+          DartPrefs.instance.getString('defaultExportFormat') ?? 'markdown',
+    );
+    final sanitized = _sanitizeDefaultModel(withDartPrefs);
     state = sanitized;
-    if (sanitized != loaded) {
+    if (sanitized.defaultModel != loaded.defaultModel) {
       await _bridge.saveSettings(sanitized);
     }
   }
@@ -150,6 +164,9 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       autoStopMinutes: state.autoStopMinutes,
       defaultExportFormat: format,
     );
+    // Persist to DartPrefs so the value survives app restarts.
+    DartPrefs.instance.setString('defaultExportFormat', format);
+    await DartPrefs.instance.save();
     await _bridge.saveSettings(state);
   }
 }
