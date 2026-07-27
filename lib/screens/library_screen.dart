@@ -266,7 +266,10 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                                   itemBuilder: (context, index) {
                                     if (index == 0) {
-                                      return StorageBar(totalSessions: _sessions.length);
+                                      return StorageBar(
+                                      totalSessions: _sessions.length,
+                                      libraryPath: widget.libraryPath,
+                                    );
                                     }
                                     final session = filtered[index - 1];
                                     return SessionCardFromSummary(
