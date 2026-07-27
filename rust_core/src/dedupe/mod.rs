@@ -56,15 +56,15 @@ fn text_similarity(a: &str, b: &str) -> f64 {
 mod tests {
     use super::*;
 
-    fn seg(_source: &str, text: &str, ts: f64) -> Segment {
+    fn seg(source: &str, text: &str, ts: f64) -> Segment {
         Segment {
-            source: "test".to_string(),
-            speaker: "TEST".to_string(),
+            source: source.to_string(),
+            speaker: source.to_uppercase(),
             text: text.to_string(),
             timestamp: ts,
-            duration: 0.0,
-            language: "auto".to_string(),
-            confidence: 1.0,
+            duration: 1.0,
+            language: "id".to_string(),
+            confidence: 0.9,
             is_partial: false,
         }
     }
