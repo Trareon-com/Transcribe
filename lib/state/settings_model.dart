@@ -33,6 +33,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       autoStopMinutes: loaded.autoStopMinutes,
       defaultExportFormat:
           DartPrefs.instance.getString('defaultExportFormat') ?? 'markdown',
+      micDeviceId: DartPrefs.instance.getString('micDeviceId'),
+      speakerDeviceId: DartPrefs.instance.getString('speakerDeviceId'),
     );
     final sanitized = _sanitizeDefaultModel(withDartPrefs);
     state = sanitized;
@@ -56,6 +58,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       language: settings.language,
       autoStopMinutes: settings.autoStopMinutes,
       defaultExportFormat: settings.defaultExportFormat,
+      micDeviceId: settings.micDeviceId,
+      speakerDeviceId: settings.speakerDeviceId,
     );
   }
 
@@ -88,6 +92,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       language: state.language,
       autoStopMinutes: state.autoStopMinutes,
       defaultExportFormat: state.defaultExportFormat,
+      micDeviceId: state.micDeviceId,
+      speakerDeviceId: state.speakerDeviceId,
     );
     await _bridge.saveSettings(state);
   }
@@ -103,6 +109,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       language: state.language,
       autoStopMinutes: state.autoStopMinutes,
       defaultExportFormat: state.defaultExportFormat,
+      micDeviceId: state.micDeviceId,
+      speakerDeviceId: state.speakerDeviceId,
     );
     await _bridge.saveSettings(state);
   }
@@ -118,6 +126,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       language: language,
       autoStopMinutes: state.autoStopMinutes,
       defaultExportFormat: state.defaultExportFormat,
+      micDeviceId: state.micDeviceId,
+      speakerDeviceId: state.speakerDeviceId,
     );
     await _bridge.saveSettings(state);
   }
@@ -133,6 +143,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       language: state.language,
       autoStopMinutes: state.autoStopMinutes,
       defaultExportFormat: state.defaultExportFormat,
+      micDeviceId: state.micDeviceId,
+      speakerDeviceId: state.speakerDeviceId,
     );
     await _bridge.saveSettings(state);
   }
@@ -148,6 +160,8 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       language: state.language,
       autoStopMinutes: minutes,
       defaultExportFormat: state.defaultExportFormat,
+      micDeviceId: state.micDeviceId,
+      speakerDeviceId: state.speakerDeviceId,
     );
     await _bridge.saveSettings(state);
   }
@@ -163,9 +177,31 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       language: state.language,
       autoStopMinutes: state.autoStopMinutes,
       defaultExportFormat: format,
+      micDeviceId: state.micDeviceId,
+      speakerDeviceId: state.speakerDeviceId,
     );
     // Persist to DartPrefs so the value survives app restarts.
     DartPrefs.instance.setString('defaultExportFormat', format);
+    await DartPrefs.instance.save();
+    await _bridge.saveSettings(state);
+  }
+
+  Future<void> setMicDeviceName(String? name) async {
+    _userActed = true;
+    state = state.copyWith(micDeviceId: name);
+    if (name != null) {
+      DartPrefs.instance.setString('micDeviceId', name);
+    }
+    await DartPrefs.instance.save();
+    await _bridge.saveSettings(state);
+  }
+
+  Future<void> setSpeakerDeviceName(String? name) async {
+    _userActed = true;
+    state = state.copyWith(speakerDeviceId: name);
+    if (name != null) {
+      DartPrefs.instance.setString('speakerDeviceId', name);
+    }
     await DartPrefs.instance.save();
     await _bridge.saveSettings(state);
   }

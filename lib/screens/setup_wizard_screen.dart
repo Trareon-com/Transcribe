@@ -20,7 +20,7 @@ class SetupWizardScreen extends ConsumerStatefulWidget {
   ConsumerState<SetupWizardScreen> createState() => _SetupWizardScreenState();
 }
 
-enum _WizardStep { specDetect, modelChoice, toneTest }
+enum _WizardStep { specDetect, modelChoice, audioSetup, toneTest }
 
 class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
   _WizardStep _step = _WizardStep.specDetect;
@@ -167,6 +167,8 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
             ref.read(settingsProvider.notifier).setDefaultModel(id);
           },
         );
+      case _WizardStep.audioSetup:
+        return const _AudioSetupStep();
       case _WizardStep.toneTest:
         return const _ToneTestStep();
     }
@@ -549,29 +551,35 @@ class _AudioSetupStepState extends ConsumerState<_AudioSetupStep> {
     final inputs = await bridge.listAudioDevices();
     final outputs = await bridge.listOutputAudioDevices();
     if (mounted) {
+      final mic = inputs.isNotEmpty
+          ? inputs.firstWhere((d) => d.isDefault, orElse: () => inputs.first).name
+          : null;
+      final speaker = outputs
+          .firstWhere(
+            (d) => d.name.toLowerCase().contains('blackhole') ||
+                d.name.toLowerCase().contains('loopback'),
+            orElse: () => outputs.isNotEmpty
+                ? outputs.first
+                : AudioDeviceInfo(
+                    name: 'Default',
+                    deviceId: '',
+                    isDefault: true,
+                    channels: 2,
+                    sampleRates: Uint32List(0),
+                  ),
+          )
+          .name;
       setState(() {
         _loading = false;
         _inputDevices = inputs;
         _outputDevices = outputs;
-        _selectedMic = inputs.isNotEmpty
-            ? inputs.firstWhere((d) => d.isDefault, orElse: () => inputs.first).name
-            : null;
-        _selectedSpeaker = outputs
-            .firstWhere(
-              (d) => d.name.toLowerCase().contains('blackhole') ||
-                  d.name.toLowerCase().contains('loopback'),
-              orElse: () => outputs.isNotEmpty
-                  ? outputs.first
-                  : AudioDeviceInfo(
-                      name: 'Default',
-                      deviceId: '',
-                      isDefault: true,
-                      channels: 2,
-                      sampleRates: Uint32List(0),
-                    ),
-            )
-            .name;
+        _selectedMic = mic;
+        _selectedSpeaker = speaker;
       });
+      // Persist the auto-detected defaults so settings reflect the discovered devices.
+      final notifier = ref.read(settingsProvider.notifier);
+      if (mic != null) await notifier.setMicDeviceName(mic);
+      await notifier.setSpeakerDeviceName(speaker);
     }
   }
 
@@ -594,14 +602,20 @@ class _AudioSetupStepState extends ConsumerState<_AudioSetupStep> {
                   label: 'Mikrofon (Input)',
                   value: _selectedMic,
                   devices: _inputDevices,
-                  onChanged: (v) => setState(() => _selectedMic = v),
+                  onChanged: (v) {
+                    setState(() => _selectedMic = v);
+                    ref.read(settingsProvider.notifier).setMicDeviceName(v);
+                  },
                 ),
                 const SizedBox(height: 12),
                 _AudioDropdown(
                   label: 'Speaker / Loopback (Output)',
                   value: _selectedSpeaker,
                   devices: _outputDevices,
-                  onChanged: (v) => setState(() => _selectedSpeaker = v),
+                  onChanged: (v) {
+                    setState(() => _selectedSpeaker = v);
+                    ref.read(settingsProvider.notifier).setSpeakerDeviceName(v);
+                  },
                 ),
                 const SizedBox(height: 16),
                 // BlackHole status

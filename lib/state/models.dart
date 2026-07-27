@@ -225,6 +225,8 @@ class AppSettings {
   final int? autoStopMinutes;
   // Dart-only: not sent to Rust. Persists for the app session only.
   final String defaultExportFormat;
+  final String? micDeviceId;
+  final String? speakerDeviceId;
 
   const AppSettings({
     required this.theme,
@@ -235,6 +237,8 @@ class AppSettings {
     this.language,
     this.autoStopMinutes,
     this.defaultExportFormat = 'markdown',
+    this.micDeviceId,
+    this.speakerDeviceId,
   });
 
   factory AppSettings.defaults() => const AppSettings(
@@ -250,6 +254,8 @@ class AppSettings {
     SessionMode? defaultMode,
     int? autoStopMinutes,
     bool clearAutoStop = false,
+    Object? micDeviceId = _sentinel,
+    Object? speakerDeviceId = _sentinel,
   }) {
     return AppSettings(
       theme: theme ?? this.theme,
@@ -260,9 +266,14 @@ class AppSettings {
       language: language,
       autoStopMinutes: clearAutoStop ? null : (autoStopMinutes ?? this.autoStopMinutes),
       defaultExportFormat: defaultExportFormat,
+      micDeviceId: micDeviceId == _sentinel ? this.micDeviceId : micDeviceId as String?,
+      speakerDeviceId: speakerDeviceId == _sentinel ? this.speakerDeviceId : speakerDeviceId as String?,
     );
   }
 }
+
+// Sentinel value for distinguishing "not passed" from "explicitly null" in copyWith.
+const Object _sentinel = Object();
 
 /// Summary of a recorded session, used by LibraryScreen and export dialogs.
 class SessionSummary {
