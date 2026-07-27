@@ -11,6 +11,7 @@ import '../state/settings_model.dart';
 import '../src/rust/session.dart' as rust_session;
 import '../theme/app_colors.dart';
 import '../widgets/mode_selector.dart';
+import '../widgets/model_download_dialog.dart';
 import '../widgets/stream_toggle.dart';
 import '../widgets/transcript_view.dart';
 import 'library_screen.dart';
@@ -718,7 +719,23 @@ class _QualityToggle extends ConsumerWidget {
     final targetAvailable = isModelAvailable(targetModel, libraryPath: settings.libraryPath);
 
     return GestureDetector(
-      onTap: targetAvailable ? () => notifier.setDefaultModel(targetModel) : null,
+      onTap: () async {
+        if (!targetAvailable) {
+          if (!context.mounted) return;
+          final modelsDir = resolveTilde(settings.libraryPath);
+          final ok = await showModelDownloadDialog(
+            context: context,
+            bridge: ref.read(rustBridgeProvider),
+            modelId: targetModel,
+            modelsDir: modelsDir,
+          );
+          if (ok) {
+            await notifier.setDefaultModel(targetModel);
+          }
+          return;
+        }
+        await notifier.setDefaultModel(targetModel);
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
