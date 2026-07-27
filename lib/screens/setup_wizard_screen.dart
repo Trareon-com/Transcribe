@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
@@ -729,8 +728,6 @@ class _ToneTestStep extends StatefulWidget {
 
 class _ToneTestStepState extends State<_ToneTestStep> {
   bool _isPlaying = false;
-  double _signalLevel = 0.0;
-  Timer? _levelTimer;
   bool _tested = false;
   AudioPlayer? _player;
 
@@ -777,18 +774,7 @@ class _ToneTestStepState extends State<_ToneTestStep> {
   }
 
   Future<void> _startToneTest() async {
-    setState(() {
-      _isPlaying = true;
-      _signalLevel = 0.0;
-    });
-
-    _levelTimer?.cancel();
-    var ticks = 0;
-    _levelTimer = Timer.periodic(const Duration(milliseconds: 80), (_) {
-      ticks++;
-      if (!mounted) return;
-      setState(() => _signalLevel = 0.3 + (ticks % 7) * 0.1);
-    });
+    setState(() => _isPlaying = true);
 
     final player = AudioPlayer();
     _player = player;
@@ -798,8 +784,6 @@ class _ToneTestStepState extends State<_ToneTestStep> {
     } catch (_) {
       // Playback failure — still mark tested so the user can proceed
     } finally {
-      _levelTimer?.cancel();
-      _levelTimer = null;
       await player.dispose();
       if (_player == player) _player = null;
     }
@@ -807,7 +791,6 @@ class _ToneTestStepState extends State<_ToneTestStep> {
     if (mounted) {
       setState(() {
         _isPlaying = false;
-        _signalLevel = 0.0;
         _tested = true;
       });
     }
@@ -815,7 +798,6 @@ class _ToneTestStepState extends State<_ToneTestStep> {
 
   @override
   void dispose() {
-    _levelTimer?.cancel();
     _player?.dispose();
     super.dispose();
   }
@@ -826,7 +808,7 @@ class _ToneTestStepState extends State<_ToneTestStep> {
     return _StepContent(
       icon: Icons.graphic_eq,
       title: '3. Tone Test',
-      description: 'Uji nada 440Hz untuk memverifikasi jalur mic & speaker.',
+      description: 'Putar nada 440 Hz untuk memastikan speaker berfungsi.',
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -836,57 +818,57 @@ class _ToneTestStepState extends State<_ToneTestStep> {
         ),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  _isPlaying ? 'Memutar...' : (_tested ? 'Selesai' : 'Siap diuji'),
-                  style: TextStyle(fontWeight: FontWeight.bold, color: colors.text),
+            if (_tested) ...[
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.statusActive.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.statusActive.withValues(alpha: 0.3)),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _tested
-                        ? AppColors.statusActive.withValues(alpha: 0.1)
-                        : colors.chipBackground,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _tested ? Icons.check_circle : Icons.headphones,
-                        size: 14,
-                        color: _tested ? AppColors.statusActive : colors.textTertiary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        _tested ? 'Normal' : 'Standby',
+                child: Row(
+                  children: [
+                    Icon(Icons.check_circle, color: AppColors.statusActive, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Speaker berfungsi dengan baik',
                         style: TextStyle(
-                          color: _tested ? AppColors.statusActive : colors.textSecondary,
-                          fontSize: 12,
+                          color: AppColors.statusActive,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: _signalLevel,
-                minHeight: 10,
-                color: colors.primary,
-                backgroundColor: colors.border.withValues(alpha: 0.3),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colors.chipBackground,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: colors.textSecondary, size: 16),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Tes mikrofon akan aktif saat sesi dimulai',
+                        style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
             FilledButton.icon(
               onPressed: _isPlaying ? null : () => _startToneTest(),
               icon: Icon(_isPlaying ? Icons.graphic_eq : Icons.play_arrow),
-              label: Text(_isPlaying ? 'Memproses...' : 'Putar Nada Uji'),
+              label: Text(_isPlaying ? 'Memutar...' : (_tested ? 'Putar Ulang' : 'Putar Nada Uji')),
               style: FilledButton.styleFrom(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
