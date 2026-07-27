@@ -6,15 +6,28 @@ import '../src/rust/export.dart' as rust_ekspor;
 import '../state/models.dart';
 import '../theme/app_colors.dart';
 
+/// Maps a settings-side format name (e.g. 'markdown') to the dialog's short
+/// format ID (e.g. 'md'). Falls back to the input unchanged for ids that are
+/// already short-form ('txt', 'json', etc.).
+String _toDialogFormatId(String settingsFormat) => switch (settingsFormat) {
+      'markdown' => 'md',
+      _ => settingsFormat,
+    };
+
 /// Dialog for selecting ekspor formats and output directory.
 /// Returns true if the ekspor was initiated, false if cancelled.
+///
+/// [defaultFormat] is the format name from settings (e.g. 'markdown', 'txt').
+/// The corresponding checkbox will be pre-selected; others remain unchecked.
 Future<bool> showEksporDialog(
   BuildContext context,
   SessionSummary session, {
   required RustBridge bridge,
   String defaultOutputDir = '',
+  String defaultFormat = 'markdown',
 }) async {
-  final selected = <String>{'md', 'json', 'txt'};
+  final defaultId = _toDialogFormatId(defaultFormat);
+  final selected = <String>{defaultId};
 
   final confirmed = await showDialog<bool>(
     context: context,

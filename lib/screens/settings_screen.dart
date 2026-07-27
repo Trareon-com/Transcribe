@@ -169,10 +169,10 @@ class SettingsScreen extends ConsumerWidget {
               icon: Icons.description_outlined,
               label: 'Format ekspor default',
               trailing: _CompactDropdown<String>(
-                value: 'markdown',
-                items: const ['markdown', 'txt', 'srt', 'vtt', 'html', 'docx', 'json'],
+                value: settings.defaultExportFormat,
+                items: const ['markdown', 'txt', 'srt', 'vtt', 'html', 'json'],
                 labelBuilder: (s) => s.toUpperCase(),
-                onChanged: (_) {}, // placeholder — bisa ditambah di settings model nanti
+                onChanged: (value) => notifier.setDefaultExportFormat(value),
               ),
             ),
             const _SettingsDivider(),

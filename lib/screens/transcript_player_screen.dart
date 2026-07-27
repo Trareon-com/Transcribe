@@ -360,11 +360,13 @@ class _TranscriptPlayerScreenState extends ConsumerState<TranscriptPlayerScreen>
             : '$home/Documents/TrareonTranscribe';
 
     final bridge = ref.read(rustBridgeProvider);
+    final settings = ref.read(settingsProvider);
     await showEksporDialog(
       context,
       summary,
       bridge: bridge,
       defaultOutputDir: defaultDir,
+      defaultFormat: settings.defaultExportFormat,
     );
   }
 }

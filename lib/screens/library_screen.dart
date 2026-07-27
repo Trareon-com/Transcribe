@@ -176,6 +176,7 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
       session,
       bridge: bridge,
       defaultOutputDir: resolveTilde(settings.libraryPath),
+      defaultFormat: settings.defaultExportFormat,
     );
   }
 

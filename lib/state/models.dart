@@ -223,6 +223,8 @@ class AppSettings {
   final bool vadEnabled;
   final String? language;
   final int? autoStopMinutes;
+  // Dart-only: not sent to Rust. Persists for the app session only.
+  final String defaultExportFormat;
 
   const AppSettings({
     required this.theme,
@@ -232,6 +234,7 @@ class AppSettings {
     required this.vadEnabled,
     this.language,
     this.autoStopMinutes,
+    this.defaultExportFormat = 'markdown',
   });
 
   factory AppSettings.defaults() => const AppSettings(
@@ -256,6 +259,7 @@ class AppSettings {
       vadEnabled: vadEnabled,
       language: language,
       autoStopMinutes: clearAutoStop ? null : (autoStopMinutes ?? this.autoStopMinutes),
+      defaultExportFormat: defaultExportFormat,
     );
   }
 }

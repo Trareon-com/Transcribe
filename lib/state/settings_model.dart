@@ -41,6 +41,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       vadEnabled: settings.vadEnabled,
       language: settings.language,
       autoStopMinutes: settings.autoStopMinutes,
+      defaultExportFormat: settings.defaultExportFormat,
     );
   }
 
@@ -72,6 +73,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       vadEnabled: state.vadEnabled,
       language: state.language,
       autoStopMinutes: state.autoStopMinutes,
+      defaultExportFormat: state.defaultExportFormat,
     );
     await _bridge.saveSettings(state);
   }
@@ -86,6 +88,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       vadEnabled: enabled,
       language: state.language,
       autoStopMinutes: state.autoStopMinutes,
+      defaultExportFormat: state.defaultExportFormat,
     );
     await _bridge.saveSettings(state);
   }
@@ -100,6 +103,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       vadEnabled: state.vadEnabled,
       language: language,
       autoStopMinutes: state.autoStopMinutes,
+      defaultExportFormat: state.defaultExportFormat,
     );
     await _bridge.saveSettings(state);
   }
@@ -114,6 +118,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       vadEnabled: state.vadEnabled,
       language: state.language,
       autoStopMinutes: state.autoStopMinutes,
+      defaultExportFormat: state.defaultExportFormat,
     );
     await _bridge.saveSettings(state);
   }
@@ -128,6 +133,22 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       vadEnabled: state.vadEnabled,
       language: state.language,
       autoStopMinutes: minutes,
+      defaultExportFormat: state.defaultExportFormat,
+    );
+    await _bridge.saveSettings(state);
+  }
+
+  Future<void> setDefaultExportFormat(String format) async {
+    _userActed = true;
+    state = AppSettings(
+      theme: state.theme,
+      defaultModel: state.defaultModel,
+      defaultMode: state.defaultMode,
+      libraryPath: state.libraryPath,
+      vadEnabled: state.vadEnabled,
+      language: state.language,
+      autoStopMinutes: state.autoStopMinutes,
+      defaultExportFormat: format,
     );
     await _bridge.saveSettings(state);
   }
