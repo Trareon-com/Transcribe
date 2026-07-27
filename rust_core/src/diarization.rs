@@ -116,8 +116,8 @@ fn extract_acoustic_features(pcm: &[f32]) -> (f32, f32, f32) {
     if max_lag > 10 {
         for lag in 10..max_lag {
             let mut sum = 0.0f32;
-            for i in 0..(pcm.len() - lag) {
-                sum += pcm[i] * pcm[i + lag];
+            for window in pcm.windows(lag + 1) {
+                sum += window[0] * window[lag];
             }
             if sum > max_corr {
                 max_corr = sum;

@@ -93,7 +93,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Mulai'), findsOneWidget);
-    expect(find.text('Otomatis'), findsOneWidget);
+    expect(find.text('Rapat Online'), findsOneWidget);
     expect(find.text('Mikrofon'), findsWidgets);
     expect(find.text('Pengeras Suara'), findsWidgets);
   });

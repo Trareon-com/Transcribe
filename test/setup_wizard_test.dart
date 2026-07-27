@@ -105,7 +105,8 @@ void main() {
 
     for (final expectedTitle in [
       '2. Pilih Model',
-      '3. Tone Test',
+      '3. Setup Audio',
+      '4. Tone Test',
     ]) {
       await tester.tap(find.text('Lanjut'));
       await tester.pumpAndSettle();
