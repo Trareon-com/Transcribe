@@ -15,6 +15,7 @@ Two packaging scripts produce ready-to-distribute installers:
 |----------|--------|--------|----------------|
 | macOS | `scripts/package_macos.sh` | `.dmg` | Ad-hoc signed (`codesign --sign -`), whisper `tiny` model bundled |
 | Windows | `scripts/package_windows.ps1` | `.zip` | Self-signed certificate (v1), whisper `tiny` model bundled |
+| Linux | `scripts/package_linux.sh` | `.AppImage` (or `.tar.gz` fallback) | Unsigned, `base` model bundled |
 
 Both scripts:
 1. Build Rust engine (`cargo build --release --lib`)
@@ -29,6 +30,9 @@ bash scripts/package_macos.sh "1.0.0"
 
 # Windows (PowerShell)
 .\scripts\package_windows.ps1 -Version "1.0.0"
+
+# Linux (AppImage, falls back to tar.gz if appimagetool is missing)
+bash scripts/package_linux.sh "1.0.0"
 ```
 
 ## CI & Release Workflow
@@ -44,16 +48,17 @@ Pushing a `v*` tag triggers `.github/workflows/release.yml`:
 1. Source tarball (GitHub Releases — for transparency, no binaries)
 2. macOS `.dmg` (binary via Lynk.ID)
 3. Windows `.zip` (binary via Lynk.ID)
+4. Linux `.AppImage` (binary via Lynk.ID)
 
 ## Signing Status (v1)
 
-| Requirement | macOS | Windows |
-|-------------|-------|---------|
-| Code signing | ✅ Ad-hoc (`codesign --sign -`) | 🔶 Self-signed (makecert) |
-| Notarization | ❌ (requires $99/yr Apple Developer) | N/A |
-| Gatekeeper warning | ⚠️ "Apple cannot verify" | N/A |
-| SmartScreen warning | N/A | ⚠️ "Unrecognized app" |
-| User documentation | ✅ Described on download page | ✅ Described on download page |
+| Requirement | macOS | Windows | Linux |
+|-------------|-------|---------|-------|
+| Code signing | ✅ Ad-hoc (`codesign --sign -`) | 🔶 Self-signed (makecert) | — |
+| Notarization | ❌ (requires $99/yr Apple Developer) | N/A | N/A |
+| Gatekeeper warning | ⚠️ "Apple cannot verify" | N/A | N/A |
+| SmartScreen warning | N/A | ⚠️ "Unrecognized app" | N/A |
+| User documentation | ✅ Described on download page | ✅ Described on download page | ✅ Described on download page |
 
 **Why ad-hoc / self-signed?** The blueprint ADR-12 defers paid certificates to
 post-v1. Users see one warning dialog on first launch; subsequent launches are

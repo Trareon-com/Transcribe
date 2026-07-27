@@ -261,6 +261,9 @@ bash scripts/package_macos.sh "1.0.0"
 
 # Windows (PowerShell)
 .\scripts\package_windows.ps1 -Version "1.0.0"
+
+# Linux (AppImage, falls back to tar.gz if appimagetool is missing)
+bash scripts/package_linux.sh "1.0.0"
 ```
 
 Both scripts: build Rust release → build Flutter release → sign → package → generate SHA256 checksum → output to `dist/`.
@@ -285,8 +288,8 @@ cargo run --bin transcribe -- \
 | All export formats | ✅ | ✅ | ✅ |
 | CLI mode | ✅ | ✅ | ✅ |
 | CI build | ✅ | ✅ | ✅ |
-| Package script | ✅ (DMG) | ✅ (ZIP) | — |
-| Distribution | Lynk.ID ($5) | Lynk.ID ($5) | — |
+| Package script | ✅ (DMG) | ✅ (ZIP) | ✅ (AppImage) |
+| Distribution | Lynk.ID ($5) | Lynk.ID ($5) | Lynk.ID ($5) |
 | Signing | Ad-hoc | Self-signed | — |
 
 ---
