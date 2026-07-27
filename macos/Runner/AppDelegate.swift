@@ -23,7 +23,7 @@ class AppDelegate: FlutterAppDelegate {
     }
 
     hotkeyChannel = FlutterMethodChannel(
-      name: "com.trascribe.global_hotkey",
+      name: "com.trareon.global_hotkey",
       binaryMessenger: controller.engine.binaryMessenger
     )
 
