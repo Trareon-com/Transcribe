@@ -86,6 +86,7 @@ class _TranscriptPlayerScreenState extends ConsumerState<TranscriptPlayerScreen>
       _segments[index] = _segments[index].copyWith(text: newText);
     });
     widget.onSegmentsChanged?.call(List.unmodifiable(_segments));
+    _persistSegments();
   }
 
   void _renameSpeaker(String oldLabel, String newLabel) {
