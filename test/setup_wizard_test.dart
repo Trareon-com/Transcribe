@@ -88,7 +88,7 @@ class _FakeBridge implements RustBridge {
 }
 
 void main() {
-  testWidgets('wizard walks through all 3 steps and calls onFinished', (WidgetTester tester) async {
+  testWidgets('wizard walks through all 4 steps and calls onFinished', (WidgetTester tester) async {
     var finished = false;
     final bridge = _FakeBridge();
     await tester.pumpWidget(

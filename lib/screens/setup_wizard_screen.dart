@@ -829,7 +829,7 @@ class _ToneTestStepState extends State<_ToneTestStep> {
     final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
     return _StepContent(
       icon: Icons.graphic_eq,
-      title: '3. Tone Test',
+      title: '4. Tone Test',
       description: 'Putar nada 440 Hz untuk memastikan speaker berfungsi.',
       child: Container(
         padding: const EdgeInsets.all(20),
