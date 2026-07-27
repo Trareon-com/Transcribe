@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -95,6 +96,34 @@ class _TranscriptPlayerScreenState extends ConsumerState<TranscriptPlayerScreen>
           .toList();
     });
     widget.onSegmentsChanged?.call(List.unmodifiable(_segments));
+    _persistSegments();
+  }
+
+  Future<void> _persistSegments() async {
+    if (widget.audioPath == null) return;
+    try {
+      final sessionDir = File(widget.audioPath!).parent;
+      // Find existing .json file or default to transcript.json
+      final existing = sessionDir
+          .listSync()
+          .whereType<File>()
+          .where((f) => f.path.endsWith('.json'))
+          .firstOrNull;
+      final jsonFile = existing ?? File('${sessionDir.path}/transcript.json');
+      final json = jsonEncode(_segments.map((s) => {
+        'source': s.source,
+        'speaker': s.speaker,
+        'text': s.text,
+        'timestamp': s.timestamp,
+        'duration': s.duration,
+        'language': s.language,
+        'confidence': s.confidence,
+        'is_partial': s.isPartial,
+      }).toList());
+      await jsonFile.writeAsString(json);
+    } catch (e) {
+      debugPrint('_persistSegments error: $e');
+    }
   }
 
   String _formatTime(double secs) {
