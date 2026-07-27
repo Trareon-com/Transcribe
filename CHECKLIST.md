@@ -56,6 +56,7 @@
 - [x] Mic capture → WAV → decode → STT pipeline berfungsi (hardware test)
 - [x] App GUI: Start recording → VU meter → Stop berfungsi
 - [x] CLI: `transcribe --batch` dengan mic recording -> transkripsi sukses
+- [ ] Full hardware test per platform — see `docs/hardware_test_checklist.md`
 
 ## Documentation
 - [x] `ARCHITECTURE.md` — updated with distro details
