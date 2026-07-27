@@ -58,6 +58,8 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
   final RustBridge _bridge;
   StreamSubscription<TranscriptSegment>? _transcriptSub;
   Timer? _autoStopTimer;
+  Timer? _elapsedTimer;
+  DateTime? _recordingStartedAt;
   int? _autoStopMinutes;
   String _libraryPath = '~/Documents/TrareonTranscribe';
 
@@ -97,11 +99,23 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
 
   void _subscribeToLiveStreams(String sessionId) {
     _transcriptSub = _bridge.transcriptStream(sessionId).listen(_onTranscriptSegment);
+    _recordingStartedAt ??= DateTime.now();
+    _elapsedTimer?.cancel();
+    _elapsedTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      final started = _recordingStartedAt;
+      if (started != null) {
+        state = state.copyWith(
+          elapsedSeconds: DateTime.now().difference(started).inSeconds.toDouble(),
+        );
+      }
+    });
   }
 
   void _cancelLiveStreams() {
     _transcriptSub?.cancel();
     _transcriptSub = null;
+    _elapsedTimer?.cancel();
+    _elapsedTimer = null;
   }
 
   void seedRecovery(rust_session.SessionRecoverySnapshot snapshot) {
@@ -208,8 +222,9 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     final id = state.sessionId;
     if (id == null) return;
     _cancelLiveStreams();
+    _recordingStartedAt = null;
     await _bridge.stopSession(id);
-    state = state.copyWith(lifecycle: SessionLifecycle.stopped);
+    state = state.copyWith(lifecycle: SessionLifecycle.stopped, elapsedSeconds: 0);
     final segments = state.segments;
     if (segments.isNotEmpty) {
       final title = state.sessionTitle.isNotEmpty
