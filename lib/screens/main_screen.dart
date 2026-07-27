@@ -10,6 +10,7 @@ import '../state/session_model.dart';
 import '../state/settings_model.dart';
 import '../src/rust/session.dart' as rust_session;
 import '../theme/app_colors.dart';
+import '../widgets/mode_selector.dart';
 import '../widgets/stream_toggle.dart';
 import '../widgets/transcript_view.dart';
 import 'library_screen.dart';
@@ -466,25 +467,15 @@ class _ControlBar extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Auto mode info
-                  Container(
-                    height: 36,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: colors.chipBackground,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: colors.border),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('🎙️', style: TextStyle(fontSize: 14)),
-                        const SizedBox(width: 6),
-                        Text(
-                          'Otomatis',
-                          style: TextStyle(color: colors.textSecondary, fontSize: 12),
-                        ),
-                      ],
+                  // Mode selector — disabled while a session is active
+                  IgnorePointer(
+                    ignoring: isActive,
+                    child: Opacity(
+                      opacity: isActive ? 0.5 : 1.0,
+                      child: ModeSelector(
+                        selected: session.config.mode,
+                        onChanged: notifier.setMode,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
