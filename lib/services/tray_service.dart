@@ -17,23 +17,27 @@ class TrayService with TrayListener, WindowListener {
     if (_initialized) return;
     _initialized = true;
 
-    await windowManager.ensureInitialized();
-    await windowManager.setPreventClose(true);
-    windowManager.addListener(this);
+    try {
+      await windowManager.ensureInitialized();
+      await windowManager.setPreventClose(true);
+      windowManager.addListener(this);
 
-    final iconPath = Platform.isWindows ? 'assets/tray_icon.ico' : 'assets/tray_icon.png';
-    await trayManager.setIcon(iconPath);
-    await trayManager.setToolTip('Trareon Transcribe');
-    await trayManager.setContextMenu(
-      Menu(
-        items: [
-          MenuItem(key: 'show', label: 'Buka Trareon Transcribe'),
-          MenuItem.separator(),
-          MenuItem(key: 'quit', label: 'Keluar'),
-        ],
-      ),
-    );
-    trayManager.addListener(this);
+      final iconPath = Platform.isWindows ? 'assets/tray_icon.ico' : 'assets/tray_icon.png';
+      await trayManager.setIcon(iconPath);
+      await trayManager.setToolTip('Trareon Transcribe');
+      await trayManager.setContextMenu(
+        Menu(
+          items: [
+            MenuItem(key: 'show', label: 'Buka Trareon Transcribe'),
+            MenuItem.separator(),
+            MenuItem(key: 'quit', label: 'Keluar'),
+          ],
+        ),
+      );
+      trayManager.addListener(this);
+    } catch (e) {
+      // Tray not available in headless/Xvfb environments — skip silently.
+    }
   }
 
   Future<void> dispose() async {
