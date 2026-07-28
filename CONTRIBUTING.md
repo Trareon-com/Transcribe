@@ -21,7 +21,7 @@ First off, thank you for considering contributing! We welcome contributions of a
 
 ### Prerequisites
 
-- **Flutter SDK** 3.27+ (stable channel) — [Install Flutter](https://flutter.dev/docs/get-started/install)
+- **Flutter SDK** 3.32+ (stable channel) — [Install Flutter](https://flutter.dev/docs/get-started/install)
 - **Rust toolchain** 1.80+ — [Install Rust](https://rustup.rs/)
 - **CMake** on `PATH` — whisper.cpp is compiled from source via `whisper-rs`
 - **macOS**: Xcode 15+ (with Command Line Tools) and CocoaPods
