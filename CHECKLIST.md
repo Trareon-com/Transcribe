@@ -22,7 +22,7 @@
 - [ ] Gumroad backup page created
 - [ ] macOS notarization (requires $99/yr Apple Developer account)
 - [ ] Windows code signing (EV certificate recommended)
-- [ ] Screenshots taken and added to `assets/screenshots/`
+- [x] Screenshots taken and added to `assets/screenshots/`
 - [ ] Lynk.ID + Gumroad URLs added to DISTRIBUTION.md
 
 ## Security (STRIDE per blueprint §86.1)
