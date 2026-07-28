@@ -210,7 +210,7 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the complete layout, data flow diag
 
 | Layer | Technology |
 |-------|------------|
-| **UI** | Flutter 3.27+ (Dart), Riverpod, flutter_rust_bridge 2.x |
+| **UI** | Flutter 3.32+ (Dart), Riverpod, flutter_rust_bridge 2.x |
 | **Engine** | Rust 1.80+, edition 2021 |
 | **STT** | whisper.cpp via `whisper-rs` |
 | **Audio capture** | `cpal` |
@@ -226,7 +226,7 @@ See [`ARCHITECTURE.md`](ARCHITECTURE.md) for the complete layout, data flow diag
 
 ### Prerequisites
 
-- [Flutter](https://flutter.dev/) 3.27+ (stable channel)
+- [Flutter](https://flutter.dev/) 3.32+ (stable channel)
 - [Rust](https://www.rust-lang.org/) 1.80+ with `cmake` on PATH
 - **macOS**: Xcode 15+ with Command Line Tools
 - **Windows**: Visual Studio 2022 Build Tools (Desktop development with C++ workload)
