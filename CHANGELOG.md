@@ -10,6 +10,7 @@ phase instead.
 ### Fixed
 - ToneTest step number 3→4 (UI title + wizard test name) to match actual 4-step wizard.
 - README wizard step count: "3-step" → "4-step" (spec detect, model choice, audio setup, tone test).
+- README Flutter badge version: "3.27+" → "3.32+" (matches Dart SDK ^3.12.2 constraint).
 - Minimum window height 560→700 so Settings Audio section fully visible without scroll.
 
 ## [0.1.1] — 2026-07-27

@@ -21,7 +21,7 @@
     <img src="https://img.shields.io/badge/Rust-1.80+-orange" alt="Rust 1.80+"/>
   </a>
   <a href="https://flutter.dev/">
-    <img src="https://img.shields.io/badge/Flutter-3.27+-blue" alt="Flutter 3.27+"/>
+    <img src="https://img.shields.io/badge/Flutter-3.32+-blue" alt="Flutter 3.32+"/>
   </a>
   <a href="https://github.com/ggerganov/whisper.cpp">
     <img src="https://img.shields.io/badge/Engine-whisper.cpp-FF6F00" alt="whisper.cpp"/>
