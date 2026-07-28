@@ -96,7 +96,7 @@ Each export format runs in its own thread for parallel processing.
 - **Session library** — Browse, search, delete (with undo), and re-export past sessions.
 - **Transcript player** — Seek, speed control, inline editing of transcript text. Skip 10s buttons.
 - **Mode selector** — Webinar (speaker only), Rapat Online (mic + speaker), Offline (mic only).
-- **First-run setup wizard** — 3-step guided configuration: spec detection, model selection, tone test.
+- **First-run setup wizard** — 4-step guided configuration: spec detection, model selection, audio setup, tone test.
 - **Light / dark / system theme** — Full theme switching managed via Riverpod.
 - **Keyboard shortcuts** — Cmd/Ctrl+R (start/stop), Cmd/Ctrl+P (pause/resume), Cmd/Ctrl+L (library), Cmd/Ctrl+, (settings), Cmd/Ctrl+/ (shortcuts panel).
 - **Minimize to tray** — Recording continues when window is hidden.
@@ -158,7 +158,7 @@ lib/                      Flutter UI (Dart)
 │   ├── main_screen.dart           Main recording + transcript view
 │   ├── library_screen.dart        Session library browser
 │   ├── settings_screen.dart       Settings with theme, model, audio config
-│   ├── setup_wizard_screen.dart   3-step first-run wizard
+│   ├── setup_wizard_screen.dart   4-step first-run wizard
 │   ├── transcript_player_screen.dart  Playback + inline edit
 │   ├── privacy_report_screen.dart Network activity monitor
 │   └── usage_dashboard_screen.dart  Usage statistics

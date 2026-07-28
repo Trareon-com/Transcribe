@@ -5,6 +5,20 @@ follows [Keep a Changelog](https://keepachangelog.com/); this project is
 pre-1.0 so versions aren't cut yet — entries are grouped by development
 phase instead.
 
+|## [0.1.2] — 2026-07-28
+
+### Fixed
+- ToneTest step number 3→4 (UI title + wizard test name) to match actual 4-step wizard.
+- README wizard step count: "3-step" → "4-step" (spec detect, model choice, audio setup, tone test).
+- Minimum window height 560→700 so Settings Audio section fully visible without scroll.
+
+## [0.1.1] — 2026-07-27
+
+### Fixed
+- Setup wizard test: update assertion for 4-step wizard flow.
+- Clippy warnings in Rust code.
+- CI clippy lint: unused import warning.
+
 ## [0.1.0] — 2026-07-26
 
 ### Fixed
