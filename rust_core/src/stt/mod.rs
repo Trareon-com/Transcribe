@@ -136,13 +136,76 @@ impl WhisperEngine {
                 text: text.trim().to_string(),
                 timestamp: chunk_start_secs + t0,
                 duration: (t1 - t0).max(0.0),
-                language: language.unwrap_or("auto").to_string(),
+                language: segment_language(&text, language).to_string(),
                 confidence: 1.0,
                 is_partial: false,
             });
         }
 
         Ok(out)
+    }
+}
+
+/// Per-segment language classifier for Indonesian↔English code-switching.
+///
+/// Heuristics (pure std, O(n) over the word tokens — no external deps):
+///   - `language` forced by caller wins outright.
+///   - count pure-ASCII-alpha tokens (EN-like) and exact EN
+///     stopword hits.
+///   - ≥2 EN keywords + >50% Latin → `"en"`
+///   - ≥1 EN keyword + >30% Latin (mixed) → `"id-en"` (code-switch)
+///   - else → `"id"`
+///
+/// This runs cheap after inference; it does not re-encode audio.
+fn segment_language(text: &str, explicit: Option<&str>) -> &'static str {
+    if let Some(l) = explicit {
+        match l {
+            "en" => return "en",
+            "id" => return "id",
+            "id-en" => return "id-en",
+            _ => {} // "auto"/""/unknown → fall through to heuristics
+        }
+    }
+    const EN_KEYWORDS: &[&str] = &[
+        "the", "and", "to", "of", "in", "is", "it", "for", "on", "with", "you", "that", "we",
+        "they", "he", "she", "this", "have", "from", "or", "as", "at", "by", "be", "not", "but",
+        "an", "were", "our", "us", "so",
+    ];
+    const ID_KEYWORDS: &[&str] = &[
+        "terima", "kasih", "bisa", "gak", "nggak", "kirim", "saya", "kamu", "itu", "halo", "bro",
+        "di", "dari", "akan", "sudah", "udah", "ada", "aja", "juga", "ya", "dong", "deh", "tuhan",
+        "lho", "tolong", "bukan", "ini", "itu", "ya", "makasih",
+    ];
+    let words: Vec<&str> = text
+        .split(|c: char| c.is_whitespace() || c.is_ascii_punctuation())
+        .filter(|w| !w.is_empty())
+        .collect();
+    if words.is_empty() {
+        return "id";
+    }
+    let ascii_alpha = words
+        .iter()
+        .filter(|w| !w.is_empty() && w.chars().all(|c| c.is_ascii_alphabetic()))
+        .count();
+    let en_hits = words
+        .iter()
+        .filter(|w| EN_KEYWORDS.contains(&w.to_ascii_lowercase().as_str()))
+        .count();
+    let id_hits = words
+        .iter()
+        .filter(|w| ID_KEYWORDS.contains(&w.to_ascii_lowercase().as_str()))
+        .count();
+    let ratio = ascii_alpha as f32 / words.len() as f32;
+    if en_hits >= 2 && ratio > 0.5 {
+        "en"
+    } else if en_hits >= 1 && id_hits >= 1 {
+        // EN keyword + Indonesian keyword in same segment → code-switch
+        "id-en"
+    } else if en_hits >= 1 && ratio > 0.7 {
+        // almost all tokens are Latin, single EN keyword → English
+        "en"
+    } else {
+        "id"
     }
 }
 
@@ -163,5 +226,33 @@ mod tests {
         let result = WhisperEngine::load(&path);
         assert!(result.is_err());
         let _ = std::fs::remove_file(&path);
+    }
+
+    #[test]
+    fn classify_pure_english() {
+        assert_eq!(segment_language("the quick brown fox is here", None), "en");
+    }
+
+    #[test]
+    fn classify_pure_indonesian() {
+        assert_eq!(segment_language("terima kasih banyak ya", None), "id");
+        assert_eq!(segment_language("apa kabar?", None), "id");
+    }
+
+    #[test]
+    fn classify_codeswitch_id_en() {
+        assert_eq!(
+            segment_language("halo bro, bisa gak kirim the file?", None),
+            "id-en"
+        );
+        assert_eq!(segment_language("saya butuh the link itu", None), "id-en");
+    }
+
+    #[test]
+    fn explicit_language_wins() {
+        // Forced EN overrides Indonesian-looking text.
+        assert_eq!(segment_language("terima kasih", Some("en")), "en");
+        // "auto" is treated as unset → falls through to heuristics.
+        assert_eq!(segment_language("the quick brown fox", Some("auto")), "en");
     }
 }
