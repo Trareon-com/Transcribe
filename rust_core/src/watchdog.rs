@@ -12,7 +12,7 @@ use std::time::Duration;
 
 use tracing;
 
-use crate::audio::device::{list_input_devices, list_output_devices};
+use crate::audio::device::{list_input_devices, list_output_devices, AudioDeviceInfo};
 use crate::error::TranscribeError;
 
 /// Events emitted by the watchdog to the session orchestrator.
@@ -88,13 +88,18 @@ pub fn start_watchdog(
     (event_rx, stop_tx)
 }
 
-/// Returns `Ok(list of device names)` if at least one input and one output
-/// device are present. Returns `Err` if audio devices appear to be gone
-/// (sleep / disconnect).
-fn check_device_health(monitor_hints: &[String]) -> Result<Vec<String>, TranscribeError> {
-    let inputs = list_input_devices()?;
-    let outputs = list_output_devices()?;
-
+/// Pure health evaluator (no hardware I/O) — testable in CI.
+///
+/// Returns `Ok(names)` when at least one input and one output device are
+/// present (and, when `monitor_hints` is non-empty, at least one name
+/// matches a hint). Returns `Err` when devices look absent (sleep/disconnect).
+/// Pulling this out of the polling loop lets us assert the transitions
+/// (healthy → lost → reconnected) without real audio hardware.
+fn evaluate_health(
+    inputs: &[AudioDeviceInfo],
+    outputs: &[AudioDeviceInfo],
+    monitor_hints: &[String],
+) -> Result<Vec<String>, TranscribeError> {
     let all_names: Vec<String> = inputs
         .iter()
         .chain(outputs.iter())
@@ -107,7 +112,6 @@ fn check_device_health(monitor_hints: &[String]) -> Result<Vec<String>, Transcri
         ));
     }
 
-    // If we have specific hints, check at least one matches
     if !monitor_hints.is_empty() {
         let hint_matches = |name: &str| -> bool {
             monitor_hints
@@ -122,6 +126,17 @@ fn check_device_health(monitor_hints: &[String]) -> Result<Vec<String>, Transcri
     }
 
     Ok(all_names)
+}
+
+/// Returns `Ok(list of device names)` if at least one input and one output
+/// device are present. Returns `Err` if audio devices appear to be gone
+/// (sleep / disconnect).
+fn check_device_health(monitor_hints: &[String]) -> Result<Vec<String>, TranscribeError> {
+    evaluate_health(
+        &list_input_devices()?,
+        &list_output_devices()?,
+        monitor_hints,
+    )
 }
 
 /// Best-effort list of currently known device names (used for diagnostics
@@ -172,5 +187,54 @@ mod tests {
         // May be Ok if the device list is non-empty, or Err if the hint doesn't match
         // Either way, no panic
         assert!(result.is_ok() || result.is_err());
+    }
+
+    fn dev(name: &str) -> AudioDeviceInfo {
+        AudioDeviceInfo {
+            name: name.to_string(),
+            device_id: format!("dev:{name}"),
+            is_default: false,
+            channels: 2,
+            sample_rates: vec![16000, 44100],
+        }
+    }
+
+    #[test]
+    fn evaluate_health_no_devices_is_err() {
+        let res = evaluate_health(&[], &[], &[]);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn evaluate_health_empty_with_hint_is_err() {
+        let res = evaluate_health(&[], &[], &["blackhole".to_string()]);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn evaluate_health_present_and_hint_matches_ok() {
+        let ins = [dev("BlackHole 2ch"), dev("mic")];
+        let res = evaluate_health(&ins, &[], &["blackhole".to_string()]);
+        assert!(res.is_ok());
+        let names = res.unwrap();
+        assert!(names.iter().any(|n| n == "BlackHole 2ch"));
+    }
+
+    #[test]
+    fn evaluate_health_hint_mismatch_is_err() {
+        let ins = [dev("mic")];
+        let res = evaluate_health(&ins, &[], &["blackhole".to_string()]);
+        assert!(res.is_err());
+    }
+
+    #[test]
+    fn evaluate_health_reconnect_transition() {
+        // Simulate sleep/wake: healthy → lost → reconnected.
+        let ins_online = [dev("BlackHole 2ch"), dev("Built-in Mic")];
+        assert!(evaluate_health(&ins_online, &[], &[]).is_ok());
+        // sleep: devices gone
+        assert!(evaluate_health(&[], &[], &[]).is_err());
+        // wake: devices back
+        assert!(evaluate_health(&ins_online, &[], &[]).is_ok());
     }
 }
