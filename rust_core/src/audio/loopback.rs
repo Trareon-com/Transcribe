@@ -10,6 +10,7 @@ use crate::audio::capture::AudioCapture;
 use crate::error::TranscribeError;
 use std::sync::mpsc;
 
+#[flutter_rust_bridge::frb(ignore)]
 pub fn start_loopback(
     device_hint: Option<String>,
     samples_tx: mpsc::Sender<Vec<f32>>,

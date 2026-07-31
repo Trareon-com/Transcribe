@@ -131,7 +131,83 @@ pub fn export_session(
 // --- File transcription -----------------------------------------------------
 
 pub fn decode_audio_file(path: String) -> Result<crate::decode::AudioBuffer, TranscribeError> {
-    crate::decode::decode_audio_file(&PathBuf::from(path))
+    crate::decode::decode_audio_file(std::path::Path::new(&path))
+}
+
+// --- Hybrid Progressive Transcription (HPT) --------------------------------------
+
+/// Result of an HPT (dual-model) file transcription: the quick pass from
+/// `base` (`is_partial = true`) and the refined pass from
+/// `large-v3-turbo-q5` (`is_partial = false`). Same segment order, same
+/// `(source, timestamp)` keys — Dart replaces text by key.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ProgressiveFileResult {
+    pub filename: String,
+    pub quick_segments: Vec<Segment>,
+    pub refined_segments: Vec<Segment>,
+    pub language: String,
+}
+
+/// HPT file transcription: quick pass (base) then refine pass
+/// (large-v3-turbo-q5) over the same decoded audio. UI shows
+/// `quick_segments` immediately, then swaps in `refined_segments`
+/// by key — target latency to first text: 3-5s.
+pub fn progressive_transcribe_file(
+    quick_model_path: String,
+    refine_model_path: String,
+    path: String,
+    language: Option<String>,
+) -> Result<ProgressiveFileResult, TranscribeError> {
+    let engine = crate::progressive::ProgressiveEngine::load(
+        std::path::Path::new(&quick_model_path),
+        std::path::Path::new(&refine_model_path),
+        false,
+        0,
+    )?;
+    let audio = crate::decode::decode_audio_file(std::path::Path::new(&path))?;
+
+    // Chunk like file.rs: 30s chunks bound peak memory.
+    const CHUNK_SECS: f64 = 30.0;
+    let chunk_samples = (crate::decode::TARGET_SAMPLE_RATE as f64 * CHUNK_SECS) as usize;
+    let mut quick_segments = Vec::new();
+    let mut refined_segments = Vec::new();
+
+    if audio.samples.len() <= chunk_samples {
+        quick_segments =
+            engine.transcribe_quick(&audio.samples, "file", 0.0, language.as_deref())?;
+        refined_segments =
+            engine.transcribe_refine(&audio.samples, "file", 0.0, language.as_deref())?;
+    } else {
+        for (idx, chunk) in audio.samples.chunks(chunk_samples).enumerate() {
+            let start = idx as f64 * CHUNK_SECS;
+            quick_segments.extend(engine.transcribe_quick(
+                chunk,
+                "file",
+                start,
+                language.as_deref(),
+            )?);
+            refined_segments.extend(engine.transcribe_refine(
+                chunk,
+                "file",
+                start,
+                language.as_deref(),
+            )?);
+        }
+    }
+
+    // Hallucination guard: collapse repeated runs in both passes.
+    crate::progressive::filter_loops(&mut quick_segments);
+    crate::progressive::filter_loops(&mut refined_segments);
+
+    Ok(ProgressiveFileResult {
+        filename: std::path::Path::new(&path)
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_default(),
+        quick_segments,
+        refined_segments,
+        language: language.unwrap_or_else(|| "auto".to_string()),
+    })
 }
 
 // --- File transcription (batch) -----------------------------------------------------

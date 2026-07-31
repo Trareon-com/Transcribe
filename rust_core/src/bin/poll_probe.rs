@@ -22,6 +22,7 @@ fn main() {
         mic_device_id: None,
         speaker_device_id: None,
         model_path: "tiny".to_string(),
+        refine_model_path: None,
         vad_enabled: false,
         sample_rate: 16_000,
         chunk_duration_secs: 30,

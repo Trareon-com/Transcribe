@@ -63,16 +63,16 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
   int? _autoStopMinutes;
   String _libraryPath = '~/Documents/TrareonTranscribe';
 
-  SessionNotifier(this._bridge, SessionMode initialMode, String initialModelPath)
-      : super(
-          SessionUiState(
-            lifecycle: SessionLifecycle.idle,
-            config: SessionConfig.forMode(
-              initialMode,
-              initialModelPath,
-            ),
-          ),
-        );
+  SessionNotifier(
+    this._bridge,
+    SessionMode initialMode,
+    String initialModelPath,
+  ) : super(
+        SessionUiState(
+          lifecycle: SessionLifecycle.idle,
+          config: SessionConfig.forMode(initialMode, initialModelPath),
+        ),
+      );
 
   void _resetAutoStopTimer() {
     _autoStopTimer?.cancel();
@@ -93,19 +93,38 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
 
   void _onTranscriptSegment(TranscriptSegment segment) {
     if (_isBlankAudio(segment)) return;
-    state = state.copyWith(segments: [...state.segments, segment]);
+    final segments = state.segments;
+    final key = segment.segmentKey;
+    final index = segments.indexWhere((s) => s.segmentKey == key);
+    if (index >= 0) {
+      // HPT: refined (final) text replaces the partial quick pass. A new
+      // partial NEVER overwrites an already-refined row — the accurate
+      // pass is authoritative.
+      if (!segment.isPartial || segments[index].isPartial) {
+        final updated = [...segments];
+        updated[index] = segment;
+        state = state.copyWith(segments: updated);
+      }
+    } else {
+      state = state.copyWith(segments: [...segments, segment]);
+    }
     _resetAutoStopTimer();
   }
 
   void _subscribeToLiveStreams(String sessionId) {
-    _transcriptSub = _bridge.transcriptStream(sessionId).listen(_onTranscriptSegment);
+    _transcriptSub = _bridge
+        .transcriptStream(sessionId)
+        .listen(_onTranscriptSegment);
     _recordingStartedAt ??= DateTime.now();
     _elapsedTimer?.cancel();
     _elapsedTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       final started = _recordingStartedAt;
       if (started != null) {
         state = state.copyWith(
-          elapsedSeconds: DateTime.now().difference(started).inSeconds.toDouble(),
+          elapsedSeconds: DateTime.now()
+              .difference(started)
+              .inSeconds
+              .toDouble(),
         );
       }
     });
@@ -133,7 +152,9 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     state = state.copyWith(config: recovered);
   }
 
-  Future<void> recoverFromSnapshot(rust_session.SessionRecoverySnapshot snapshot) async {
+  Future<void> recoverFromSnapshot(
+    rust_session.SessionRecoverySnapshot snapshot,
+  ) async {
     seedRecovery(snapshot);
     final id = await _bridge.recoverSession(snapshot);
     state = state.copyWith(
@@ -148,7 +169,9 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
   Future<void> start() async {
     // Guard against double-start: if already recording/paused, ignore.
     if (state.lifecycle == SessionLifecycle.recording ||
-        state.lifecycle == SessionLifecycle.paused) { return; }
+        state.lifecycle == SessionLifecycle.paused) {
+      return;
+    }
     // Model existence is checked by the Rust side's own resolve_model_path(),
     // which handles tilde expansion, sandbox paths, and multiple search
     // locations. The old File.existsSync() check here was unreliable because
@@ -193,7 +216,8 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
       if (outputs.isNotEmpty) {
         speakerDeviceId = outputs
             .firstWhere(
-              (d) => d.name.toLowerCase().contains('blackhole') ||
+              (d) =>
+                  d.name.toLowerCase().contains('blackhole') ||
                   d.name.toLowerCase().contains('loopback'),
               orElse: () => outputs.first,
             )
@@ -205,7 +229,8 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
         if (inputs.isNotEmpty) {
           speakerDeviceId = inputs
               .firstWhere(
-                (d) => d.name.toLowerCase().contains('blackhole') ||
+                (d) =>
+                    d.name.toLowerCase().contains('blackhole') ||
                     d.name.toLowerCase().contains('loopback'),
                 orElse: () => inputs.first,
               )
@@ -213,7 +238,10 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
         }
       }
     }
-    return config.copyWith(micDeviceId: micDeviceId, speakerDeviceId: speakerDeviceId);
+    return config.copyWith(
+      micDeviceId: micDeviceId,
+      speakerDeviceId: speakerDeviceId,
+    );
   }
 
   Future<void> stop() async {
@@ -224,7 +252,10 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     _cancelLiveStreams();
     _recordingStartedAt = null;
     await _bridge.stopSession(id);
-    state = state.copyWith(lifecycle: SessionLifecycle.stopped, elapsedSeconds: 0);
+    state = state.copyWith(
+      lifecycle: SessionLifecycle.stopped,
+      elapsedSeconds: 0,
+    );
     final segments = state.segments;
     if (segments.isNotEmpty) {
       final title = state.sessionTitle.isNotEmpty
@@ -271,7 +302,9 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
 
   Future<void> toggleSpeaker(bool enabled) async {
     final id = state.sessionId;
-    state = state.copyWith(config: state.config.copyWith(speakerEnabled: enabled));
+    state = state.copyWith(
+      config: state.config.copyWith(speakerEnabled: enabled),
+    );
     if (id != null) await _bridge.toggleSpeaker(id, enabled);
   }
 
@@ -316,7 +349,10 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
         micEnabled: mic,
         speakerEnabled: speaker,
         mode: settings.defaultMode,
-        modelPath: modelPathForId(settings.defaultModel, libraryPath: settings.libraryPath),
+        modelPath: modelPathForId(
+          settings.defaultModel,
+          libraryPath: settings.libraryPath,
+        ),
         vadEnabled: settings.vadEnabled,
       ),
     );
@@ -342,7 +378,9 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
   }
 }
 
-final sessionProvider = StateNotifierProvider<SessionNotifier, SessionUiState>((ref) {
+final sessionProvider = StateNotifierProvider<SessionNotifier, SessionUiState>((
+  ref,
+) {
   // Use ref.read (not watch) — watching would recreate the SessionNotifier on
   // every settings change, destroying the active session (transcript subs,
   // timers, segments).  ref.listen below handles updates reactively.

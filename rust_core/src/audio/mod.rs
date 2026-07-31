@@ -44,6 +44,12 @@ pub struct SessionConfig {
     pub mic_device_id: Option<String>,
     pub speaker_device_id: Option<String>,
     pub model_path: String,
+    /// Optional second model for Hybrid Progressive Transcription (HPT).
+    /// When `Some`, each source runs quick (base) → refine (q5) so text
+    /// renders in 3-5s and is then replaced in place by the accurate pass.
+    /// `None` = classic single-model live transcription.
+    #[serde(default)]
+    pub refine_model_path: Option<String>,
     pub vad_enabled: bool,
     pub sample_rate: u32,
     pub chunk_duration_secs: u32,
@@ -59,10 +65,19 @@ impl SessionConfig {
             mic_device_id: None,
             speaker_device_id: None,
             model_path,
+            refine_model_path: None,
             vad_enabled: true,
             sample_rate: 16_000,
             chunk_duration_secs: 30,
         }
+    }
+
+    /// True when HPT is configured (refine model present and distinct from
+    /// the quick model).
+    pub fn hpt_enabled(&self) -> bool {
+        self.refine_model_path
+            .as_deref()
+            .is_some_and(|p| !p.is_empty() && p != self.model_path)
     }
 }
 

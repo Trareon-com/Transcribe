@@ -123,6 +123,7 @@ fn start_capture(
     enabled: bool,
     device_name: Option<String>,
     model_path: &str,
+    refine_model_path: Option<String>,
     source: &str,
     language: Option<String>,
 ) -> Result<Option<CaptureChannel>, TranscribeError> {
@@ -144,12 +145,24 @@ fn start_capture(
         }
     };
     let (events_tx, events_rx) = mpsc::channel();
-    let worker = match LiveWorker::spawn(model_path, source, language, samples_rx, events_tx) {
-        Ok(w) => w,
-        Err(e) => {
-            tracing::warn!(source, %e, "skipping capture — pipeline init failed");
-            return Ok(None);
+    let worker = match refine_model_path {
+        Some(refine) => {
+            match LiveWorker::spawn_hpt(model_path, refine, source, language, samples_rx, events_tx)
+            {
+                Ok(w) => w,
+                Err(e) => {
+                    tracing::warn!(source, %e, "skipping capture — hpt pipeline init failed");
+                    return Ok(None);
+                }
+            }
         }
+        None => match LiveWorker::spawn(model_path, source, language, samples_rx, events_tx) {
+            Ok(w) => w,
+            Err(e) => {
+                tracing::warn!(source, %e, "skipping capture — pipeline init failed");
+                return Ok(None);
+            }
+        },
     };
     Ok(Some(CaptureChannel {
         _capture: capture,
@@ -300,10 +313,15 @@ fn start_session_with_id(id: String, config: SessionConfig) -> Result<String, Tr
     let now = std::time::Instant::now();
     let now_unix_ms = unix_ms_now()?;
     let language = crate::settings::load_settings().language;
+    let refine_model_path = config
+        .refine_model_path
+        .clone()
+        .filter(|p| !p.is_empty() && p != &config.model_path);
     let mic_capture = start_capture(
         config.mic_enabled,
         config.mic_device_id.clone(),
         &config.model_path,
+        refine_model_path.clone(),
         "mic",
         language.clone(),
     )?;
@@ -311,6 +329,7 @@ fn start_session_with_id(id: String, config: SessionConfig) -> Result<String, Tr
         config.speaker_enabled,
         config.speaker_device_id.clone(),
         &config.model_path,
+        refine_model_path,
         "spk",
         language,
     )?;

@@ -463,6 +463,31 @@ class _SegmentTile extends StatelessWidget {
                               ),
                             ),
                           ),
+                          if (segment.isPartial) ...[
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: 9,
+                                  height: 9,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 1.4,
+                                    color: colors.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  'Memperbaiki…',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: colors.textTertiary,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
                         ],
                       ),
                     ),

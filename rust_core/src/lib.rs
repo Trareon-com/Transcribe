@@ -11,6 +11,7 @@ pub mod memory;
 pub mod model;
 pub mod pipeline;
 pub mod preprocess;
+pub mod progressive;
 pub mod session;
 pub mod settings;
 pub mod singleton;

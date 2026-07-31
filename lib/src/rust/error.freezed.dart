@@ -57,7 +57,8 @@ mixin _$TranscribeError {
     required TResult Function(TranscribeError_AudioDevice value) audioDevice,
     required TResult Function(TranscribeError_AudioDecode value) audioDecode,
     required TResult Function(TranscribeError_Model value) model,
-    required TResult Function(TranscribeError_Transcription value) transcription,
+    required TResult Function(TranscribeError_Transcription value)
+    transcription,
     required TResult Function(TranscribeError_Export value) export_,
     required TResult Function(TranscribeError_Io value) io,
     required TResult Function(TranscribeError_InvalidInput value) invalidInput,
@@ -146,7 +147,8 @@ abstract class _$$TranscribeError_AudioDeviceImplCopyWith<$Res>
 
 /// @nodoc
 class __$$TranscribeError_AudioDeviceImplCopyWithImpl<$Res>
-    extends _$TranscribeErrorCopyWithImpl<$Res, _$TranscribeError_AudioDeviceImpl>
+    extends
+        _$TranscribeErrorCopyWithImpl<$Res, _$TranscribeError_AudioDeviceImpl>
     implements _$$TranscribeError_AudioDeviceImplCopyWith<$Res> {
   __$$TranscribeError_AudioDeviceImplCopyWithImpl(
     _$TranscribeError_AudioDeviceImpl _value,
@@ -259,7 +261,8 @@ class _$TranscribeError_AudioDeviceImpl extends TranscribeError_AudioDevice {
     required TResult Function(TranscribeError_AudioDevice value) audioDevice,
     required TResult Function(TranscribeError_AudioDecode value) audioDecode,
     required TResult Function(TranscribeError_Model value) model,
-    required TResult Function(TranscribeError_Transcription value) transcription,
+    required TResult Function(TranscribeError_Transcription value)
+    transcription,
     required TResult Function(TranscribeError_Export value) export_,
     required TResult Function(TranscribeError_Io value) io,
     required TResult Function(TranscribeError_InvalidInput value) invalidInput,
@@ -334,7 +337,8 @@ abstract class _$$TranscribeError_AudioDecodeImplCopyWith<$Res>
 
 /// @nodoc
 class __$$TranscribeError_AudioDecodeImplCopyWithImpl<$Res>
-    extends _$TranscribeErrorCopyWithImpl<$Res, _$TranscribeError_AudioDecodeImpl>
+    extends
+        _$TranscribeErrorCopyWithImpl<$Res, _$TranscribeError_AudioDecodeImpl>
     implements _$$TranscribeError_AudioDecodeImplCopyWith<$Res> {
   __$$TranscribeError_AudioDecodeImplCopyWithImpl(
     _$TranscribeError_AudioDecodeImpl _value,
@@ -447,7 +451,8 @@ class _$TranscribeError_AudioDecodeImpl extends TranscribeError_AudioDecode {
     required TResult Function(TranscribeError_AudioDevice value) audioDevice,
     required TResult Function(TranscribeError_AudioDecode value) audioDecode,
     required TResult Function(TranscribeError_Model value) model,
-    required TResult Function(TranscribeError_Transcription value) transcription,
+    required TResult Function(TranscribeError_Transcription value)
+    transcription,
     required TResult Function(TranscribeError_Export value) export_,
     required TResult Function(TranscribeError_Io value) io,
     required TResult Function(TranscribeError_InvalidInput value) invalidInput,
@@ -636,7 +641,8 @@ class _$TranscribeError_ModelImpl extends TranscribeError_Model {
     required TResult Function(TranscribeError_AudioDevice value) audioDevice,
     required TResult Function(TranscribeError_AudioDecode value) audioDecode,
     required TResult Function(TranscribeError_Model value) model,
-    required TResult Function(TranscribeError_Transcription value) transcription,
+    required TResult Function(TranscribeError_Transcription value)
+    transcription,
     required TResult Function(TranscribeError_Export value) export_,
     required TResult Function(TranscribeError_Io value) io,
     required TResult Function(TranscribeError_InvalidInput value) invalidInput,
@@ -737,7 +743,8 @@ class __$$TranscribeError_TranscriptionImplCopyWithImpl<$Res>
 
 /// @nodoc
 
-class _$TranscribeError_TranscriptionImpl extends TranscribeError_Transcription {
+class _$TranscribeError_TranscriptionImpl
+    extends TranscribeError_Transcription {
   const _$TranscribeError_TranscriptionImpl(this.field0) : super._();
 
   @override
@@ -827,7 +834,8 @@ class _$TranscribeError_TranscriptionImpl extends TranscribeError_Transcription 
     required TResult Function(TranscribeError_AudioDevice value) audioDevice,
     required TResult Function(TranscribeError_AudioDecode value) audioDecode,
     required TResult Function(TranscribeError_Model value) model,
-    required TResult Function(TranscribeError_Transcription value) transcription,
+    required TResult Function(TranscribeError_Transcription value)
+    transcription,
     required TResult Function(TranscribeError_Export value) export_,
     required TResult Function(TranscribeError_Io value) io,
     required TResult Function(TranscribeError_InvalidInput value) invalidInput,
@@ -1018,7 +1026,8 @@ class _$TranscribeError_ExportImpl extends TranscribeError_Export {
     required TResult Function(TranscribeError_AudioDevice value) audioDevice,
     required TResult Function(TranscribeError_AudioDecode value) audioDecode,
     required TResult Function(TranscribeError_Model value) model,
-    required TResult Function(TranscribeError_Transcription value) transcription,
+    required TResult Function(TranscribeError_Transcription value)
+    transcription,
     required TResult Function(TranscribeError_Export value) export_,
     required TResult Function(TranscribeError_Io value) io,
     required TResult Function(TranscribeError_InvalidInput value) invalidInput,
@@ -1206,7 +1215,8 @@ class _$TranscribeError_IoImpl extends TranscribeError_Io {
     required TResult Function(TranscribeError_AudioDevice value) audioDevice,
     required TResult Function(TranscribeError_AudioDecode value) audioDecode,
     required TResult Function(TranscribeError_Model value) model,
-    required TResult Function(TranscribeError_Transcription value) transcription,
+    required TResult Function(TranscribeError_Transcription value)
+    transcription,
     required TResult Function(TranscribeError_Export value) export_,
     required TResult Function(TranscribeError_Io value) io,
     required TResult Function(TranscribeError_InvalidInput value) invalidInput,
@@ -1334,7 +1344,9 @@ class _$TranscribeError_InvalidInputImpl extends TranscribeError_InvalidInput {
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   @pragma('vm:prefer-inline')
-  _$$TranscribeError_InvalidInputImplCopyWith<_$TranscribeError_InvalidInputImpl>
+  _$$TranscribeError_InvalidInputImplCopyWith<
+    _$TranscribeError_InvalidInputImpl
+  >
   get copyWith =>
       __$$TranscribeError_InvalidInputImplCopyWithImpl<
         _$TranscribeError_InvalidInputImpl
@@ -1395,7 +1407,8 @@ class _$TranscribeError_InvalidInputImpl extends TranscribeError_InvalidInput {
     required TResult Function(TranscribeError_AudioDevice value) audioDevice,
     required TResult Function(TranscribeError_AudioDecode value) audioDecode,
     required TResult Function(TranscribeError_Model value) model,
-    required TResult Function(TranscribeError_Transcription value) transcription,
+    required TResult Function(TranscribeError_Transcription value)
+    transcription,
     required TResult Function(TranscribeError_Export value) export_,
     required TResult Function(TranscribeError_Io value) io,
     required TResult Function(TranscribeError_InvalidInput value) invalidInput,
@@ -1452,7 +1465,9 @@ abstract class TranscribeError_InvalidInput extends TranscribeError {
   /// with the given fields replaced by the non-null parameter values.
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
-  _$$TranscribeError_InvalidInputImplCopyWith<_$TranscribeError_InvalidInputImpl>
+  _$$TranscribeError_InvalidInputImplCopyWith<
+    _$TranscribeError_InvalidInputImpl
+  >
   get copyWith => throw _privateConstructorUsedError;
 }
 
@@ -1471,7 +1486,10 @@ abstract class _$$TranscribeError_SessionNotFoundImplCopyWith<$Res>
 /// @nodoc
 class __$$TranscribeError_SessionNotFoundImplCopyWithImpl<$Res>
     extends
-        _$TranscribeErrorCopyWithImpl<$Res, _$TranscribeError_SessionNotFoundImpl>
+        _$TranscribeErrorCopyWithImpl<
+          $Res,
+          _$TranscribeError_SessionNotFoundImpl
+        >
     implements _$$TranscribeError_SessionNotFoundImplCopyWith<$Res> {
   __$$TranscribeError_SessionNotFoundImplCopyWithImpl(
     _$TranscribeError_SessionNotFoundImpl _value,
@@ -1587,7 +1605,8 @@ class _$TranscribeError_SessionNotFoundImpl
     required TResult Function(TranscribeError_AudioDevice value) audioDevice,
     required TResult Function(TranscribeError_AudioDecode value) audioDecode,
     required TResult Function(TranscribeError_Model value) model,
-    required TResult Function(TranscribeError_Transcription value) transcription,
+    required TResult Function(TranscribeError_Transcription value)
+    transcription,
     required TResult Function(TranscribeError_Export value) export_,
     required TResult Function(TranscribeError_Io value) io,
     required TResult Function(TranscribeError_InvalidInput value) invalidInput,

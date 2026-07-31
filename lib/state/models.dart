@@ -76,7 +76,8 @@ bool isModelAvailable(String modelId, {String? libraryPath}) {
     if (libraryPath != null && libraryPath.isNotEmpty)
       '${libraryPath.startsWith('~/') && home != null ? '$home${libraryPath.substring(1)}' : libraryPath}/$fileName',
     if (home != null) '$home/Library/Caches/TrareonTranscribe/models/$fileName',
-    if (localAppData != null) '$localAppData\\TrareonTranscribe\\models\\$fileName',
+    if (localAppData != null)
+      '$localAppData\\TrareonTranscribe\\models\\$fileName',
     _bundledResourcesPath(fileName),
     ..._devTreePaths(fileName),
   ];
@@ -108,18 +109,18 @@ List<String> _devTreePaths(String fileName) {
 
 extension SessionModeDefaults on SessionMode {
   (bool mic, bool speaker) get defaultToggles => switch (this) {
-        SessionMode.webinar => (false, true),
-        SessionMode.online => (true, true),
-        SessionMode.offline => (true, false),
-      };
+    SessionMode.webinar => (false, true),
+    SessionMode.online => (true, true),
+    SessionMode.offline => (true, false),
+  };
 
   bool get echoDedupeEnabled => this == SessionMode.online;
 
   String get label => switch (this) {
-        SessionMode.webinar => 'Webinar',
-        SessionMode.online => 'Rapat Online',
-        SessionMode.offline => 'Rapat Offline',
-      };
+    SessionMode.webinar => 'Webinar',
+    SessionMode.online => 'Rapat Online',
+    SessionMode.offline => 'Rapat Offline',
+  };
 }
 
 class SessionConfig {
@@ -204,6 +205,11 @@ class TranscriptSegment {
       isPartial: isPartial,
     );
   }
+
+  /// HPT merge key: same (source, timestamp) in the quick pass and the
+  /// refined pass refers to the SAME utterance — Dart replaces text in
+  /// place instead of appending a duplicate row.
+  String get segmentKey => '$source@${timestamp.toStringAsFixed(2)}';
 }
 
 class VuLevel {
@@ -242,12 +248,12 @@ class AppSettings {
   });
 
   factory AppSettings.defaults() => const AppSettings(
-        theme: AppThemeMode.light,
-        defaultModel: 'tiny',
-        defaultMode: SessionMode.online,
-        libraryPath: '~/Documents/TrareonTranscribe',
-        vadEnabled: true,
-      );
+    theme: AppThemeMode.light,
+    defaultModel: 'tiny',
+    defaultMode: SessionMode.online,
+    libraryPath: '~/Documents/TrareonTranscribe',
+    vadEnabled: true,
+  );
 
   AppSettings copyWith({
     AppThemeMode? theme,
@@ -264,10 +270,16 @@ class AppSettings {
       libraryPath: libraryPath,
       vadEnabled: vadEnabled,
       language: language,
-      autoStopMinutes: clearAutoStop ? null : (autoStopMinutes ?? this.autoStopMinutes),
+      autoStopMinutes: clearAutoStop
+          ? null
+          : (autoStopMinutes ?? this.autoStopMinutes),
       defaultExportFormat: defaultExportFormat,
-      micDeviceId: micDeviceId == _sentinel ? this.micDeviceId : micDeviceId as String?,
-      speakerDeviceId: speakerDeviceId == _sentinel ? this.speakerDeviceId : speakerDeviceId as String?,
+      micDeviceId: micDeviceId == _sentinel
+          ? this.micDeviceId
+          : micDeviceId as String?,
+      speakerDeviceId: speakerDeviceId == _sentinel
+          ? this.speakerDeviceId
+          : speakerDeviceId as String?,
     );
   }
 }

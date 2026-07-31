@@ -15,6 +15,8 @@ import 'session.dart';
 import 'settings.dart';
 import 'stt/file.dart';
 
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `fmt`
+
 /// Installs a `tracing` subscriber writing to stderr. Without this,
 /// every `tracing::error!`/`warn!` call in the engine (session/pipeline
 /// failures, capture errors, etc.) is silently dropped — there is no
@@ -112,6 +114,22 @@ Future<List<ExportedFile>> exportSession({
 Future<AudioBuffer> decodeAudioFile({required String path}) =>
     RustLib.instance.api.crateApiDecodeAudioFile(path: path);
 
+/// HPT file transcription: quick pass (base) then refine pass
+/// (large-v3-turbo-q5) over the same decoded audio. UI shows
+/// `quick_segments` immediately, then swaps in `refined_segments`
+/// by key — target latency to first text: 3-5s.
+Future<ProgressiveFileResult> progressiveTranscribeFile({
+  required String quickModelPath,
+  required String refineModelPath,
+  required String path,
+  String? language,
+}) => RustLib.instance.api.crateApiProgressiveTranscribeFile(
+  quickModelPath: quickModelPath,
+  refineModelPath: refineModelPath,
+  path: path,
+  language: language,
+);
+
 Future<List<TranscribeFileResult>> transcribeFilesBatch({
   required String modelPath,
   required List<String> files,
@@ -136,3 +154,38 @@ Future<void> acquireInstanceLock() =>
 
 Future<void> releaseInstanceLock() =>
     RustLib.instance.api.crateApiReleaseInstanceLock();
+
+/// Result of an HPT (dual-model) file transcription: the quick pass from
+/// `base` (`is_partial = true`) and the refined pass from
+/// `large-v3-turbo-q5` (`is_partial = false`). Same segment order, same
+/// `(source, timestamp)` keys — Dart replaces text by key.
+class ProgressiveFileResult {
+  final String filename;
+  final List<Segment> quickSegments;
+  final List<Segment> refinedSegments;
+  final String language;
+
+  const ProgressiveFileResult({
+    required this.filename,
+    required this.quickSegments,
+    required this.refinedSegments,
+    required this.language,
+  });
+
+  @override
+  int get hashCode =>
+      filename.hashCode ^
+      quickSegments.hashCode ^
+      refinedSegments.hashCode ^
+      language.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is ProgressiveFileResult &&
+          runtimeType == other.runtimeType &&
+          filename == other.filename &&
+          quickSegments == other.quickSegments &&
+          refinedSegments == other.refinedSegments &&
+          language == other.language;
+}
