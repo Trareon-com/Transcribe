@@ -42,8 +42,8 @@
 
 ## Batch 4: Model & Accuracy
 
-- [ ] **2-Model Bundle Default** — belum di assets.
-- [x]**Hallucination Filter** — ✓ `progressive.rs:filter_loops`.
++ - [x]**2-Model Bundle Default** — ✓ `KNOWN_MODELS` base+q5 `is_bundled=true`, test `default_bundle_includes_base_and_q5`.
++ - [x]**Hallucination Filter** — ✓ `progressive.rs:filter_loops`.
 - [ ] **Per-segment ID/EN detection** — desain ada (`stt/mod.rs:73`), belum implement.
 - [x]**Model ID Sync Check** — ✓ `model.rs` ↔ `models.dart` model ID sync.
 

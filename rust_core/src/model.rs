@@ -371,6 +371,25 @@ mod tests {
     }
 
     #[test]
+    fn default_bundle_includes_base_and_q5() {
+        let dir = std::env::temp_dir();
+        let models = list_available_models(&dir);
+        let base = models
+            .iter()
+            .find(|m| m.id == "base")
+            .expect("base catalog entry");
+        let q5 = models
+            .iter()
+            .find(|m| m.id == "large-v3-turbo-q5")
+            .expect("q5 catalog entry");
+        assert!(base.is_bundled, "base must be bundled for offline-first");
+        assert!(
+            q5.is_bundled,
+            "large-v3-turbo-q5 must be bundled for zero-download refine"
+        );
+    }
+
+    #[test]
     fn resolve_unknown_model_errors() {
         let dir = std::env::temp_dir();
         assert!(resolve_model_path(&dir, "not-a-real-model").is_err());
