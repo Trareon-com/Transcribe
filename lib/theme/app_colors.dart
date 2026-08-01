@@ -16,6 +16,7 @@ class AppColors {
 
   // Status colors
   static const Color statusActive = Color(0xFF2E7D32);
+  static const Color statusError = Color(0xFFD32F2F);
   static const Color warning = Color(0xFFFF3B30);
   static const Color recordingDot = Color(0xFFFF3B30);
 
