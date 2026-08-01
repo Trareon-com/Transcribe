@@ -40,9 +40,13 @@
 
 ## Screenshots
 
-| 🏠 Layar Utama (siap) | 🎙️ Layar Utama (merekam) | ⚙️ Pengaturan |
+| 🏠 Utama (light) | 🏠 Utama (dark) | ⚙️ Pengaturan (light) |
 |:---:|:---:|:---:|
-| <img src="assets/screenshots/main-screen.png" width="300" alt="Main screen"/> | <img src="assets/screenshots/recording-screen.png" width="300" alt="Recording"/> | <img src="assets/screenshots/settings-screen.png" width="220" alt="Settings"/> |
+| <img src="assets/screenshots/01_main_light.png" width="300" alt="Main light"/> | <img src="assets/screenshots/02_main_dark.png" width="300" alt="Main dark"/> | <img src="assets/screenshots/03_settings_light.png" width="220" alt="Settings light"/> |
+
+| 📚 Perpustakaan | ⚙️ Pengaturan (dark) |
+|:---:|:---:|
+| <img src="assets/screenshots/04_library_light.png" width="300" alt="Library"/> | <img src="assets/screenshots/05_settings_dark.png" width="220" alt="Settings dark"/> |
 
 ---
 
