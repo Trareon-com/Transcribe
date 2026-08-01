@@ -12,6 +12,7 @@ import '../src/rust/session.dart' as rust_session;
 import '../theme/app_colors.dart';
 import '../widgets/mode_selector.dart';
 import '../widgets/setup_overlay.dart';
+import '../widgets/settings_side_panel.dart';
 import '../widgets/stream_toggle.dart';
 import '../widgets/transcript_view.dart';
 import 'library_screen.dart';
@@ -29,6 +30,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   List<rust_session.SessionRecoverySnapshot> _recoverableSessions = const [];
   bool _loadingRecoveries = true;
   bool _showShortcuts = false;
+  bool _showSettingsPanel = false;
   final _titleController = TextEditingController();
 
   @override
@@ -221,9 +223,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
               return LibraryScreen(libraryPath: resolveTilde(lp));
             })),
         SingleActivator(LogicalKeyboardKey.comma, meta: true): () =>
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
+            setState(() => _showSettingsPanel = true),
         SingleActivator(LogicalKeyboardKey.comma, control: true): () =>
-            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
+            setState(() => _showSettingsPanel = true),
         SingleActivator(LogicalKeyboardKey.slash, meta: true): () =>
             setState(() => _showShortcuts = !_showShortcuts),
         SingleActivator(LogicalKeyboardKey.slash, control: true): () =>
@@ -231,10 +233,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       },
       child: Focus(
         autofocus: true,
-        child: Scaffold(
-          backgroundColor: colors.background,
-          body: Column(
-            children: [
+        child: Stack(
+          children: [
+            Scaffold(
+              backgroundColor: colors.background,
+              body: Column(
+                children: [
               // Recovery banner
               if (_loadingRecoveries)
                 const LinearProgressIndicator(minHeight: 2)
@@ -323,9 +327,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                     IconButton(
                       icon: Icon(Icons.settings_outlined, size: 18),
                       tooltip: 'Pengaturan',
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                      ),
+                      onPressed: () => setState(() => _showSettingsPanel = true),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                       color: colors.textSecondary,
@@ -395,8 +397,16 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           ),
         ),
       ),
-    );
-  }
+      if (_showSettingsPanel)
+        Positioned(
+          top: 0,
+          right: 0,
+          bottom: 0,
+          child: SettingsSidePanel(onClose: () => setState(() => _showSettingsPanel = false)),
+        ),
+    ],
+  );
+}
 }
 
 /// Footer bar: recording timer, minify to tray, diarization info
