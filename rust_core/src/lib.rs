@@ -1,5 +1,6 @@
 pub mod api;
 pub mod benchmark;
+pub mod doctor;
 pub mod error;
 mod frb_generated;
 

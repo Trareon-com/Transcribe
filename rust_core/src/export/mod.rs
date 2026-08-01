@@ -119,8 +119,7 @@ pub fn export_segments(
             };
 
             let path: PathBuf = session_dir.join(&filename);
-            let mut file = fs::File::create(&path).map_err(TranscribeError::from)?;
-            file.write_all(&content).map_err(TranscribeError::from)?;
+            atomic_write(&path, &content)?;
 
             let size_bytes = fs::metadata(&path).map_err(TranscribeError::from)?.len();
             Ok::<ExportedFile, TranscribeError>(ExportedFile {
@@ -146,7 +145,37 @@ pub fn export_segments(
         }
     }
 
+    // Trigger on_stop hook after all exports complete.
+    run_on_stop_hook(&session_dir);
+
     Ok(results)
+}
+
+/// Atomic write: write to temp file then rename. Falls back to
+/// copy+remove on cross-device rename (e.g. /tmp on a different
+/// filesystem than the target).
+fn atomic_write(path: &Path, content: &[u8]) -> Result<(), TranscribeError> {
+    let temp_path = path.with_extension("tmp");
+    fs::write(&temp_path, content).map_err(TranscribeError::from)?;
+    match fs::rename(&temp_path, path) {
+        Ok(()) => Ok(()),
+        Err(_) => {
+            fs::copy(&temp_path, path).map_err(TranscribeError::from)?;
+            let _ = fs::remove_file(&temp_path);
+            Ok(())
+        }
+    }
+}
+
+/// Execute the on_stop hook (if configured) after export completes.
+fn run_on_stop_hook(session_dir: &Path) {
+    if let Some(hook) = crate::settings::AppConfig::on_stop_hook() {
+        let _ = std::process::Command::new("sh")
+            .arg("-c")
+            .arg(format!("{} \"$0\"", hook))
+            .arg(session_dir.to_string_lossy().to_string())
+            .spawn();
+    }
 }
 
 /// Write mono f32 PCM (16kHz) as a 16-bit WAV file.

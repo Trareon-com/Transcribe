@@ -8,11 +8,37 @@
 use std::path::PathBuf;
 
 use crate::audio::{AudioDeviceInfo, SessionConfig, SessionMode};
+use crate::doctor::{run_checks, format_checks, Check};
 use crate::error::TranscribeError;
 use crate::export::{ExportFormat, ExportedFile, Segment};
 use crate::model::ModelInfo;
 use crate::session::{SessionEvent, SessionRecoverySnapshot, SessionStatus};
-use crate::settings::AppSettings;
+use crate::settings::{AppSettings, AppConfig};
+
+pub fn get_app_config() -> AppConfig {
+    AppConfig::load().unwrap_or_default()
+}
+
+pub fn run_preflight_checks() -> Vec<Check> {
+    let settings = crate::settings::load_settings();
+    run_checks(&settings)
+}
+
+pub fn format_preflight_checks(checks: Vec<Check>) -> String {
+    format_checks(&checks)
+}
+
+pub fn resume_pending_transcriptions(
+    library_path: String,
+) -> Result<Vec<String>, TranscribeError> {
+    let paths = crate::pipeline::LiveWorker::resume_pending_transcriptions(
+        std::path::Path::new(&library_path),
+    )?;
+    Ok(paths
+        .iter()
+        .map(|p| p.to_string_lossy().to_string())
+        .collect())
+}
 
 /// Installs a `tracing` subscriber writing to stderr. Without this,
 /// every `tracing::error!`/`warn!` call in the engine (session/pipeline

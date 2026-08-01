@@ -11,6 +11,8 @@
 //! happens one level up, in `session::SessionState::collect_worker_events`,
 //! once both channels' segments have actually converged.
 
+use std::path::{Path, PathBuf};
+
 use crate::audio::{HptMode, RingBuffer};
 use crate::diarization::Diarizer;
 use crate::error::{TranscribeError, TranscribeResult};
@@ -41,6 +43,20 @@ pub struct LiveWorker {
 }
 
 impl LiveWorker {
+    pub fn resume_pending_transcriptions(
+        library_path: &Path,
+    ) -> Result<Vec<PathBuf>, TranscribeError> {
+        let mut pending = Vec::new();
+        let sessions = crate::session::list_recoverable_sessions()?;
+        for s in sessions {
+            let session_dir = library_path.join(&s.session_id);
+            if !session_dir.join("transcript.json").exists() {
+                pending.push(session_dir);
+            }
+        }
+        Ok(pending)
+    }
+
     pub fn spawn(
         model_path: impl AsRef<std::path::Path>,
         source: impl Into<String>,

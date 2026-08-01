@@ -139,3 +139,72 @@ mod tests {
         let _ = std::fs::remove_dir_all(&dir);
     }
 }
+
+// ── Quill-inspired config: CLI flag > config.json > default ──
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct AppConfig {
+    pub recordings_dir: Option<String>,
+    pub on_stop: Option<String>,
+    pub transcription_enabled: Option<bool>,
+    pub doctor_check_on_start: Option<bool>,
+}
+
+impl AppConfig {
+    pub fn config_path() -> Result<PathBuf, TranscribeError> {
+        let dir = dirs::config_dir()
+            .ok_or_else(|| TranscribeError::InvalidInput("no config directory".into()))?;
+        Ok(dir.join("TrareonTranscribe").join("config.json"))
+    }
+
+    pub fn load() -> Option<Self> {
+        let path = Self::config_path().ok()?;
+        let content = fs::read_to_string(&path).ok()?;
+        serde_json::from_str(&content).ok()
+    }
+
+    pub fn resolve_recordings_dir(cli_override: Option<&str>) -> PathBuf {
+        if let Some(dir) = cli_override {
+            return PathBuf::from(dir);
+        }
+        if let Some(cfg) = Self::load() {
+            if let Some(dir) = cfg.recordings_dir {
+                return PathBuf::from(dir);
+            }
+        }
+        PathBuf::from(default_library_path())
+    }
+
+    pub fn on_stop_hook() -> Option<String> {
+        Self::load()?.on_stop
+    }
+
+    pub fn transcription_enabled() -> bool {
+        Self::load()
+            .and_then(|c| c.transcription_enabled)
+            .unwrap_or(true)
+    }
+
+    pub fn doctor_check_on_start() -> bool {
+        Self::load()
+            .and_then(|c| c.doctor_check_on_start)
+            .unwrap_or(true)
+    }
+}
+
+#[cfg(test)]
+mod config_tests {
+    use super::*;
+
+    #[test]
+    fn resolve_recordings_dir_cli_overrides_all() {
+        let resolved = AppConfig::resolve_recordings_dir(Some("/from/cli"));
+        assert_eq!(resolved.to_string_lossy(), "/from/cli");
+    }
+
+    #[test]
+    fn resolve_recordings_dir_returns_default_when_no_cli_and_no_config() {
+        let resolved = AppConfig::resolve_recordings_dir(None);
+        assert!(!resolved.to_string_lossy().is_empty());
+    }
+}
