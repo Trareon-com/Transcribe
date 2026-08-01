@@ -10,13 +10,10 @@ import '../state/session_model.dart';
 import '../state/settings_model.dart';
 import '../src/rust/session.dart' as rust_session;
 import '../theme/app_colors.dart';
-import '../widgets/mode_selector.dart';
 import '../widgets/setup_overlay.dart';
 import '../widgets/settings_side_panel.dart' hide isModelAvailable;
-import '../widgets/stream_toggle.dart';
 import '../widgets/transcript_view.dart';
 import 'library_screen.dart';
-import 'settings_screen.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
@@ -566,13 +563,25 @@ class _ControlBar extends StatelessWidget {
           // VU meters (mic + speaker)
           Row(
             children: [
-              Icon(Icons.mic, size: 16, color: colors.textSecondary),
-              const SizedBox(width: 6),
-              _VuBar(level: vuMikrofonLevel, color: AppColors.statusActive),
+              Row(
+                children: [
+                  Icon(Icons.mic, size: 16, color: colors.textSecondary),
+                  const SizedBox(width: 4),
+                  Text('Mikrofon', style: TextStyle(color: colors.textSecondary, fontSize: 12)),
+                  const SizedBox(width: 6),
+                  _VuBar(level: vuMikrofonLevel, color: AppColors.statusActive),
+                ],
+              ),
               const SizedBox(width: 12),
-              Icon(Icons.graphic_eq, size: 16, color: colors.textSecondary),
-              const SizedBox(width: 6),
-              _VuBar(level: vuSpeakerLevel, color: Colors.blue),
+              Row(
+                children: [
+                  Icon(Icons.graphic_eq, size: 16, color: colors.textSecondary),
+                  const SizedBox(width: 4),
+                  Text('Pengeras Suara', style: TextStyle(color: colors.textSecondary, fontSize: 12)),
+                  const SizedBox(width: 6),
+                  _VuBar(level: vuSpeakerLevel, color: Colors.blue),
+                ],
+              ),
             ],
           ),
 
@@ -608,7 +617,61 @@ class _ControlBar extends StatelessWidget {
   }
 }
 
-/class _ShortcutRow extends StatelessWidget {
+class _ShortcutsPanel extends StatelessWidget {
+  final VoidCallback onClose;
+
+  const _ShortcutsPanel({required this.onClose});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(top: BorderSide(color: colors.divider)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.1),
+            blurRadius: 8,
+            offset: const Offset(0, -2),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Pintasan keyboard',
+                style: TextStyle(
+                  color: colors.text,
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.close, size: 18),
+                onPressed: onClose,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          const _ShortcutRow(label: 'Mulai / Berhenti merekam', shortcut: 'Cmd+R'),
+          const _ShortcutRow(label: 'Jeda / Lanjutkan', shortcut: 'Cmd+P'),
+          const _ShortcutRow(label: 'Buka Perpustakaan', shortcut: 'Cmd+L'),
+          const _ShortcutRow(label: 'Buka Pengaturan', shortcut: 'Cmd+,'),
+          const _ShortcutRow(label: 'Tampilkan panel pintasan', shortcut: 'Cmd+/'),
+        ],
+      ),
+    );
+  }
+}
+
+class _ShortcutRow extends StatelessWidget {
   final String label;
   final String shortcut;
 

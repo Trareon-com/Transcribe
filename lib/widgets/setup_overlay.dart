@@ -2,9 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../src/rust/api.dart' as rust_api;
 
+/// A flag to skip preflight checks during tests.
+/// Set to true before running tests, or use SetupOverlay.test() constructor.
+bool skipPreflightChecks = false;
+
 class SetupOverlay extends ConsumerStatefulWidget {
   final Widget child;
+
   const SetupOverlay({super.key, required this.child});
+
+  /// Creates a SetupOverlay that skips preflight checks.
+  /// Use this in tests to avoid hanging on preflight checks.
+  const SetupOverlay.test({super.key, required this.child});
 
   @override
   ConsumerState<SetupOverlay> createState() => _SetupOverlayState();
@@ -17,7 +26,11 @@ class _SetupOverlayState extends ConsumerState<SetupOverlay> {
   @override
   void initState() {
     super.initState();
-    _runPreflight();
+    if (!skipPreflightChecks) {
+      _runPreflight();
+    } else {
+      _loading = false;
+    }
   }
 
   Future<void> _runPreflight() async {
