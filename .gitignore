@@ -39,3 +39,9 @@ rust_core/transkrip/
 
 # OS
 Thumbs.db
+AppDir
+
+# Build artifacts (ship via GitHub Releases, not repo)
+dist/
+transcribe.AppImage
+transcribe-linux-portable.zip
