@@ -9,6 +9,7 @@ import 'audio/device.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'decode.dart';
+import 'doctor.dart';
 import 'error.dart';
 import 'export.dart';
 import 'frb_generated.dart';
@@ -73,7 +74,7 @@ class RustLib extends BaseEntrypoint<RustLibApi, RustLibApiImpl, RustLibWire> {
   String get codegenVersion => '2.12.0';
 
   @override
-  int get rustContentHash => 320330777;
+  int get rustContentHash => -1823263644;
 
   static const kDefaultExternalLibraryLoaderConfig =
       ExternalLibraryLoaderConfig(
@@ -105,19 +106,17 @@ abstract class RustLibApi extends BaseApi {
     required String title,
   });
 
+  Future<String> crateApiFormatPreflightChecks({required List<Check> checks});
+
+  Future<AppConfig> crateApiGetAppConfig();
+
   Future<(BigInt, BigInt)?> crateApiGetDownloadProgress();
 
   Future<AudioDeviceInfo> crateApiGetLoopbackDevice({required String nameHint});
 
-  Future<AudioDeviceInfo> crateAudioDeviceGetLoopbackDevice({
-    required String nameHint,
-  });
-
   Future<SessionStatus> crateApiGetSessionStatus({required String sessionId});
 
   Future<bool> crateApiHealthCheck();
-
-  Future<HptMode> crateAudioHptModeDefault();
 
   Future<void> crateApiInitLogging();
 
@@ -133,10 +132,6 @@ abstract class RustLibApi extends BaseApi {
   Future<List<ModelInfo>> crateApiListAvailableModels({
     required String modelsDir,
   });
-
-  Future<List<AudioDeviceInfo>> crateAudioDeviceListInputDevices();
-
-  Future<List<AudioDeviceInfo>> crateAudioDeviceListOutputDevices();
 
   Future<List<SessionRecoverySnapshot>> crateApiListRecoverableSessions();
 
@@ -159,22 +154,13 @@ abstract class RustLibApi extends BaseApi {
 
   Future<void> crateApiReleaseInstanceLock();
 
+  Future<List<String>> crateApiResumePendingTranscriptions({
+    required String libraryPath,
+  });
+
+  Future<List<Check>> crateApiRunPreflightChecks();
+
   Future<void> crateApiSaveSettings({required AppSettings settings});
-
-  Future<SessionConfig> crateAudioSessionConfigForMode({
-    required SessionMode mode,
-    required String modelPath,
-  });
-
-  Future<bool> crateAudioSessionConfigHptEnabled({required SessionConfig that});
-
-  Future<(bool, bool)> crateAudioSessionModeDefaultToggles({
-    required SessionMode that,
-  });
-
-  Future<bool> crateAudioSessionModeEchoDedupeEnabled({
-    required SessionMode that,
-  });
 
   Future<void> crateApiSetSessionMode({
     required String sessionId,
@@ -393,6 +379,64 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   );
 
   @override
+  Future<String> crateApiFormatPreflightChecks({required List<Check> checks}) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_list_check(checks, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 7,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_String,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiFormatPreflightChecksConstMeta,
+        argValues: [checks],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiFormatPreflightChecksConstMeta =>
+      const TaskConstMeta(
+        debugName: "format_preflight_checks",
+        argNames: ["checks"],
+      );
+
+  @override
+  Future<AppConfig> crateApiGetAppConfig() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 8,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_app_config,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiGetAppConfigConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiGetAppConfigConstMeta =>
+      const TaskConstMeta(debugName: "get_app_config", argNames: []);
+
+  @override
   Future<(BigInt, BigInt)?> crateApiGetDownloadProgress() {
     return handler.executeNormal(
       NormalTask(
@@ -401,7 +445,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 7,
+            funcId: 9,
             port: port_,
           );
         },
@@ -431,7 +475,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 8,
+            funcId: 10,
             port: port_,
           );
         },
@@ -452,39 +496,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   );
 
   @override
-  Future<AudioDeviceInfo> crateAudioDeviceGetLoopbackDevice({
-    required String nameHint,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_String(nameHint, serializer);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 9,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_audio_device_info,
-          decodeErrorData: sse_decode_transcribe_error,
-        ),
-        constMeta: kCrateAudioDeviceGetLoopbackDeviceConstMeta,
-        argValues: [nameHint],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateAudioDeviceGetLoopbackDeviceConstMeta =>
-      const TaskConstMeta(
-        debugName: "get_loopback_device",
-        argNames: ["nameHint"],
-      );
-
-  @override
   Future<SessionStatus> crateApiGetSessionStatus({required String sessionId}) {
     return handler.executeNormal(
       NormalTask(
@@ -494,7 +505,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 10,
+            funcId: 11,
             port: port_,
           );
         },
@@ -523,7 +534,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 11,
+            funcId: 12,
             port: port_,
           );
         },
@@ -540,33 +551,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   TaskConstMeta get kCrateApiHealthCheckConstMeta =>
       const TaskConstMeta(debugName: "health_check", argNames: []);
-
-  @override
-  Future<HptMode> crateAudioHptModeDefault() {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 12,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_hpt_mode,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateAudioHptModeDefaultConstMeta,
-        argValues: [],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateAudioHptModeDefaultConstMeta =>
-      const TaskConstMeta(debugName: "hpt_mode_default", argNames: []);
 
   @override
   Future<void> crateApiInitLogging() {
@@ -720,60 +704,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       );
 
   @override
-  Future<List<AudioDeviceInfo>> crateAudioDeviceListInputDevices() {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 18,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_list_audio_device_info,
-          decodeErrorData: sse_decode_transcribe_error,
-        ),
-        constMeta: kCrateAudioDeviceListInputDevicesConstMeta,
-        argValues: [],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateAudioDeviceListInputDevicesConstMeta =>
-      const TaskConstMeta(debugName: "list_input_devices", argNames: []);
-
-  @override
-  Future<List<AudioDeviceInfo>> crateAudioDeviceListOutputDevices() {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 19,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_list_audio_device_info,
-          decodeErrorData: sse_decode_transcribe_error,
-        ),
-        constMeta: kCrateAudioDeviceListOutputDevicesConstMeta,
-        argValues: [],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateAudioDeviceListOutputDevicesConstMeta =>
-      const TaskConstMeta(debugName: "list_output_devices", argNames: []);
-
-  @override
   Future<List<SessionRecoverySnapshot>> crateApiListRecoverableSessions() {
     return handler.executeNormal(
       NormalTask(
@@ -782,7 +712,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 20,
+            funcId: 18,
             port: port_,
           );
         },
@@ -809,7 +739,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 21,
+            funcId: 19,
             port: port_,
           );
         },
@@ -839,7 +769,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 22,
+            funcId: 20,
             port: port_,
           );
         },
@@ -877,7 +807,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 23,
+            funcId: 21,
             port: port_,
           );
         },
@@ -913,7 +843,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 24,
+            funcId: 22,
             port: port_,
           );
         },
@@ -940,7 +870,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 25,
+            funcId: 23,
             port: port_,
           );
         },
@@ -957,6 +887,66 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
 
   TaskConstMeta get kCrateApiReleaseInstanceLockConstMeta =>
       const TaskConstMeta(debugName: "release_instance_lock", argNames: []);
+
+  @override
+  Future<List<String>> crateApiResumePendingTranscriptions({
+    required String libraryPath,
+  }) {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          sse_encode_String(libraryPath, serializer);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 24,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_String,
+          decodeErrorData: sse_decode_transcribe_error,
+        ),
+        constMeta: kCrateApiResumePendingTranscriptionsConstMeta,
+        argValues: [libraryPath],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiResumePendingTranscriptionsConstMeta =>
+      const TaskConstMeta(
+        debugName: "resume_pending_transcriptions",
+        argNames: ["libraryPath"],
+      );
+
+  @override
+  Future<List<Check>> crateApiRunPreflightChecks() {
+    return handler.executeNormal(
+      NormalTask(
+        callFfi: (port_) {
+          final serializer = SseSerializer(generalizedFrbRustBinding);
+          pdeCallFfi(
+            generalizedFrbRustBinding,
+            serializer,
+            funcId: 25,
+            port: port_,
+          );
+        },
+        codec: SseCodec(
+          decodeSuccessData: sse_decode_list_check,
+          decodeErrorData: null,
+        ),
+        constMeta: kCrateApiRunPreflightChecksConstMeta,
+        argValues: [],
+        apiImpl: this,
+      ),
+    );
+  }
+
+  TaskConstMeta get kCrateApiRunPreflightChecksConstMeta =>
+      const TaskConstMeta(debugName: "run_preflight_checks", argNames: []);
 
   @override
   Future<void> crateApiSaveSettings({required AppSettings settings}) {
@@ -987,140 +977,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       const TaskConstMeta(debugName: "save_settings", argNames: ["settings"]);
 
   @override
-  Future<SessionConfig> crateAudioSessionConfigForMode({
-    required SessionMode mode,
-    required String modelPath,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_session_mode(mode, serializer);
-          sse_encode_String(modelPath, serializer);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 27,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_session_config,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateAudioSessionConfigForModeConstMeta,
-        argValues: [mode, modelPath],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateAudioSessionConfigForModeConstMeta =>
-      const TaskConstMeta(
-        debugName: "session_config_for_mode",
-        argNames: ["mode", "modelPath"],
-      );
-
-  @override
-  Future<bool> crateAudioSessionConfigHptEnabled({
-    required SessionConfig that,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_box_autoadd_session_config(that, serializer);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 28,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_bool,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateAudioSessionConfigHptEnabledConstMeta,
-        argValues: [that],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateAudioSessionConfigHptEnabledConstMeta =>
-      const TaskConstMeta(
-        debugName: "session_config_hpt_enabled",
-        argNames: ["that"],
-      );
-
-  @override
-  Future<(bool, bool)> crateAudioSessionModeDefaultToggles({
-    required SessionMode that,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_session_mode(that, serializer);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 29,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_record_bool_bool,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateAudioSessionModeDefaultTogglesConstMeta,
-        argValues: [that],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateAudioSessionModeDefaultTogglesConstMeta =>
-      const TaskConstMeta(
-        debugName: "session_mode_default_toggles",
-        argNames: ["that"],
-      );
-
-  @override
-  Future<bool> crateAudioSessionModeEchoDedupeEnabled({
-    required SessionMode that,
-  }) {
-    return handler.executeNormal(
-      NormalTask(
-        callFfi: (port_) {
-          final serializer = SseSerializer(generalizedFrbRustBinding);
-          sse_encode_session_mode(that, serializer);
-          pdeCallFfi(
-            generalizedFrbRustBinding,
-            serializer,
-            funcId: 30,
-            port: port_,
-          );
-        },
-        codec: SseCodec(
-          decodeSuccessData: sse_decode_bool,
-          decodeErrorData: null,
-        ),
-        constMeta: kCrateAudioSessionModeEchoDedupeEnabledConstMeta,
-        argValues: [that],
-        apiImpl: this,
-      ),
-    );
-  }
-
-  TaskConstMeta get kCrateAudioSessionModeEchoDedupeEnabledConstMeta =>
-      const TaskConstMeta(
-        debugName: "session_mode_echo_dedupe_enabled",
-        argNames: ["that"],
-      );
-
-  @override
   Future<void> crateApiSetSessionMode({
     required String sessionId,
     required SessionMode mode,
@@ -1134,7 +990,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 31,
+            funcId: 27,
             port: port_,
           );
         },
@@ -1164,7 +1020,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 32,
+            funcId: 28,
             port: port_,
           );
         },
@@ -1192,7 +1048,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 33,
+            funcId: 29,
             port: port_,
           );
         },
@@ -1224,7 +1080,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 34,
+            funcId: 30,
             port: port_,
           );
         },
@@ -1258,7 +1114,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 35,
+            funcId: 31,
             port: port_,
           );
         },
@@ -1294,7 +1150,7 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
           pdeCallFfi(
             generalizedFrbRustBinding,
             serializer,
-            funcId: 36,
+            funcId: 32,
             port: port_,
           );
         },
@@ -1319,6 +1175,20 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   String dco_decode_String(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as String;
+  }
+
+  @protected
+  AppConfig dco_decode_app_config(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 4)
+      throw Exception('unexpected arr length: expect 4 but see ${arr.length}');
+    return AppConfig(
+      recordingsDir: dco_decode_opt_String(arr[0]),
+      onStop: dco_decode_opt_String(arr[1]),
+      transcriptionEnabled: dco_decode_opt_box_autoadd_bool(arr[2]),
+      doctorCheckOnStart: dco_decode_opt_box_autoadd_bool(arr[3]),
+    );
   }
 
   @protected
@@ -1382,6 +1252,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  bool dco_decode_box_autoadd_bool(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw as bool;
+  }
+
+  @protected
   (BigInt, BigInt) dco_decode_box_autoadd_record_u_64_u_64(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw as (BigInt, BigInt);
@@ -1405,6 +1281,34 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return dco_decode_session_recovery_snapshot(raw);
+  }
+
+  @protected
+  Check dco_decode_check(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    final arr = raw as List<dynamic>;
+    if (arr.length != 3)
+      throw Exception('unexpected arr length: expect 3 but see ${arr.length}');
+    return Check(
+      name: dco_decode_String(arr[0]),
+      status: dco_decode_check_status(arr[1]),
+      remediation: dco_decode_opt_String(arr[2]),
+    );
+  }
+
+  @protected
+  CheckStatus dco_decode_check_status(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    switch (raw[0]) {
+      case 0:
+        return CheckStatus_Ok();
+      case 1:
+        return CheckStatus_Warn(dco_decode_String(raw[1]));
+      case 2:
+        return CheckStatus_Fail(dco_decode_String(raw[1]));
+      default:
+        throw Exception("unreachable");
+    }
   }
 
   @protected
@@ -1460,6 +1364,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   List<AudioDeviceInfo> dco_decode_list_audio_device_info(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return (raw as List<dynamic>).map(dco_decode_audio_device_info).toList();
+  }
+
+  @protected
+  List<Check> dco_decode_list_check(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return (raw as List<dynamic>).map(dco_decode_check).toList();
   }
 
   @protected
@@ -1554,6 +1464,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  bool? dco_decode_opt_box_autoadd_bool(dynamic raw) {
+    // Codec=Dco (DartCObject based), see doc to use other codecs
+    return raw == null ? null : dco_decode_box_autoadd_bool(raw);
+  }
+
+  @protected
   (BigInt, BigInt)? dco_decode_opt_box_autoadd_record_u_64_u_64(dynamic raw) {
     // Codec=Dco (DartCObject based), see doc to use other codecs
     return raw == null ? null : dco_decode_box_autoadd_record_u_64_u_64(raw);
@@ -1571,16 +1487,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       refinedSegments: dco_decode_list_segment(arr[2]),
       language: dco_decode_String(arr[3]),
     );
-  }
-
-  @protected
-  (bool, bool) dco_decode_record_bool_bool(dynamic raw) {
-    // Codec=Dco (DartCObject based), see doc to use other codecs
-    final arr = raw as List<dynamic>;
-    if (arr.length != 2) {
-      throw Exception('Expected 2 elements, got ${arr.length}');
-    }
-    return (dco_decode_bool(arr[0]), dco_decode_bool(arr[1]));
   }
 
   @protected
@@ -1768,6 +1674,23 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  AppConfig sse_decode_app_config(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_recordingsDir = sse_decode_opt_String(deserializer);
+    var var_onStop = sse_decode_opt_String(deserializer);
+    var var_transcriptionEnabled = sse_decode_opt_box_autoadd_bool(
+      deserializer,
+    );
+    var var_doctorCheckOnStart = sse_decode_opt_box_autoadd_bool(deserializer);
+    return AppConfig(
+      recordingsDir: var_recordingsDir,
+      onStop: var_onStop,
+      transcriptionEnabled: var_transcriptionEnabled,
+      doctorCheckOnStart: var_doctorCheckOnStart,
+    );
+  }
+
+  @protected
   AppSettings sse_decode_app_settings(SseDeserializer deserializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     var var_theme = sse_decode_theme(deserializer);
@@ -1839,6 +1762,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  bool sse_decode_box_autoadd_bool(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    return (sse_decode_bool(deserializer));
+  }
+
+  @protected
   (BigInt, BigInt) sse_decode_box_autoadd_record_u_64_u_64(
     SseDeserializer deserializer,
   ) {
@@ -1866,6 +1795,38 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     return (sse_decode_session_recovery_snapshot(deserializer));
+  }
+
+  @protected
+  Check sse_decode_check(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    var var_name = sse_decode_String(deserializer);
+    var var_status = sse_decode_check_status(deserializer);
+    var var_remediation = sse_decode_opt_String(deserializer);
+    return Check(
+      name: var_name,
+      status: var_status,
+      remediation: var_remediation,
+    );
+  }
+
+  @protected
+  CheckStatus sse_decode_check_status(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var tag_ = sse_decode_i_32(deserializer);
+    switch (tag_) {
+      case 0:
+        return CheckStatus_Ok();
+      case 1:
+        var var_field0 = sse_decode_String(deserializer);
+        return CheckStatus_Warn(var_field0);
+      case 2:
+        var var_field0 = sse_decode_String(deserializer);
+        return CheckStatus_Fail(var_field0);
+      default:
+        throw UnimplementedError('');
+    }
   }
 
   @protected
@@ -1935,6 +1896,18 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     var ans_ = <AudioDeviceInfo>[];
     for (var idx_ = 0; idx_ < len_; ++idx_) {
       ans_.add(sse_decode_audio_device_info(deserializer));
+    }
+    return ans_;
+  }
+
+  @protected
+  List<Check> sse_decode_list_check(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    var len_ = sse_decode_i_32(deserializer);
+    var ans_ = <Check>[];
+    for (var idx_ = 0; idx_ < len_; ++idx_) {
+      ans_.add(sse_decode_check(deserializer));
     }
     return ans_;
   }
@@ -2087,6 +2060,17 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    if (sse_decode_bool(deserializer)) {
+      return (sse_decode_box_autoadd_bool(deserializer));
+    } else {
+      return null;
+    }
+  }
+
+  @protected
   (BigInt, BigInt)? sse_decode_opt_box_autoadd_record_u_64_u_64(
     SseDeserializer deserializer,
   ) {
@@ -2114,14 +2098,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
       refinedSegments: var_refinedSegments,
       language: var_language,
     );
-  }
-
-  @protected
-  (bool, bool) sse_decode_record_bool_bool(SseDeserializer deserializer) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    var var_field0 = sse_decode_bool(deserializer);
-    var var_field1 = sse_decode_bool(deserializer);
-    return (var_field0, var_field1);
   }
 
   @protected
@@ -2342,6 +2318,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_app_config(AppConfig self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_opt_String(self.recordingsDir, serializer);
+    sse_encode_opt_String(self.onStop, serializer);
+    sse_encode_opt_box_autoadd_bool(self.transcriptionEnabled, serializer);
+    sse_encode_opt_box_autoadd_bool(self.doctorCheckOnStart, serializer);
+  }
+
+  @protected
   void sse_encode_app_settings(AppSettings self, SseSerializer serializer) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_theme(self.theme, serializer);
@@ -2393,6 +2378,12 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_bool(self, serializer);
+  }
+
+  @protected
   void sse_encode_box_autoadd_record_u_64_u_64(
     (BigInt, BigInt) self,
     SseSerializer serializer,
@@ -2423,6 +2414,29 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   ) {
     // Codec=Sse (Serialization based), see doc to use other codecs
     sse_encode_session_recovery_snapshot(self, serializer);
+  }
+
+  @protected
+  void sse_encode_check(Check self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_String(self.name, serializer);
+    sse_encode_check_status(self.status, serializer);
+    sse_encode_opt_String(self.remediation, serializer);
+  }
+
+  @protected
+  void sse_encode_check_status(CheckStatus self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    switch (self) {
+      case CheckStatus_Ok():
+        sse_encode_i_32(0, serializer);
+      case CheckStatus_Warn(field0: final field0):
+        sse_encode_i_32(1, serializer);
+        sse_encode_String(field0, serializer);
+      case CheckStatus_Fail(field0: final field0):
+        sse_encode_i_32(2, serializer);
+        sse_encode_String(field0, serializer);
+    }
   }
 
   @protected
@@ -2481,6 +2495,15 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_i_32(self.length, serializer);
     for (final item in self) {
       sse_encode_audio_device_info(item, serializer);
+    }
+  }
+
+  @protected
+  void sse_encode_list_check(List<Check> self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+    sse_encode_i_32(self.length, serializer);
+    for (final item in self) {
+      sse_encode_check(item, serializer);
     }
   }
 
@@ -2618,6 +2641,16 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
   }
 
   @protected
+  void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer) {
+    // Codec=Sse (Serialization based), see doc to use other codecs
+
+    sse_encode_bool(self != null, serializer);
+    if (self != null) {
+      sse_encode_box_autoadd_bool(self, serializer);
+    }
+  }
+
+  @protected
   void sse_encode_opt_box_autoadd_record_u_64_u_64(
     (BigInt, BigInt)? self,
     SseSerializer serializer,
@@ -2640,16 +2673,6 @@ class RustLibApiImpl extends RustLibApiImplPlatform implements RustLibApi {
     sse_encode_list_segment(self.quickSegments, serializer);
     sse_encode_list_segment(self.refinedSegments, serializer);
     sse_encode_String(self.language, serializer);
-  }
-
-  @protected
-  void sse_encode_record_bool_bool(
-    (bool, bool) self,
-    SseSerializer serializer,
-  ) {
-    // Codec=Sse (Serialization based), see doc to use other codecs
-    sse_encode_bool(self.$1, serializer);
-    sse_encode_bool(self.$2, serializer);
   }
 
   @protected

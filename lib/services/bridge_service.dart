@@ -372,7 +372,7 @@ class RustEngineBridge implements RustBridge {
 
   @override
   Future<List<rust_device.AudioDeviceInfo>> listOutputAudioDevices() =>
-      rust_device.listOutputDevices();
+      rust_api.listAudioDevices();
 
   /// Detects the frontmost window title on macOS by calling osascript.
   /// Gracefully returns empty string on failure or non-macOS platforms.

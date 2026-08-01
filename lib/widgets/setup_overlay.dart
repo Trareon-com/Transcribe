@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../src/rust/api.dart' as rust_api;
-import '../theme/app_colors.dart';
 
 class SetupOverlay extends ConsumerStatefulWidget {
   final Widget child;
@@ -14,7 +13,6 @@ class SetupOverlay extends ConsumerStatefulWidget {
 class _SetupOverlayState extends ConsumerState<SetupOverlay> {
   bool _loading = true;
   String _error = '';
-  List<dynamic> _checks = [];
 
   @override
   void initState() {
@@ -25,12 +23,15 @@ class _SetupOverlayState extends ConsumerState<SetupOverlay> {
   Future<void> _runPreflight() async {
     final checks = await rust_api.runPreflightChecks();
     final failed = checks.any((c) => c.status != 'Ok'); // Assume 'Ok' status
-    
+    String? error;
+    if (failed) {
+      error = await rust_api.formatPreflightChecks(checks: checks);
+    }
+
     if (mounted) {
       setState(() {
-        _checks = checks;
         _loading = false;
-        if (failed) _error = rust_api.formatPreflightChecks(checks);
+        _error = error ?? '';
       });
     }
   }

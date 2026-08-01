@@ -12,7 +12,7 @@ import '../src/rust/session.dart' as rust_session;
 import '../theme/app_colors.dart';
 import '../widgets/mode_selector.dart';
 import '../widgets/setup_overlay.dart';
-import '../widgets/settings_side_panel.dart';
+import '../widgets/settings_side_panel.dart' hide isModelAvailable;
 import '../widgets/stream_toggle.dart';
 import '../widgets/transcript_view.dart';
 import 'library_screen.dart';
@@ -39,7 +39,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     _globalHotkeys.init(
       ref.read(sessionProvider.notifier),
       () => ref.read(sessionProvider).lifecycle,
-    );
     );
     _loadRecoveries();
   }
@@ -76,8 +75,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Sesi ${snapshot.sessionId} dipulihkan.')),
     );
-    );
-  }
+    }
 
   Future<void> _handleBerhentiPressed(BuildContext context, WidgetRef ref) async {
     final segments = ref.read(sessionProvider).segments;
@@ -154,20 +152,16 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         outputDir: selectedDir,
         title: title,
       );
-    );
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Ekspor berhasil ke: $selectedDir')),
       );
-    );
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Ekspor gagal: $e')),
       );
-    );
     }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -393,24 +387,22 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 segmentsCount: session.segments.length,
                 elapsedSeconds: session.elapsedSeconds,
               ),
-            ],
-          ),
+            if (_showSettingsPanel)
+              Positioned(
+                top: 0,
+                right: 0,
+                bottom: 0,
+                child: SettingsSidePanel(onClose: () => setState(() => _showSettingsPanel = false)),
+              ),
+          ],
         ),
       ),
-      if (_showSettingsPanel)
-        Positioned(
-          top: 0,
-          right: 0,
-          bottom: 0,
-          child: SettingsSidePanel(onClose: () => setState(() => _showSettingsPanel = false)),
-        ),
-    ],
-  );
-}
-}
+    );
+    }
+    }
 
-/// Footer bar: recording timer, minify to tray, diarization info
-class _FooterBar extends StatelessWidget {
+    /// Footer bar: recording timer, minify to tray, diarization info
+    class _FooterBar extends StatelessWidget {
   final SessionLifecycle lifecycle;
   final int segmentsCount;
   final double elapsedSeconds;
@@ -482,14 +474,12 @@ class _FooterBar extends StatelessWidget {
 
           const Spacer(),
         ],
-      ),
-    );
-    );
-  }
-}
+      );
+      }
+      }
 
-/// Horizontal VU meter bar — reflects live audio level [0,1].
-class _VuBar extends StatelessWidget {
+      /// Footer bar: recording timer, minify to tray, diarization info
+      class _FooterBar extends StatelessWidget {
   final double level;
   final Color color;
   const _VuBar({required this.level, required this.color});
@@ -506,14 +496,12 @@ class _VuBar extends StatelessWidget {
         backgroundColor: colors.divider,
         color: color,
         borderRadius: BorderRadius.circular(2),
-      ),
-    );
-    );
-  }
-}
+      );
+      }
+      }
 
-/// Control bar: title, mode selector, mic/spk indicators, start/export
-class _ControlBar extends StatelessWidget {
+      /// Footer bar: recording timer, minify to tray, diarization info
+      class _FooterBar extends StatelessWidget {
   final SessionUiState session;
   final SessionNotifier notifier;
   final bool isActive;
@@ -668,14 +656,12 @@ class _ControlBar extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-    );
-  }
-}
+      );
+      }
+      }
 
-/// Keyboard shortcuts panel
-class _ShortcutsPanel extends StatelessWidget {
+      /// Footer bar: recording timer, minify to tray, diarization info
+      class _FooterBar extends StatelessWidget {
   final VoidCallback onClose;
 
   const _ShortcutsPanel({required this.onClose});
@@ -726,7 +712,6 @@ class _ShortcutsPanel extends StatelessWidget {
         ],
       ),
     );
-    );
   }
 }
 
@@ -759,7 +744,6 @@ class _ShortcutRow extends StatelessWidget {
           ),
         ],
       ),
-    );
     );
   }
 }
@@ -820,7 +804,6 @@ class _QualityToggle extends ConsumerWidget {
           ),
         ),
       ),
-    );
     );
   }
 }

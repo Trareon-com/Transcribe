@@ -7,6 +7,37 @@ import 'audio.dart';
 import 'frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
+class AppConfig {
+  final String? recordingsDir;
+  final String? onStop;
+  final bool? transcriptionEnabled;
+  final bool? doctorCheckOnStart;
+
+  const AppConfig({
+    this.recordingsDir,
+    this.onStop,
+    this.transcriptionEnabled,
+    this.doctorCheckOnStart,
+  });
+
+  @override
+  int get hashCode =>
+      recordingsDir.hashCode ^
+      onStop.hashCode ^
+      transcriptionEnabled.hashCode ^
+      doctorCheckOnStart.hashCode;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AppConfig &&
+          runtimeType == other.runtimeType &&
+          recordingsDir == other.recordingsDir &&
+          onStop == other.onStop &&
+          transcriptionEnabled == other.transcriptionEnabled &&
+          doctorCheckOnStart == other.doctorCheckOnStart;
+}
+
 class AppSettings {
   final Theme theme;
   final String defaultModel;

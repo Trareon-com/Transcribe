@@ -12,6 +12,7 @@ import 'audio/device.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'decode.dart';
+import 'doctor.dart';
 import 'error.dart';
 import 'export.dart';
 import 'frb_generated.dart';
@@ -33,6 +34,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String dco_decode_String(dynamic raw);
 
   @protected
+  AppConfig dco_decode_app_config(dynamic raw);
+
+  @protected
   AppSettings dco_decode_app_settings(dynamic raw);
 
   @protected
@@ -48,6 +52,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   AppSettings dco_decode_box_autoadd_app_settings(dynamic raw);
 
   @protected
+  bool dco_decode_box_autoadd_bool(dynamic raw);
+
+  @protected
   (BigInt, BigInt) dco_decode_box_autoadd_record_u_64_u_64(dynamic raw);
 
   @protected
@@ -60,6 +67,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   SessionRecoverySnapshot dco_decode_box_autoadd_session_recovery_snapshot(
     dynamic raw,
   );
+
+  @protected
+  Check dco_decode_check(dynamic raw);
+
+  @protected
+  CheckStatus dco_decode_check_status(dynamic raw);
 
   @protected
   ExportFormat dco_decode_export_format(dynamic raw);
@@ -84,6 +97,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   List<AudioDeviceInfo> dco_decode_list_audio_device_info(dynamic raw);
+
+  @protected
+  List<Check> dco_decode_list_check(dynamic raw);
 
   @protected
   List<ExportFormat> dco_decode_list_export_format(dynamic raw);
@@ -126,13 +142,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String? dco_decode_opt_String(dynamic raw);
 
   @protected
+  bool? dco_decode_opt_box_autoadd_bool(dynamic raw);
+
+  @protected
   (BigInt, BigInt)? dco_decode_opt_box_autoadd_record_u_64_u_64(dynamic raw);
 
   @protected
   ProgressiveFileResult dco_decode_progressive_file_result(dynamic raw);
-
-  @protected
-  (bool, bool) dco_decode_record_bool_bool(dynamic raw);
 
   @protected
   (BigInt, BigInt) dco_decode_record_u_64_u_64(dynamic raw);
@@ -183,6 +199,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
+  AppConfig sse_decode_app_config(SseDeserializer deserializer);
+
+  @protected
   AppSettings sse_decode_app_settings(SseDeserializer deserializer);
 
   @protected
@@ -196,6 +215,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   AppSettings sse_decode_box_autoadd_app_settings(SseDeserializer deserializer);
+
+  @protected
+  bool sse_decode_box_autoadd_bool(SseDeserializer deserializer);
 
   @protected
   (BigInt, BigInt) sse_decode_box_autoadd_record_u_64_u_64(
@@ -214,6 +236,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   SessionRecoverySnapshot sse_decode_box_autoadd_session_recovery_snapshot(
     SseDeserializer deserializer,
   );
+
+  @protected
+  Check sse_decode_check(SseDeserializer deserializer);
+
+  @protected
+  CheckStatus sse_decode_check_status(SseDeserializer deserializer);
 
   @protected
   ExportFormat sse_decode_export_format(SseDeserializer deserializer);
@@ -240,6 +268,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   List<AudioDeviceInfo> sse_decode_list_audio_device_info(
     SseDeserializer deserializer,
   );
+
+  @protected
+  List<Check> sse_decode_list_check(SseDeserializer deserializer);
 
   @protected
   List<ExportFormat> sse_decode_list_export_format(
@@ -288,6 +319,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   String? sse_decode_opt_String(SseDeserializer deserializer);
 
   @protected
+  bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer);
+
+  @protected
   (BigInt, BigInt)? sse_decode_opt_box_autoadd_record_u_64_u_64(
     SseDeserializer deserializer,
   );
@@ -296,9 +330,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ProgressiveFileResult sse_decode_progressive_file_result(
     SseDeserializer deserializer,
   );
-
-  @protected
-  (bool, bool) sse_decode_record_bool_bool(SseDeserializer deserializer);
 
   @protected
   (BigInt, BigInt) sse_decode_record_u_64_u_64(SseDeserializer deserializer);
@@ -353,6 +384,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
+  void sse_encode_app_config(AppConfig self, SseSerializer serializer);
+
+  @protected
   void sse_encode_app_settings(AppSettings self, SseSerializer serializer);
 
   @protected
@@ -374,6 +408,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_box_autoadd_bool(bool self, SseSerializer serializer);
+
+  @protected
   void sse_encode_box_autoadd_record_u_64_u_64(
     (BigInt, BigInt) self,
     SseSerializer serializer,
@@ -393,6 +430,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     SessionRecoverySnapshot self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_check(Check self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_check_status(CheckStatus self, SseSerializer serializer);
 
   @protected
   void sse_encode_export_format(ExportFormat self, SseSerializer serializer);
@@ -420,6 +463,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     List<AudioDeviceInfo> self,
     SseSerializer serializer,
   );
+
+  @protected
+  void sse_encode_list_check(List<Check> self, SseSerializer serializer);
 
   @protected
   void sse_encode_list_export_format(
@@ -485,6 +531,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_opt_String(String? self, SseSerializer serializer);
 
   @protected
+  void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer);
+
+  @protected
   void sse_encode_opt_box_autoadd_record_u_64_u_64(
     (BigInt, BigInt)? self,
     SseSerializer serializer,
@@ -495,9 +544,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
     ProgressiveFileResult self,
     SseSerializer serializer,
   );
-
-  @protected
-  void sse_encode_record_bool_bool((bool, bool) self, SseSerializer serializer);
 
   @protected
   void sse_encode_record_u_64_u_64(

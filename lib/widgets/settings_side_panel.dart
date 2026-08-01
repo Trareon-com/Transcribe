@@ -282,11 +282,11 @@ class _SettingsSidePanelState extends ConsumerState<SettingsSidePanel>
                           _SettingsTile(
                             icon: Icons.save_alt_outlined,
                             label: 'Format ekspor default',
-                            trailing: _CompactDropdown<ExportFormatSet>(
-                              value: settings.defaultExportFormats,
-                              items: ExportFormatSet.values,
-                              labelBuilder: (f) => f.label,
-                              onChanged: notifier.setDefaultExportFormats,
+                            trailing: _CompactDropdown<String>(
+                              value: settings.defaultExportFormat,
+                              items: const ['markdown', 'txt', 'json', 'srt', 'vtt', 'html', 'docx'],
+                              labelBuilder: (f) => f,
+                              onChanged: notifier.setDefaultExportFormat,
                             ),
                           ),
                         ],
@@ -304,23 +304,6 @@ class _SettingsSidePanelState extends ConsumerState<SettingsSidePanel>
                                 '🏆 Q5_0 turbo: 548MB, RAM 1.2GB (turun 62%)',
                             trailing: const SizedBox.shrink(),
                           ),
-                          const _SettingsDivider(),
-                          _SettingsSwitch(
-                            icon: Icons.label_outlined,
-                            label: 'Diarisasi (pembicara)',
-                            subtitle: 'Identifikasi siapa yang bicara. Butuh model yang mendukung.',
-                            value: settings.diarizationEnabled,
-                            onChanged: notifier.setDiarizationEnabled,
-                          ),
-                          const _SettingsDivider(),
-                          _SettingsSwitch(
-                            icon: Icons.translate_outlined,
-                            label: 'Terjemahkan ke Indonesia',
-                            subtitle:
-                                'Otomatis terjemahkan hasil transkripsi bahasa Inggris ke Indonesia.',
-                            value: settings.translateToIndonesian,
-                            onChanged: notifier.setTranslateToIndonesian,
-                          ),
                         ],
                       ),
                       const SizedBox(height: 12),
@@ -333,7 +316,7 @@ class _SettingsSidePanelState extends ConsumerState<SettingsSidePanel>
                             trailing: const Icon(Icons.chevron_right, size: 18),
                             onTap: () => Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) => const PrivacyReportScreen(),
+                                builder: (_) => PrivacyReportScreen(),
                               ),
                             ),
                           ),
@@ -344,7 +327,7 @@ class _SettingsSidePanelState extends ConsumerState<SettingsSidePanel>
                             trailing: const Icon(Icons.chevron_right, size: 18),
                             onTap: () => Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) => const UsageDashboardScreen(),
+                                builder: (_) => UsageDashboardScreen(),
                               ),
                             ),
                           ),
@@ -355,7 +338,36 @@ class _SettingsSidePanelState extends ConsumerState<SettingsSidePanel>
                             trailing: const Icon(Icons.chevron_right, size: 18),
                             onTap: () async {
                               final update = UpdateChecker();
-                              await update.checkAndPrompt(context);
+                              final info = await update.checkForUpdate();
+                              if (!context.mounted) return;
+                              if (info.isUpdateAvailable) {
+                                showDialog(
+                                  context: context,
+                                  builder: (_) => AlertDialog(
+                                    title: const Text('Pembaruan Tersedia'),
+                                    content: Text(
+                                      'Versi ${info.latestVersion} tersedia (saat ini ${info.currentVersion}).',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('Nanti'),
+                                      ),
+                                      TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                          // Open release page
+                                        },
+                                        child: const Text('Lihat Rilis'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Sudah versi terbaru')),
+                                );
+                              }
                             },
                           ),
                           const _SettingsDivider(),
@@ -434,7 +446,7 @@ class _SettingsSection extends StatelessWidget {
         ),
         Container(
           decoration: BoxDecoration(
-            color: colors.cardBackground,
+            color: colors.surfaceElevated,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(color: colors.border),
           ),
