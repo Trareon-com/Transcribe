@@ -10,10 +10,12 @@ import '../state/session_model.dart';
 import '../state/settings_model.dart';
 import '../src/rust/session.dart' as rust_session;
 import '../theme/app_colors.dart';
-import '../widgets/setup_overlay.dart';
-import '../widgets/settings_side_panel.dart' hide isModelAvailable;
+import '../widgets/mode_selector.dart';
+import '../widgets/model_download_dialog.dart';
+import '../widgets/stream_toggle.dart';
 import '../widgets/transcript_view.dart';
 import 'library_screen.dart';
+import 'settings_screen.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
@@ -27,7 +29,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   List<rust_session.SessionRecoverySnapshot> _recoverableSessions = const [];
   bool _loadingRecoveries = true;
   bool _showShortcuts = false;
-  bool _showSettingsPanel = false;
   final _titleController = TextEditingController();
 
   @override
@@ -180,221 +181,360 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       }
     });
 
-    return SetupOverlay(
-      child: CallbackShortcuts(
-        bindings: {
-          SingleActivator(LogicalKeyboardKey.keyR, meta: true): () =>
-              _toggleStartBerhenti(context, ref),
-          SingleActivator(LogicalKeyboardKey.keyR, control: true): () =>
-              _toggleStartBerhenti(context, ref),
-          SingleActivator(LogicalKeyboardKey.keyP, meta: true): () {
-            if (isPaused) {
-              notifier.resume();
-            } else if (lifecycle == SessionLifecycle.recording) {
-              notifier.pause();
-            }
-          },
-          SingleActivator(LogicalKeyboardKey.keyP, control: true): () {
-            if (isPaused) {
-              notifier.resume();
-            } else if (lifecycle == SessionLifecycle.recording) {
-              notifier.pause();
-            }
-          },
-          SingleActivator(LogicalKeyboardKey.keyL, meta: true): () =>
-              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) {
-                final lp = ref.read(settingsProvider).libraryPath;
-                return LibraryScreen(libraryPath: resolveTilde(lp));
-              })),
-          SingleActivator(LogicalKeyboardKey.keyL, control: true): () =>
-              Navigator.of(context).push(MaterialPageRoute(builder: (ctx) {
-                final lp = ref.read(settingsProvider).libraryPath;
-                return LibraryScreen(libraryPath: resolveTilde(lp));
-              })),
-          SingleActivator(LogicalKeyboardKey.comma, meta: true): () =>
-              setState(() => _showSettingsPanel = true),
-          SingleActivator(LogicalKeyboardKey.comma, control: true): () =>
-              setState(() => _showSettingsPanel = true),
-          SingleActivator(LogicalKeyboardKey.slash, meta: true): () =>
-              setState(() => _showShortcuts = !_showShortcuts),
-          SingleActivator(LogicalKeyboardKey.slash, control: true): () =>
-              setState(() => _showShortcuts = !_showShortcuts),
+    return CallbackShortcuts(
+      bindings: {
+        SingleActivator(LogicalKeyboardKey.keyR, meta: true): () =>
+            _toggleStartBerhenti(context, ref),
+        SingleActivator(LogicalKeyboardKey.keyR, control: true): () =>
+            _toggleStartBerhenti(context, ref),
+        SingleActivator(LogicalKeyboardKey.keyP, meta: true): () {
+          if (isPaused) {
+            notifier.resume();
+          } else if (lifecycle == SessionLifecycle.recording) {
+            notifier.pause();
+          }
         },
-        child: Focus(
-          autofocus: true,
-          child: Stack(
+        SingleActivator(LogicalKeyboardKey.keyP, control: true): () {
+          if (isPaused) {
+            notifier.resume();
+          } else if (lifecycle == SessionLifecycle.recording) {
+            notifier.pause();
+          }
+        },
+        SingleActivator(LogicalKeyboardKey.keyL, meta: true): () =>
+            Navigator.of(context).push(MaterialPageRoute(builder: (ctx) {
+              final lp = ref.read(settingsProvider).libraryPath;
+              return LibraryScreen(libraryPath: resolveTilde(lp));
+            })),
+        SingleActivator(LogicalKeyboardKey.keyL, control: true): () =>
+            Navigator.of(context).push(MaterialPageRoute(builder: (ctx) {
+              final lp = ref.read(settingsProvider).libraryPath;
+              return LibraryScreen(libraryPath: resolveTilde(lp));
+            })),
+        SingleActivator(LogicalKeyboardKey.comma, meta: true): () =>
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
+        SingleActivator(LogicalKeyboardKey.comma, control: true): () =>
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
+        SingleActivator(LogicalKeyboardKey.slash, meta: true): () =>
+            setState(() => _showShortcuts = !_showShortcuts),
+        SingleActivator(LogicalKeyboardKey.slash, control: true): () =>
+            setState(() => _showShortcuts = !_showShortcuts),
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          backgroundColor: colors.background,
+          body: Column(
             children: [
-              Scaffold(
-                backgroundColor: colors.background,
-                body: Column(
-                  children: [
-                    // Recovery banner
-                    if (_loadingRecoveries)
-                      const LinearProgressIndicator(minHeight: 2)
-                    else if (_recoverableSessions.isNotEmpty)
-                      Material(
-                        color: colors.chipBackground,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          child: Row(
-                            children: [
-                              Icon(Icons.restore_outlined, color: colors.primary),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  'Ada ${_recoverableSessions.length} sesi yang bisa dipulihkan.',
-                                  style: TextStyle(color: colors.text, fontSize: 13),
-                                ),
-                              ),
-                              TextButton(
-                                onPressed: () => setState(() => _recoverableSessions = const []),
-                                child: const Text('Abaikan'),
-                              ),
-                              FilledButton(
-                                onPressed: () => _recoverSession(context, ref, _recoverableSessions.first),
-                                child: const Text('Pulihkan'),
-                              ),
-                            ],
+              // Recovery banner
+              if (_loadingRecoveries)
+                const LinearProgressIndicator(minHeight: 2)
+              else if (_recoverableSessions.isNotEmpty)
+                Material(
+                  color: colors.chipBackground,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    child: Row(
+                      children: [
+                        Icon(Icons.restore_outlined, color: colors.primary),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Ada ${_recoverableSessions.length} sesi yang bisa dipulihkan.',
+                            style: TextStyle(color: colors.text, fontSize: 13),
                           ),
                         ),
-                      ),
+                        TextButton(
+                          onPressed: () => setState(() => _recoverableSessions = const []),
+                          child: const Text('Abaikan'),
+                        ),
+                        FilledButton(
+                          onPressed: () => _recoverSession(context, ref, _recoverableSessions.first),
+                          child: const Text('Pulihkan'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
-                    // Minimal header row (native title bar dari OS yang handle window chrome)
-                    Container(
-                      height: 44,
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: colors.headerBackground,
-                        border: Border(bottom: BorderSide(color: colors.divider, width: 0.5)),
-                      ),
-                      child: Row(
-                        children: [
-                          Image.asset('assets/logo.png', width: 20, height: 20,
-                              errorBuilder: (_, _, _) => const SizedBox.shrink()),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Trareon Transcribe',
-                            style: TextStyle(
-                              color: colors.text,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          _QualityToggle(),
-                          const Spacer(),
-                          IconButton(
-                            icon: Icon(Icons.upload_file_outlined, size: 18),
-                            tooltip: 'Upload File',
-                            onPressed: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) {
-                                  final lp = ref.read(settingsProvider).libraryPath;
-                                  return LibraryScreen(libraryPath: resolveTilde(lp));
-                                },
-                              ),
-                            ),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-                            color: colors.textSecondary,
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.folder_outlined, size: 18),
-                            tooltip: 'Perpustakaan',
-                            onPressed: () => Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) {
-                                  final lp = ref.read(settingsProvider).libraryPath;
-                                  return LibraryScreen(libraryPath: resolveTilde(lp));
-                                },
-                              ),
-                            ),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                            color: colors.textSecondary,
-                          ),
-                          IconButton(
-                            icon: Icon(Icons.settings_outlined, size: 18),
-                            tooltip: 'Pengaturan',
-                            onPressed: () => setState(() => _showSettingsPanel = true),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                            color: colors.textSecondary,
-                          ),
-                          IconButton(
-                            icon: Icon(
-                              isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                              size: 18,
-                            ),
-                            tooltip: isDark ? 'Mode Terang' : 'Mode Gelap',
-                            onPressed: () {
-                              final notifier = ref.read(settingsProvider.notifier);
-                              notifier.toggleTheme();
-                            },
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                            color: colors.textSecondary,
-                          ),
-                        ],
+              // Minimal header row (native title bar dari OS yang handle window chrome)
+              Container(
+                height: 44,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: colors.headerBackground,
+                  border: Border(bottom: BorderSide(color: colors.divider, width: 0.5)),
+                ),
+                child: Row(
+                  children: [
+                    Image.asset('assets/logo.png', width: 20, height: 20,
+                        errorBuilder: (_, _, _) => const SizedBox.shrink()),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Trareon Transcribe',
+                      style: TextStyle(
+                        color: colors.text,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
-
-                    // Control bar
-                    _ControlBar(
-                      session: session,
-                      notifier: notifier,
-                      isActive: isActive,
-                      vuMikrofonLevel: vuLevel?.micLevel ?? 0.0,
-                      vuSpeakerLevel: vuLevel?.speakerLevel ?? 0.0,
-                      titleController: _titleController,
-                      onStartBerhenti: () => _toggleStartBerhenti(context, ref),
-                      onEkspor: () => _onEkspor(context),
-                    ),
-
-                    // Transcript
-                    Expanded(
-                      child: Stack(
-                        children: [
-                          TranscriptView(
-                            segments: session.segments,
-                            onRenameSpeaker: (oldLabel, newLabel) {
-                              ref
-                                  .read(sessionProvider.notifier)
-                                  .renameSpeaker(oldLabel, newLabel);
-                            },
-                          ),
-                          if (_showShortcuts)
-                            Positioned(
-                              bottom: 0,
-                              left: 0,
-                              right: 0,
-                              child: _ShortcutsPanel(
-                                onClose: () => setState(() => _showShortcuts = false),
-                              ),
-                            ),
-                        ],
+                    const SizedBox(width: 12),
+                    _QualityToggle(),
+                    const Spacer(),
+                    IconButton(
+                      icon: Icon(Icons.upload_file_outlined, size: 18),
+                      tooltip: 'Upload File',
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) {
+                            final lp = ref.read(settingsProvider).libraryPath;
+                            return LibraryScreen(libraryPath: resolveTilde(lp));
+                          },
+                        ),
                       ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      color: colors.textSecondary,
                     ),
-
-                    // Footer
-                    _FooterBar(
-                      lifecycle: lifecycle,
-                      segmentsCount: session.segments.length,
-                      elapsedSeconds: session.elapsedSeconds,
+                    IconButton(
+                      icon: Icon(Icons.folder_outlined, size: 18),
+                      tooltip: 'Library',
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) {
+                            final lp = ref.read(settingsProvider).libraryPath;
+                            return LibraryScreen(libraryPath: resolveTilde(lp));
+                          },
+                        ),
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      color: colors.textSecondary,
+                    ),
+                    IconButton(
+                      icon: Icon(Icons.settings_outlined, size: 18),
+                      tooltip: 'Pengaturan',
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      color: colors.textSecondary,
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
+                        size: 18,
+                      ),
+                      tooltip: isDark ? 'Mode Terang' : 'Mode Gelap',
+                      onPressed: () {
+                        final notifier = ref.read(settingsProvider.notifier);
+                        notifier.toggleTheme();
+                      },
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      color: colors.textSecondary,
                     ),
                   ],
                 ),
               ),
-              if (_showSettingsPanel)
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  bottom: 0,
-                  child: SettingsSidePanel(onClose: () => setState(() => _showSettingsPanel = false)),
+
+              // Control bar
+              _ControlBar(
+                session: session,
+                notifier: notifier,
+                isActive: isActive,
+                vuMikrofonLevel: vuLevel?.micLevel ?? 0.0,
+                vuSpeakerLevel: vuLevel?.speakerLevel ?? 0.0,
+                titleController: _titleController,
+                onStartBerhenti: () => _toggleStartBerhenti(context, ref),
+                onEkspor: () => _onEkspor(context),
+              ),
+
+              // Transcript
+              Expanded(
+                child: Stack(
+                  children: [
+                    TranscriptView(
+                      segments: session.segments,
+                      onRenameSpeaker: (oldLabel, newLabel) {
+                        ref
+                            .read(sessionProvider.notifier)
+                            .renameSpeaker(oldLabel, newLabel);
+                      },
+                    ),
+                    if (_showShortcuts)
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: _ShortcutsPanel(
+                          onClose: () => setState(() => _showShortcuts = false),
+                        ),
+                      ),
+                  ],
                 ),
+              ),
+
+              // Footer
+              _FooterBar(
+                lifecycle: lifecycle,
+                segmentsCount: session.segments.length,
+                elapsedSeconds: session.elapsedSeconds,
+              ),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Control bar: title, mode selector, mic/spk indicators, start/export
+class _ControlBar extends StatelessWidget {
+  final SessionUiState session;
+  final SessionNotifier notifier;
+  final bool isActive;
+  final double vuMikrofonLevel;
+  final double vuSpeakerLevel;
+  final TextEditingController titleController;
+  final VoidCallback onStartBerhenti;
+  final VoidCallback onEkspor;
+
+  const _ControlBar({
+    required this.session,
+    required this.notifier,
+    required this.isActive,
+    required this.vuMikrofonLevel,
+    required this.vuSpeakerLevel,
+    required this.titleController,
+    required this.onStartBerhenti,
+    required this.onEkspor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(bottom: BorderSide(color: colors.divider, width: 0.5)),
+      ),
+      child: Row(
+        children: [
+          // Session title
+          Expanded(
+            flex: 3,
+            child: Container(
+              height: 36,
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              decoration: BoxDecoration(
+                color: colors.chipBackground,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: colors.border),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.edit_outlined, color: colors.textTertiary, size: 16),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: TextField(
+                      controller: titleController,
+                      onChanged: notifier.setTitle,
+                      onSubmitted: notifier.setTitle,
+                      style: TextStyle(color: colors.text, fontSize: 13),
+                      decoration: InputDecoration.collapsed(
+                        hintText: 'Judul sesi...',
+                        hintStyle: TextStyle(color: colors.textTertiary, fontSize: 13),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+
+          // Mode selector, audio indicators, and action buttons scale down
+          // together instead of overflowing when the window is narrower than
+          // their combined natural width.
+          Expanded(
+            flex: 5,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Mode selector — disabled while a session is active
+                  IgnorePointer(
+                    ignoring: isActive,
+                    child: Opacity(
+                      opacity: isActive ? 0.5 : 1.0,
+                      child: ModeSelector(
+                        selected: session.config.mode,
+                        onChanged: notifier.setMode,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // MIC toggle interaktif
+                  StreamToggle(
+                    label: 'Mikrofon',
+                    enabled: session.config.micEnabled,
+                    accent: colors.primary,
+                    onChanged: (enabled) => notifier.toggleMic(enabled),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // SPK toggle interaktif
+                  StreamToggle(
+                    label: 'Pengeras Suara',
+                    enabled: session.config.speakerEnabled,
+                    accent: colors.primary,
+                    onChanged: (enabled) => notifier.toggleSpeaker(enabled),
+                  ),
+                  const SizedBox(width: 12),
+
+                  // Start/Berhenti button
+                  SizedBox(
+                    height: 36,
+                    child: ElevatedButton.icon(
+                      onPressed: onStartBerhenti,
+                      icon: Icon(isActive ? Icons.stop : Icons.play_arrow, size: 18),
+                      label: Text(isActive ? 'Berhenti' : 'Mulai'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isActive ? AppColors.warning : colors.primary,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+
+                  // Ekspor button
+                  SizedBox(
+                    height: 36,
+                    child: OutlinedButton.icon(
+                      onPressed: onEkspor,
+                      icon: Icon(Icons.download_outlined, size: 16, color: colors.text),
+                      label: Text('Ekspor', style: TextStyle(color: colors.text)),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: colors.border),
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -478,145 +618,7 @@ class _FooterBar extends StatelessWidget {
   }
 }
 
-/// Horizontal VU meter bar — reflects live audio level [0,1].
-class _VuBar extends StatelessWidget {
-  final double level;
-  final Color color;
-  const _VuBar({required this.level, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-    final clamped = level.clamp(0.0, 1.0);
-    return SizedBox(
-      width: 56,
-      height: 4,
-      child: LinearProgressIndicator(
-        value: clamped,
-        backgroundColor: colors.divider,
-        color: color,
-        borderRadius: BorderRadius.circular(2),
-      ),
-    );
-  }
-}
-
-/// Control bar: title, mode selector, mic/spk indicators, start/export
-class _ControlBar extends StatelessWidget {
-  final SessionUiState session;
-  final SessionNotifier notifier;
-  final bool isActive;
-  final double vuMikrofonLevel;
-  final double vuSpeakerLevel;
-  final TextEditingController titleController;
-  final VoidCallback onStartBerhenti;
-  final VoidCallback onEkspor;
-
-  const _ControlBar({
-    required this.session,
-    required this.notifier,
-    required this.isActive,
-    required this.vuMikrofonLevel,
-    required this.vuSpeakerLevel,
-    required this.titleController,
-    required this.onStartBerhenti,
-    required this.onEkspor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-
-    return Container(
-      height: 80,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        border: Border(bottom: BorderSide(color: colors.divider, width: 0.5)),
-      ),
-      child: Row(
-        children: [
-          // Session title (editable, max 60 chars)
-          Expanded(
-            flex: 3,
-            child: TextField(
-              controller: titleController,
-              maxLength: 60,
-              style: TextStyle(color: colors.text, fontSize: 14, fontWeight: FontWeight.w500),
-              decoration: InputDecoration(
-                hintText: 'Judul sesi…',
-                hintStyle: TextStyle(color: colors.textTertiary),
-                counterText: '',
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
-          ),
-
-          const SizedBox(width: 16),
-
-          // Mode selector — "Cepat"/"Akurat" with ⚡/🎯 emoji
-          _QualityToggle(),
-
-          const SizedBox(width: 16),
-
-          // VU meters (mic + speaker)
-          Row(
-            children: [
-              Row(
-                children: [
-                  Icon(Icons.mic, size: 16, color: colors.textSecondary),
-                  const SizedBox(width: 4),
-                  Text('Mikrofon', style: TextStyle(color: colors.textSecondary, fontSize: 12)),
-                  const SizedBox(width: 6),
-                  _VuBar(level: vuMikrofonLevel, color: AppColors.statusActive),
-                ],
-              ),
-              const SizedBox(width: 12),
-              Row(
-                children: [
-                  Icon(Icons.graphic_eq, size: 16, color: colors.textSecondary),
-                  const SizedBox(width: 4),
-                  Text('Pengeras Suara', style: TextStyle(color: colors.textSecondary, fontSize: 12)),
-                  const SizedBox(width: 6),
-                  _VuBar(level: vuSpeakerLevel, color: Colors.blue),
-                ],
-              ),
-            ],
-          ),
-
-          const SizedBox(width: 16),
-
-          // Start/Stop button
-          FilledButton.icon(
-            icon: Icon(isActive ? Icons.stop_circle_outlined : Icons.mic, size: 20),
-            label: Text(isActive ? 'Berhenti' : 'Mulai'),
-            onPressed: onStartBerhenti,
-            style: FilledButton.styleFrom(
-              backgroundColor: isActive ? AppColors.statusError : AppColors.statusActive,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(96, 40),
-            ),
-          ),
-
-          const SizedBox(width: 8),
-
-          // Export button
-          OutlinedButton.icon(
-            icon: const Icon(Icons.download_outlined, size: 18),
-            label: const Text('Ekspor'),
-            onPressed: session.segments.isNotEmpty ? onEkspor : null,
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(88, 40),
-              foregroundColor: colors.text,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
+/// Keyboard shortcuts panel
 class _ShortcutsPanel extends StatelessWidget {
   final VoidCallback onClose;
 
@@ -654,17 +656,17 @@ class _ShortcutsPanel extends StatelessWidget {
               ),
               const Spacer(),
               IconButton(
-                icon: const Icon(Icons.close, size: 18),
+                icon: Icon(Icons.close, size: 18, color: colors.textSecondary),
                 onPressed: onClose,
               ),
             ],
           ),
           const SizedBox(height: 8),
-          const _ShortcutRow(label: 'Mulai / Berhenti merekam', shortcut: 'Cmd+R'),
-          const _ShortcutRow(label: 'Jeda / Lanjutkan', shortcut: 'Cmd+P'),
-          const _ShortcutRow(label: 'Buka Perpustakaan', shortcut: 'Cmd+L'),
-          const _ShortcutRow(label: 'Buka Pengaturan', shortcut: 'Cmd+,'),
-          const _ShortcutRow(label: 'Tampilkan panel pintasan', shortcut: 'Cmd+/'),
+          _ShortcutRow(label: 'Mulai / Berhenti merekam', shortcut: 'Cmd+R'),
+          _ShortcutRow(label: 'Jeda / Lanjutkan', shortcut: 'Cmd+P'),
+          _ShortcutRow(label: 'Buka Perpustakaan', shortcut: 'Cmd+L'),
+          _ShortcutRow(label: 'Buka Pengaturan', shortcut: 'Cmd+,'),
+          _ShortcutRow(label: 'Tampilkan panel pintasan', shortcut: 'Cmd+/'),
         ],
       ),
     );
@@ -704,59 +706,55 @@ class _ShortcutRow extends StatelessWidget {
   }
 }
 
-/// Quality toggle chip — "Cepat"/"Akurat" with ⚡/🎯 emoji + progressive hint
+/// Toggle kualitas: ⚡ Cepat (base) / 🎯 Akurat (large-v3-turbo)
 class _QualityToggle extends ConsumerWidget {
-  const _QualityToggle();
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final notifier = ref.read(settingsProvider.notifier);
     final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-    final isAkurat = settings.defaultModel == 'large-v3-turbo-q5';
-    final adaptive = !isAkurat && settings.progressiveEnabled;
+    final isAkurat = settings.defaultModel == 'large-v3-turbo';
 
-    final targetModel = isAkurat ? 'base' : 'large-v3-turbo-q5';
+    final targetModel = isAkurat ? 'base' : 'large-v3-turbo';
     final targetAvailable = isModelAvailable(targetModel, libraryPath: settings.libraryPath);
 
-    final label = adaptive
-        ? 'Otomatis'
-        : (isAkurat ? 'Akurat' : 'Cepat');
-    final emoji = adaptive ? '⚡→🎯' : (isAkurat ? '🎯' : '⚡');
-
-    return Tooltip(
-      message: adaptive
-          ? 'Progressive: laptop kuat → q5 langsung, lemot → base dulu lalu q5. Ketuk untuk Akurat penuh.'
-          : isAkurat
-              ? 'Ganti ke mode Cepat (base)'
-              : 'Ganti ke mode Akurat (large-v3-turbo-q5)',
-      child: Semantics(
-        label: 'Mode kualitas: $label. '
-            'Ketuk untuk berpindah ke mode ${isAkurat ? 'Cepat' : 'Akurat'}.',
-        button: true,
-        child: GestureDetector(
-          onTap: targetAvailable ? () => notifier.setDefaultModel(targetModel) : null,
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: colors.chipBackground,
-              borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: colors.border),
-            ),
-            child: Opacity(
-              opacity: targetAvailable ? 1.0 : 0.4,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(emoji, style: const TextStyle(fontSize: 12)),
-                  const SizedBox(width: 4),
-                  Text(
-                    label,
-                    style: TextStyle(color: colors.textSecondary, fontSize: 12),
-                  ),
-                ],
+    return GestureDetector(
+      onTap: () async {
+        if (!targetAvailable) {
+          if (!context.mounted) return;
+          final modelsDir = resolveTilde(settings.libraryPath);
+          final ok = await showModelDownloadDialog(
+            context: context,
+            bridge: ref.read(rustBridgeProvider),
+            modelId: targetModel,
+            modelsDir: modelsDir,
+          );
+          if (ok) {
+            await notifier.setDefaultModel(targetModel);
+          }
+          return;
+        }
+        await notifier.setDefaultModel(targetModel);
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: colors.chipBackground,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: colors.border),
+        ),
+        child: Opacity(
+          opacity: targetAvailable ? 1.0 : 0.4,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(isAkurat ? '🎯' : '⚡', style: const TextStyle(fontSize: 12)),
+              const SizedBox(width: 4),
+              Text(
+                isAkurat ? 'Akurat' : 'Cepat',
+                style: TextStyle(color: colors.textSecondary, fontSize: 12),
               ),
-            ),
+            ],
           ),
         ),
       ),
