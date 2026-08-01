@@ -11,6 +11,7 @@ import '../state/settings_model.dart';
 import '../src/rust/session.dart' as rust_session;
 import '../theme/app_colors.dart';
 import '../widgets/mode_selector.dart';
+import '../widgets/setup_overlay.dart';
 import '../widgets/stream_toggle.dart';
 import '../widgets/transcript_view.dart';
 import 'library_screen.dart';
@@ -36,6 +37,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     _globalHotkeys.init(
       ref.read(sessionProvider.notifier),
       () => ref.read(sessionProvider).lifecycle,
+    );
     );
     _loadRecoveries();
   }
@@ -72,6 +74,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Sesi ${snapshot.sessionId} dipulihkan.')),
     );
+    );
   }
 
   Future<void> _handleBerhentiPressed(BuildContext context, WidgetRef ref) async {
@@ -97,6 +100,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           ],
         ),
       );
+    );
       if (confirmed != true) return;
     }
     if (context.mounted) {
@@ -126,6 +130,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Tidak ada transkrip untuk diekspor.')),
       );
+    );
       return;
     }
     final settings = ref.read(settingsProvider);
@@ -133,6 +138,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     final selectedDir = await FilePicker.platform.getDirectoryPath(
       dialogTitle: 'Pilih folder ekspor',
       initialDirectory: defaultDir,
+    );
     );
     if (selectedDir == null) return;
     if (!context.mounted) return;
@@ -146,15 +152,18 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         outputDir: selectedDir,
         title: title,
       );
+    );
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Ekspor berhasil ke: $selectedDir')),
       );
+    );
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Ekspor gagal: $e')),
       );
+    );
     }
   }
 
@@ -180,7 +189,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       }
     });
 
-    return CallbackShortcuts(
+    return SetupOverlay(
+      child: CallbackShortcuts(
       bindings: {
         SingleActivator(LogicalKeyboardKey.keyR, meta: true): () =>
             _toggleStartBerhenti(context, ref),
@@ -464,6 +474,7 @@ class _FooterBar extends StatelessWidget {
         ],
       ),
     );
+    );
   }
 }
 
@@ -486,6 +497,7 @@ class _VuBar extends StatelessWidget {
         color: color,
         borderRadius: BorderRadius.circular(2),
       ),
+    );
     );
   }
 }
@@ -648,6 +660,7 @@ class _ControlBar extends StatelessWidget {
         ],
       ),
     );
+    );
   }
 }
 
@@ -703,6 +716,7 @@ class _ShortcutsPanel extends StatelessWidget {
         ],
       ),
     );
+    );
   }
 }
 
@@ -735,6 +749,7 @@ class _ShortcutRow extends StatelessWidget {
           ),
         ],
       ),
+    );
     );
   }
 }
@@ -795,6 +810,7 @@ class _QualityToggle extends ConsumerWidget {
           ),
         ),
       ),
+    );
     );
   }
 }
