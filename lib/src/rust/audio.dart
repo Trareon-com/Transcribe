@@ -15,6 +15,12 @@ class SessionConfig {
   final String? micDeviceId;
   final String? speakerDeviceId;
   final String modelPath;
+
+  /// Optional second model for Hybrid Progressive Transcription (HPT).
+  /// When `Some`, each source runs quick (base) → refine (q5) so text
+  /// renders in 3-5s and is then replaced in place by the accurate pass.
+  /// `None` = classic single-model live transcription.
+  final String? refineModelPath;
   final bool vadEnabled;
   final int sampleRate;
   final int chunkDurationSecs;
@@ -26,6 +32,7 @@ class SessionConfig {
     this.micDeviceId,
     this.speakerDeviceId,
     required this.modelPath,
+    this.refineModelPath,
     required this.vadEnabled,
     required this.sampleRate,
     required this.chunkDurationSecs,
@@ -39,6 +46,11 @@ class SessionConfig {
     modelPath: modelPath,
   );
 
+  /// True when HPT is configured (refine model present and distinct from
+  /// the quick model).
+  Future<bool> hptEnabled() =>
+      RustLib.instance.api.crateAudioSessionConfigHptEnabled(that: this);
+
   @override
   int get hashCode =>
       micEnabled.hashCode ^
@@ -47,6 +59,7 @@ class SessionConfig {
       micDeviceId.hashCode ^
       speakerDeviceId.hashCode ^
       modelPath.hashCode ^
+      refineModelPath.hashCode ^
       vadEnabled.hashCode ^
       sampleRate.hashCode ^
       chunkDurationSecs.hashCode;
@@ -62,6 +75,7 @@ class SessionConfig {
           micDeviceId == other.micDeviceId &&
           speakerDeviceId == other.speakerDeviceId &&
           modelPath == other.modelPath &&
+          refineModelPath == other.refineModelPath &&
           vadEnabled == other.vadEnabled &&
           sampleRate == other.sampleRate &&
           chunkDurationSecs == other.chunkDurationSecs;

@@ -344,15 +344,27 @@ class SessionNotifier extends StateNotifier<SessionUiState> {
     }
     _autoStopMinutes = settings.autoStopMinutes;
     final (mic, speaker) = settings.defaultMode.defaultToggles;
+    // HPT: quick pass uses the default model; refine pass always targets
+    // large-v3-turbo-q5 when progressive is enabled (and the quick model
+    // is not itself the q5 — HPT only makes sense quick≠refine).
+    final quickPath = modelPathForId(
+      settings.defaultModel,
+      libraryPath: settings.libraryPath,
+    );
+    final refinePath = settings.progressiveEnabled &&
+            settings.defaultModel != 'large-v3-turbo-q5' &&
+            isModelAvailable('large-v3-turbo-q5',
+                libraryPath: settings.libraryPath)
+        ? modelPathForId('large-v3-turbo-q5',
+            libraryPath: settings.libraryPath)
+        : null;
     state = state.copyWith(
       config: SessionConfig(
         micEnabled: mic,
         speakerEnabled: speaker,
         mode: settings.defaultMode,
-        modelPath: modelPathForId(
-          settings.defaultModel,
-          libraryPath: settings.libraryPath,
-        ),
+        modelPath: quickPath,
+        refineModelPath: refinePath,
         vadEnabled: settings.vadEnabled,
       ),
     );

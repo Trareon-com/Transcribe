@@ -38,7 +38,7 @@ flutter_rust_bridge::frb_generated_boilerplate!(
     default_rust_auto_opaque = RustAutoOpaqueMoi,
 );
 pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_VERSION: &str = "2.12.0";
-pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = -787672667;
+pub(crate) const FLUTTER_RUST_BRIDGE_CODEGEN_CONTENT_HASH: i32 = 1814228425;
 
 // Section: executor
 
@@ -1286,6 +1286,40 @@ fn wire__crate__audio__session_config_for_mode_impl(
         },
     )
 }
+fn wire__crate__audio__session_config_hpt_enabled_impl(
+    port_: flutter_rust_bridge::for_generated::MessagePort,
+    ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
+    rust_vec_len_: i32,
+    data_len_: i32,
+) {
+    FLUTTER_RUST_BRIDGE_HANDLER.wrap_normal::<flutter_rust_bridge::for_generated::SseCodec, _, _>(
+        flutter_rust_bridge::for_generated::TaskInfo {
+            debug_name: "session_config_hpt_enabled",
+            port: Some(port_),
+            mode: flutter_rust_bridge::for_generated::FfiCallMode::Normal,
+        },
+        move || {
+            let message = unsafe {
+                flutter_rust_bridge::for_generated::Dart2RustMessageSse::from_wire(
+                    ptr_,
+                    rust_vec_len_,
+                    data_len_,
+                )
+            };
+            let mut deserializer =
+                flutter_rust_bridge::for_generated::SseDeserializer::new(message);
+            let api_that = <crate::audio::SessionConfig>::sse_decode(&mut deserializer);
+            deserializer.end();
+            move |context| {
+                transform_result_sse::<_, ()>((move || {
+                    let output_ok =
+                        Result::<_, ()>::Ok(crate::audio::SessionConfig::hpt_enabled(&api_that))?;
+                    Ok(output_ok)
+                })())
+            }
+        },
+    )
+}
 fn wire__crate__audio__session_mode_default_toggles_impl(
     port_: flutter_rust_bridge::for_generated::MessagePort,
     ptr_: flutter_rust_bridge::for_generated::PlatformGeneralizedUint8ListPtr,
@@ -2398,25 +2432,28 @@ fn pde_ffi_dispatcher_primary_impl(
         36 => wire__crate__settings__save_settings_impl(port, ptr, rust_vec_len, data_len),
         37 => wire__crate__audio__session_config_for_mode_impl(port, ptr, rust_vec_len, data_len),
         38 => {
+            wire__crate__audio__session_config_hpt_enabled_impl(port, ptr, rust_vec_len, data_len)
+        }
+        39 => {
             wire__crate__audio__session_mode_default_toggles_impl(port, ptr, rust_vec_len, data_len)
         }
-        39 => wire__crate__audio__session_mode_echo_dedupe_enabled_impl(
+        40 => wire__crate__audio__session_mode_echo_dedupe_enabled_impl(
             port,
             ptr,
             rust_vec_len,
             data_len,
         ),
-        40 => wire__crate__api__set_session_mode_impl(port, ptr, rust_vec_len, data_len),
-        41 => wire__crate__session__set_session_mode_impl(port, ptr, rust_vec_len, data_len),
-        42 => wire__crate__api__start_session_impl(port, ptr, rust_vec_len, data_len),
-        43 => wire__crate__session__start_session_impl(port, ptr, rust_vec_len, data_len),
-        44 => wire__crate__api__stop_session_impl(port, ptr, rust_vec_len, data_len),
-        45 => wire__crate__session__stop_session_impl(port, ptr, rust_vec_len, data_len),
-        46 => wire__crate__api__toggle_mic_impl(port, ptr, rust_vec_len, data_len),
-        47 => wire__crate__session__toggle_mic_impl(port, ptr, rust_vec_len, data_len),
-        48 => wire__crate__api__toggle_speaker_impl(port, ptr, rust_vec_len, data_len),
-        49 => wire__crate__session__toggle_speaker_impl(port, ptr, rust_vec_len, data_len),
-        50 => wire__crate__api__transcribe_files_batch_impl(port, ptr, rust_vec_len, data_len),
+        41 => wire__crate__api__set_session_mode_impl(port, ptr, rust_vec_len, data_len),
+        42 => wire__crate__session__set_session_mode_impl(port, ptr, rust_vec_len, data_len),
+        43 => wire__crate__api__start_session_impl(port, ptr, rust_vec_len, data_len),
+        44 => wire__crate__session__start_session_impl(port, ptr, rust_vec_len, data_len),
+        45 => wire__crate__api__stop_session_impl(port, ptr, rust_vec_len, data_len),
+        46 => wire__crate__session__stop_session_impl(port, ptr, rust_vec_len, data_len),
+        47 => wire__crate__api__toggle_mic_impl(port, ptr, rust_vec_len, data_len),
+        48 => wire__crate__session__toggle_mic_impl(port, ptr, rust_vec_len, data_len),
+        49 => wire__crate__api__toggle_speaker_impl(port, ptr, rust_vec_len, data_len),
+        50 => wire__crate__session__toggle_speaker_impl(port, ptr, rust_vec_len, data_len),
+        51 => wire__crate__api__transcribe_files_batch_impl(port, ptr, rust_vec_len, data_len),
         _ => unreachable!(),
     }
 }
@@ -2641,6 +2678,7 @@ impl flutter_rust_bridge::IntoDart for crate::audio::SessionConfig {
             self.mic_device_id.into_into_dart().into_dart(),
             self.speaker_device_id.into_into_dart().into_dart(),
             self.model_path.into_into_dart().into_dart(),
+            self.refine_model_path.into_into_dart().into_dart(),
             self.vad_enabled.into_into_dart().into_dart(),
             self.sample_rate.into_into_dart().into_dart(),
             self.chunk_duration_secs.into_into_dart().into_dart(),
@@ -3157,6 +3195,7 @@ impl SseEncode for crate::audio::SessionConfig {
         <Option<String>>::sse_encode(self.mic_device_id, serializer);
         <Option<String>>::sse_encode(self.speaker_device_id, serializer);
         <String>::sse_encode(self.model_path, serializer);
+        <Option<String>>::sse_encode(self.refine_model_path, serializer);
         <bool>::sse_encode(self.vad_enabled, serializer);
         <u32>::sse_encode(self.sample_rate, serializer);
         <u32>::sse_encode(self.chunk_duration_secs, serializer);

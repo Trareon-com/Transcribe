@@ -60,6 +60,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       defaultExportFormat: settings.defaultExportFormat,
       micDeviceId: settings.micDeviceId,
       speakerDeviceId: settings.speakerDeviceId,
+      progressiveEnabled: settings.progressiveEnabled,
     );
   }
 
@@ -94,6 +95,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       defaultExportFormat: state.defaultExportFormat,
       micDeviceId: state.micDeviceId,
       speakerDeviceId: state.speakerDeviceId,
+      progressiveEnabled: state.progressiveEnabled,
     );
     await _bridge.saveSettings(state);
   }
@@ -111,6 +113,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       defaultExportFormat: state.defaultExportFormat,
       micDeviceId: state.micDeviceId,
       speakerDeviceId: state.speakerDeviceId,
+      progressiveEnabled: state.progressiveEnabled,
     );
     await _bridge.saveSettings(state);
   }
@@ -128,6 +131,25 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       defaultExportFormat: state.defaultExportFormat,
       micDeviceId: state.micDeviceId,
       speakerDeviceId: state.speakerDeviceId,
+      progressiveEnabled: state.progressiveEnabled,
+    );
+    await _bridge.saveSettings(state);
+  }
+
+  Future<void> setProgressiveEnabled(bool enabled) async {
+    _userActed = true;
+    state = AppSettings(
+      theme: state.theme,
+      defaultModel: state.defaultModel,
+      defaultMode: state.defaultMode,
+      libraryPath: state.libraryPath,
+      vadEnabled: state.vadEnabled,
+      language: state.language,
+      autoStopMinutes: state.autoStopMinutes,
+      defaultExportFormat: state.defaultExportFormat,
+      micDeviceId: state.micDeviceId,
+      speakerDeviceId: state.speakerDeviceId,
+      progressiveEnabled: enabled,
     );
     await _bridge.saveSettings(state);
   }
@@ -145,6 +167,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       defaultExportFormat: state.defaultExportFormat,
       micDeviceId: state.micDeviceId,
       speakerDeviceId: state.speakerDeviceId,
+      progressiveEnabled: state.progressiveEnabled,
     );
     await _bridge.saveSettings(state);
   }
@@ -162,6 +185,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       defaultExportFormat: state.defaultExportFormat,
       micDeviceId: state.micDeviceId,
       speakerDeviceId: state.speakerDeviceId,
+      progressiveEnabled: state.progressiveEnabled,
     );
     await _bridge.saveSettings(state);
   }

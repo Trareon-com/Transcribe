@@ -74,12 +74,27 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ),
             const _SettingsDivider(),
-            _SettingsTile(
+            _SettingsSwitch(
               icon: Icons.speed_outlined,
               label: 'Progressive Mode',
-              subtitle: 'Mode ini akan memproses audio dengan base model untuk hasil cepat,\n'
-                  'lalu menyempurnakan dengan q5 di background. Tersedia di v1.1.',
-              trailing: Icon(Icons.construction_outlined, size: 16, color: colors.textTertiary),
+              subtitle: settings.progressiveEnabled
+                  ? 'Base dulu untuk hasil cepat, lalu q5 menyempurnakan teks di background.'
+                  : 'Aktifkan: teks muncul 3-5 detik, akurasi setara q5',
+              value: settings.progressiveEnabled,
+              onChanged: (enabled) {
+                if (enabled &&
+                    !isModelAvailable('large-v3-turbo-q5',
+                        libraryPath: settings.libraryPath)) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Model q5 belum ada. Unduh lewat Setup Wizard terlebih dahulu.'),
+                      behavior: SnackBarBehavior.floating,
+                    ),
+                  );
+                  return;
+                }
+                notifier.setProgressiveEnabled(enabled);
+              },
             ),
             const _SettingsDivider(),
             _SettingsTile(

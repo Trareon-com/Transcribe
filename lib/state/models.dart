@@ -131,6 +131,9 @@ class SessionConfig {
   final bool vadEnabled;
   final String? micDeviceId;
   final String? speakerDeviceId;
+  // Optional second model for HPT. When non-null, live sessions run
+  // quick (base) → refine (q5) and replace partial rows in place.
+  final String? refineModelPath;
 
   const SessionConfig({
     required this.micEnabled,
@@ -140,6 +143,7 @@ class SessionConfig {
     this.vadEnabled = true,
     this.micDeviceId,
     this.speakerDeviceId,
+    this.refineModelPath,
   });
 
   factory SessionConfig.forMode(SessionMode mode, String modelPath) {
@@ -159,6 +163,7 @@ class SessionConfig {
     bool? vadEnabled,
     String? micDeviceId,
     String? speakerDeviceId,
+    Object? refineModelPath = _sentinel,
   }) {
     return SessionConfig(
       micEnabled: micEnabled ?? this.micEnabled,
@@ -168,6 +173,9 @@ class SessionConfig {
       vadEnabled: vadEnabled ?? this.vadEnabled,
       micDeviceId: micDeviceId ?? this.micDeviceId,
       speakerDeviceId: speakerDeviceId ?? this.speakerDeviceId,
+      refineModelPath: refineModelPath == _sentinel
+          ? this.refineModelPath
+          : refineModelPath as String?,
     );
   }
 }
@@ -233,6 +241,9 @@ class AppSettings {
   final String defaultExportFormat;
   final String? micDeviceId;
   final String? speakerDeviceId;
+  // Hybrid Progressive Transcription: quick pass (base) then refine (q5).
+  // Dart-only — resolved into SessionConfig.refineModelPath at session start.
+  final bool progressiveEnabled;
 
   const AppSettings({
     required this.theme,
@@ -245,6 +256,7 @@ class AppSettings {
     this.defaultExportFormat = 'markdown',
     this.micDeviceId,
     this.speakerDeviceId,
+    this.progressiveEnabled = true,
   });
 
   factory AppSettings.defaults() => const AppSettings(
@@ -280,6 +292,7 @@ class AppSettings {
       speakerDeviceId: speakerDeviceId == _sentinel
           ? this.speakerDeviceId
           : speakerDeviceId as String?,
+      progressiveEnabled: progressiveEnabled,
     );
   }
 }

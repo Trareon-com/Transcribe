@@ -165,4 +165,100 @@ void main() {
     expect(session.config.modelPath, '${tempDir.path}/ggml-medium.bin');
     expect(session.config.mode, SessionMode.webinar);
   });
+
+  test('progressive enabled wires q5 refine path into session config', () async {
+    final tempDir = await Directory.systemTemp.createTemp('transcribe-hpt-test-');
+    addTearDown(() => tempDir.deleteSync(recursive: true));
+    File('${tempDir.path}/ggml-base.bin').writeAsStringSync('stub');
+    File('${tempDir.path}/ggml-large-v3-turbo-q5_0.bin').writeAsStringSync('stub');
+
+    final bridge = _NoopBridge(
+      settings: AppSettings(
+        theme: AppThemeMode.light,
+        defaultModel: 'base',
+        defaultMode: SessionMode.online,
+        libraryPath: tempDir.path,
+        vadEnabled: true,
+        progressiveEnabled: true,
+      ),
+    );
+    final container = ProviderContainer(
+      overrides: [rustBridgeProvider.overrideWithValue(bridge)],
+    );
+    addTearDown(container.dispose);
+
+    SessionUiState session = container.read(sessionProvider);
+    for (var i = 0; i < 20; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      session = container.read(sessionProvider);
+      if (session.config.modelPath.endsWith('ggml-base.bin')) break;
+    }
+
+    expect(session.config.modelPath, '${tempDir.path}/ggml-base.bin');
+    expect(session.config.refineModelPath,
+        '${tempDir.path}/ggml-large-v3-turbo-q5_0.bin');
+  });
+
+  test('progressive disabled leaves refine path null', () async {
+    final tempDir = await Directory.systemTemp.createTemp('transcribe-hpt-off-test-');
+    addTearDown(() => tempDir.deleteSync(recursive: true));
+    File('${tempDir.path}/ggml-base.bin').writeAsStringSync('stub');
+
+    final bridge = _NoopBridge(
+      settings: AppSettings(
+        theme: AppThemeMode.light,
+        defaultModel: 'base',
+        defaultMode: SessionMode.online,
+        libraryPath: tempDir.path,
+        vadEnabled: true,
+        progressiveEnabled: false,
+      ),
+    );
+    final container = ProviderContainer(
+      overrides: [rustBridgeProvider.overrideWithValue(bridge)],
+    );
+    addTearDown(container.dispose);
+
+    SessionUiState session = container.read(sessionProvider);
+    for (var i = 0; i < 20; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      session = container.read(sessionProvider);
+      if (session.config.modelPath.endsWith('ggml-base.bin')) break;
+    }
+
+    expect(session.config.modelPath, '${tempDir.path}/ggml-base.bin');
+    expect(session.config.refineModelPath, isNull);
+  });
+
+  test('q5 as default model skips refine (HPT needs quick≠refine)', () async {
+    final tempDir = await Directory.systemTemp.createTemp('transcribe-hpt-q5-test-');
+    addTearDown(() => tempDir.deleteSync(recursive: true));
+    File('${tempDir.path}/ggml-large-v3-turbo-q5_0.bin').writeAsStringSync('stub');
+
+    final bridge = _NoopBridge(
+      settings: AppSettings(
+        theme: AppThemeMode.light,
+        defaultModel: 'large-v3-turbo-q5',
+        defaultMode: SessionMode.online,
+        libraryPath: tempDir.path,
+        vadEnabled: true,
+        progressiveEnabled: true,
+      ),
+    );
+    final container = ProviderContainer(
+      overrides: [rustBridgeProvider.overrideWithValue(bridge)],
+    );
+    addTearDown(container.dispose);
+
+    SessionUiState session = container.read(sessionProvider);
+    for (var i = 0; i < 20; i++) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      session = container.read(sessionProvider);
+      if (session.config.modelPath.endsWith('ggml-large-v3-turbo-q5_0.bin')) break;
+    }
+
+    expect(session.config.modelPath,
+        '${tempDir.path}/ggml-large-v3-turbo-q5_0.bin');
+    expect(session.config.refineModelPath, isNull);
+  });
 }

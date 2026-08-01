@@ -454,6 +454,7 @@ class RustEngineBridge implements RustBridge {
       micDeviceId: config.micDeviceId,
       speakerDeviceId: config.speakerDeviceId,
       modelPath: config.modelPath,
+      refineModelPath: config.refineModelPath,
       vadEnabled: config.vadEnabled,
       sampleRate: 16000,
       chunkDurationSecs: 30,
