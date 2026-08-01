@@ -66,6 +66,7 @@ void main() {
         speakerEnabled: false,
         mode: rust_audio.SessionMode.offline,
         modelPath: 'tiny', // will not load — capture is disabled
+        hptMode: rust_audio.HptMode.auto,
         vadEnabled: true,
         sampleRate: 16000,
         chunkDurationSecs: 30,

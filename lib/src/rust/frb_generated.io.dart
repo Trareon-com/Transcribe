@@ -40,16 +40,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   AudioDeviceInfo dco_decode_audio_device_info(dynamic raw);
 
   @protected
-  AutoSplitReason dco_decode_auto_split_reason(dynamic raw);
-
-  @protected
   bool dco_decode_bool(dynamic raw);
 
   @protected
   AppSettings dco_decode_box_autoadd_app_settings(dynamic raw);
-
-  @protected
-  AutoSplitReason dco_decode_box_autoadd_auto_split_reason(dynamic raw);
 
   @protected
   (BigInt, BigInt) dco_decode_box_autoadd_record_u_64_u_64(dynamic raw);
@@ -76,6 +70,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   double dco_decode_f_64(dynamic raw);
+
+  @protected
+  HptMode dco_decode_hpt_mode(dynamic raw);
 
   @protected
   int dco_decode_i_32(dynamic raw);
@@ -125,9 +122,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   String? dco_decode_opt_String(dynamic raw);
-
-  @protected
-  AutoSplitReason? dco_decode_opt_box_autoadd_auto_split_reason(dynamic raw);
 
   @protected
   (BigInt, BigInt)? dco_decode_opt_box_autoadd_record_u_64_u_64(dynamic raw);
@@ -196,18 +190,10 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   AudioDeviceInfo sse_decode_audio_device_info(SseDeserializer deserializer);
 
   @protected
-  AutoSplitReason sse_decode_auto_split_reason(SseDeserializer deserializer);
-
-  @protected
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
   AppSettings sse_decode_box_autoadd_app_settings(SseDeserializer deserializer);
-
-  @protected
-  AutoSplitReason sse_decode_box_autoadd_auto_split_reason(
-    SseDeserializer deserializer,
-  );
 
   @protected
   (BigInt, BigInt) sse_decode_box_autoadd_record_u_64_u_64(
@@ -238,6 +224,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   double sse_decode_f_64(SseDeserializer deserializer);
+
+  @protected
+  HptMode sse_decode_hpt_mode(SseDeserializer deserializer);
 
   @protected
   int sse_decode_i_32(SseDeserializer deserializer);
@@ -295,11 +284,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
-
-  @protected
-  AutoSplitReason? sse_decode_opt_box_autoadd_auto_split_reason(
-    SseDeserializer deserializer,
-  );
 
   @protected
   (BigInt, BigInt)? sse_decode_opt_box_autoadd_record_u_64_u_64(
@@ -379,23 +363,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
-  void sse_encode_auto_split_reason(
-    AutoSplitReason self,
-    SseSerializer serializer,
-  );
-
-  @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_app_settings(
     AppSettings self,
-    SseSerializer serializer,
-  );
-
-  @protected
-  void sse_encode_box_autoadd_auto_split_reason(
-    AutoSplitReason self,
     SseSerializer serializer,
   );
 
@@ -431,6 +403,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_f_64(double self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_hpt_mode(HptMode self, SseSerializer serializer);
 
   @protected
   void sse_encode_i_32(int self, SseSerializer serializer);
@@ -506,12 +481,6 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
-
-  @protected
-  void sse_encode_opt_box_autoadd_auto_split_reason(
-    AutoSplitReason? self,
-    SseSerializer serializer,
-  );
 
   @protected
   void sse_encode_opt_box_autoadd_record_u_64_u_64(

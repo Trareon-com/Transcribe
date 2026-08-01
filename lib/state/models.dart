@@ -134,6 +134,7 @@ class SessionConfig {
   // Optional second model for HPT. When non-null, live sessions run
   // quick (base) → refine (q5) and replace partial rows in place.
   final String? refineModelPath;
+  final HptMode hptMode;
 
   const SessionConfig({
     required this.micEnabled,
@@ -144,6 +145,7 @@ class SessionConfig {
     this.micDeviceId,
     this.speakerDeviceId,
     this.refineModelPath,
+    this.hptMode = HptMode.auto,
   });
 
   factory SessionConfig.forMode(SessionMode mode, String modelPath) {
@@ -164,6 +166,7 @@ class SessionConfig {
     String? micDeviceId,
     String? speakerDeviceId,
     Object? refineModelPath = _sentinel,
+    HptMode? hptMode,
   }) {
     return SessionConfig(
       micEnabled: micEnabled ?? this.micEnabled,
@@ -176,6 +179,7 @@ class SessionConfig {
       refineModelPath: refineModelPath == _sentinel
           ? this.refineModelPath
           : refineModelPath as String?,
+      hptMode: hptMode ?? this.hptMode,
     );
   }
 }
@@ -229,6 +233,16 @@ class VuLevel {
 
 enum AppThemeMode { light, dark, system }
 
+/// HPT (Hybrid Progressive Transcription) strategy chosen by the user.
+enum HptMode {
+  /// Benchmark q5 RTF; direct if fast, dual-pass if slow (default).
+  auto,
+  /// Force base quick → q5 refine dual-pass.
+  forceDual,
+  /// Force q5 single-pass (skip base entirely).
+  forceDirect,
+}
+
 class AppSettings {
   final AppThemeMode theme;
   final String defaultModel;
@@ -244,6 +258,10 @@ class AppSettings {
   // Hybrid Progressive Transcription: quick pass (base) then refine (q5).
   // Dart-only — resolved into SessionConfig.refineModelPath at session start.
   final bool progressiveEnabled;
+  // Benchmarked q5 realtime factor (seconds audio / second wall).
+  // 0.0 = not yet benchmarked. ≥1.2 ≈ fast enough for single-pass q5.
+  final double rtfScore;
+  final HptMode hptMode;
 
   const AppSettings({
     required this.theme,
@@ -257,6 +275,8 @@ class AppSettings {
     this.micDeviceId,
     this.speakerDeviceId,
     this.progressiveEnabled = true,
+    this.rtfScore = 0.0,
+    this.hptMode = HptMode.auto,
   });
 
   factory AppSettings.defaults() => const AppSettings(
@@ -269,30 +289,40 @@ class AppSettings {
 
   AppSettings copyWith({
     AppThemeMode? theme,
+    String? defaultModel,
     SessionMode? defaultMode,
+    String? libraryPath,
+    bool? vadEnabled,
+    String? language,
     int? autoStopMinutes,
     bool clearAutoStop = false,
+    String? defaultExportFormat,
     Object? micDeviceId = _sentinel,
     Object? speakerDeviceId = _sentinel,
+    bool? progressiveEnabled,
+    double? rtfScore,
+    HptMode? hptMode,
   }) {
     return AppSettings(
       theme: theme ?? this.theme,
-      defaultModel: defaultModel,
+      defaultModel: defaultModel ?? this.defaultModel,
       defaultMode: defaultMode ?? this.defaultMode,
-      libraryPath: libraryPath,
-      vadEnabled: vadEnabled,
-      language: language,
+      libraryPath: libraryPath ?? this.libraryPath,
+      vadEnabled: vadEnabled ?? this.vadEnabled,
+      language: language ?? this.language,
       autoStopMinutes: clearAutoStop
           ? null
           : (autoStopMinutes ?? this.autoStopMinutes),
-      defaultExportFormat: defaultExportFormat,
+      defaultExportFormat: defaultExportFormat ?? this.defaultExportFormat,
       micDeviceId: micDeviceId == _sentinel
           ? this.micDeviceId
           : micDeviceId as String?,
       speakerDeviceId: speakerDeviceId == _sentinel
           ? this.speakerDeviceId
           : speakerDeviceId as String?,
-      progressiveEnabled: progressiveEnabled,
+      progressiveEnabled: progressiveEnabled ?? this.progressiveEnabled,
+      rtfScore: rtfScore ?? this.rtfScore,
+      hptMode: hptMode ?? this.hptMode,
     );
   }
 }

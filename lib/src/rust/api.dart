@@ -75,6 +75,14 @@ Future<List<SessionRecoverySnapshot>> listRecoverableSessions() =>
 Future<String> recoverSession({required SessionRecoverySnapshot snapshot}) =>
     RustLib.instance.api.crateApiRecoverSession(snapshot: snapshot);
 
+/// Benchmark a model's realtime factor (seconds of audio transcribed per
+/// second of wall-clock) using a 5s calibration chunk. Used by adaptive
+/// HPT to decide whether a device can run q5 in a single pass.
+/// Returns an error if the model cannot be loaded.
+/// (No network access — purely local inference benchmark.)
+Future<double> benchmarkRtf({required String modelPath}) =>
+    RustLib.instance.api.crateApiBenchmarkRtf(modelPath: modelPath);
+
 Future<List<ModelInfo>> listAvailableModels({required String modelsDir}) =>
     RustLib.instance.api.crateApiListAvailableModels(modelsDir: modelsDir);
 

@@ -6,7 +6,24 @@
 import 'frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `clone`, `clone`, `eq`, `fmt`, `fmt`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `assert_fields_are_eq`, `clone`, `clone`, `clone`, `eq`, `eq`, `fmt`, `fmt`, `fmt`
+
+/// User-chosen strategy for Hybrid Progressive Transcription (HPT).
+///
+/// * `Auto`      — benchmark q5; direct single-pass on fast devices,
+///                 dual-pass base→q5 on slow ones (default).
+/// * `ForceDual` — always base quick → q5 refine (best for low-CPU devices
+///                 where the user wants instant partial text).
+/// * `ForceDirect` — skip the base pass, run q5 alone from the start
+///                 (best for fast devices; lower total latency).
+enum HptMode {
+  auto,
+  forceDual,
+  forceDirect;
+
+  static Future<HptMode> default_() =>
+      RustLib.instance.api.crateAudioHptModeDefault();
+}
 
 class SessionConfig {
   final bool micEnabled;
@@ -21,6 +38,10 @@ class SessionConfig {
   /// renders in 3-5s and is then replaced in place by the accurate pass.
   /// `None` = classic single-model live transcription.
   final String? refineModelPath;
+
+  /// Overrides adaptive HPT routing. `Auto` benchmarks live; the other
+  /// variants force a specific path regardless of device capability.
+  final HptMode hptMode;
   final bool vadEnabled;
   final int sampleRate;
   final int chunkDurationSecs;
@@ -33,6 +54,7 @@ class SessionConfig {
     this.speakerDeviceId,
     required this.modelPath,
     this.refineModelPath,
+    required this.hptMode,
     required this.vadEnabled,
     required this.sampleRate,
     required this.chunkDurationSecs,
@@ -60,6 +82,7 @@ class SessionConfig {
       speakerDeviceId.hashCode ^
       modelPath.hashCode ^
       refineModelPath.hashCode ^
+      hptMode.hashCode ^
       vadEnabled.hashCode ^
       sampleRate.hashCode ^
       chunkDurationSecs.hashCode;
@@ -76,6 +99,7 @@ class SessionConfig {
           speakerDeviceId == other.speakerDeviceId &&
           modelPath == other.modelPath &&
           refineModelPath == other.refineModelPath &&
+          hptMode == other.hptMode &&
           vadEnabled == other.vadEnabled &&
           sampleRate == other.sampleRate &&
           chunkDurationSecs == other.chunkDurationSecs;

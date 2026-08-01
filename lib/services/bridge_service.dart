@@ -70,6 +70,11 @@ abstract class RustBridge {
 
   /// Resumes event forwarding for a previously-paused session.
   void resumeSession(String sessionId);
+
+  /// Benchmarks a model's realtime factor (seconds-audio-per-second-wallclock)
+  /// by transcribing a 5s synthetic sine wave. Used by adaptive HPT at startup.
+  /// Throws if the model cannot be loaded.
+  Future<double> benchmarkRtf(String modelPath);
 }
 
 class RustBridgeMock implements RustBridge {
@@ -227,6 +232,9 @@ class RustBridgeMock implements RustBridge {
 
   @override
   void resumeSession(String sessionId) {}
+
+  @override
+  Future<double> benchmarkRtf(String modelPath) async => 0.8;
 }
 
 /// Real bridge backed by the flutter_rust_bridge-generated bindings in
@@ -267,6 +275,10 @@ class RustEngineBridge implements RustBridge {
   void resumeSession(String sessionId) => _pausedSessions.remove(sessionId);
 
   @override
+  Future<double> benchmarkRtf(String modelPath) =>
+      rust_api.benchmarkRtf(modelPath: modelPath);
+
+  @override
   Future<void> toggleMic(String sessionId, bool enabled) =>
       rust_api.toggleMic(sessionId: sessionId, enabled: enabled);
 
@@ -295,7 +307,7 @@ class RustEngineBridge implements RustBridge {
   Future<void> _poll(String sessionId) async {
     if (!_polling.add(sessionId)) return;
     try {
-      final events = await rust_session.pollEvents(sessionId: sessionId);
+      final events = await rust_api.pollSessionEvents(sessionId: sessionId);
       // Always drain events even when paused — this prevents the Rust mpsc
       // channel from filling up and blocking capture threads. Events are
       // simply not forwarded to the Dart stream controllers.
@@ -455,11 +467,21 @@ class RustEngineBridge implements RustBridge {
       speakerDeviceId: config.speakerDeviceId,
       modelPath: config.modelPath,
       refineModelPath: config.refineModelPath,
+      hptMode: _toRustHptMode(config.hptMode),
       vadEnabled: config.vadEnabled,
       sampleRate: 16000,
       chunkDurationSecs: 30,
     );
   }
+
+  static const _hptModeMap = {
+    HptMode.auto: rust_audio.HptMode.auto,
+    HptMode.forceDual: rust_audio.HptMode.forceDual,
+    HptMode.forceDirect: rust_audio.HptMode.forceDirect,
+  };
+
+  rust_audio.HptMode _toRustHptMode(HptMode mode) =>
+      _hptModeMap[mode] ?? rust_audio.HptMode.auto;
 
   rust_audio.SessionMode _toRustSessionMode(SessionMode mode) => switch (mode) {
     SessionMode.webinar => rust_audio.SessionMode.webinar,

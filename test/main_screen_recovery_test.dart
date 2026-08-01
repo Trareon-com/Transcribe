@@ -23,6 +23,9 @@ class _RecoveryBridge implements RustBridge {
   Future<void> toggleMic(String sessionId, bool enabled) async {}
   @override
   Future<void> toggleSpeaker(String sessionId, bool enabled) async {}
+
+  @override
+  Future<double> benchmarkRtf(String modelPath) async => 0.8;
   @override
   Stream<TranscriptSegment> transcriptStream(String sessionId) => const Stream.empty();
   @override
@@ -86,6 +89,7 @@ void main() {
         speakerEnabled: false,
         mode: rust_audio.SessionMode.offline,
         modelPath: 'models/tiny.gguf',
+        hptMode: rust_audio.HptMode.auto,
         vadEnabled: true,
         sampleRate: 16000,
         chunkDurationSecs: 30,

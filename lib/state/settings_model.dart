@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'dart:io';
 
 import '../services/bridge_service.dart';
 import '../services/dart_prefs.dart';
@@ -8,9 +9,6 @@ final rustBridgeProvider = Provider<RustBridge>((ref) => RustEngineBridge());
 
 class SettingsNotifier extends StateNotifier<AppSettings> {
   final RustBridge _bridge;
-  // Set to true as soon as either (a) the disk load completes or (b) a user
-  // action fires — whichever comes first. Prevents the disk load from
-  // overwriting an in-flight user change.
   bool _userActed = false;
 
   SettingsNotifier(this._bridge) : super(AppSettings.defaults()) {
@@ -18,7 +16,6 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   }
 
   Future<void> _load() async {
-    // Load Dart-only prefs (e.g. defaultExportFormat) alongside Rust settings.
     await DartPrefs.instance.load();
     final loaded = await _bridge.loadSettings();
     if (_userActed) return;
@@ -31,16 +28,36 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
       vadEnabled: loaded.vadEnabled,
       language: loaded.language,
       autoStopMinutes: loaded.autoStopMinutes,
-      defaultExportFormat:
-          DartPrefs.instance.getString('defaultExportFormat') ?? 'markdown',
+      defaultExportFormat: DartPrefs.instance.getString('defaultExportFormat') ?? 'markdown',
       micDeviceId: DartPrefs.instance.getString('micDeviceId'),
       speakerDeviceId: DartPrefs.instance.getString('speakerDeviceId'),
+      progressiveEnabled: DartPrefs.instance.getBool('progressiveEnabled') ?? true,
+      rtfScore: DartPrefs.instance.getDouble('rtfScore') ?? 0.0,
+      hptMode: (() {
+        final raw = DartPrefs.instance.getInt('hptMode');
+        if (raw == null) return HptMode.auto;
+        return HptMode.values[raw.clamp(0, HptMode.values.length - 1)];
+      })(),
     );
     final sanitized = _sanitizeDefaultModel(withDartPrefs);
     state = sanitized;
     if (sanitized.defaultModel != loaded.defaultModel) {
       await _bridge.saveSettings(sanitized);
     }
+    if (sanitized.progressiveEnabled && sanitized.rtfScore == 0.0) {
+      _backgroundBenchmark(sanitized);
+    }
+  }
+
+  Future<void> _backgroundBenchmark(AppSettings settings) async {
+    if (state.rtfScore != 0.0) return;
+    final q5Path = modelPathForId('large-v3-turbo-q5', libraryPath: settings.libraryPath);
+    final q5File = File(q5Path);
+    if (!await q5File.exists()) return;
+    try {
+      final score = await RustEngineBridge().benchmarkRtf(q5Path);
+      if (score > 0) setRtfScore(score);
+    } catch (_) {}
   }
 
   AppSettings _sanitizeDefaultModel(AppSettings settings) {
@@ -49,19 +66,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     }
     const fallback = 'tiny';
     if (settings.defaultModel == fallback) return settings;
-    return AppSettings(
-      theme: settings.theme,
-      defaultModel: fallback,
-      defaultMode: settings.defaultMode,
-      libraryPath: settings.libraryPath,
-      vadEnabled: settings.vadEnabled,
-      language: settings.language,
-      autoStopMinutes: settings.autoStopMinutes,
-      defaultExportFormat: settings.defaultExportFormat,
-      micDeviceId: settings.micDeviceId,
-      speakerDeviceId: settings.speakerDeviceId,
-      progressiveEnabled: settings.progressiveEnabled,
-    );
+    return settings.copyWith(defaultModel: fallback);
   }
 
   Future<void> setTheme(AppThemeMode theme) async {
@@ -70,10 +75,44 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _bridge.saveSettings(state);
   }
 
-  /// Toggle between light ↔ dark. If system, treat as light first.
   Future<void> toggleTheme() async {
     final next = state.theme == AppThemeMode.dark ? AppThemeMode.light : AppThemeMode.dark;
     await setTheme(next);
+  }
+
+  Future<void> setProgressiveEnabled(bool enabled) async {
+    _userActed = true;
+    state = state.copyWith(progressiveEnabled: enabled);
+    DartPrefs.instance.setBool('progressiveEnabled', enabled);
+    await DartPrefs.instance.save();
+    await _bridge.saveSettings(state);
+  }
+
+  Future<void> setRtfScore(double score) async {
+    _userActed = true;
+    state = state.copyWith(rtfScore: score);
+    DartPrefs.instance.setDouble('rtfScore', score);
+    await DartPrefs.instance.save();
+  }
+
+  Future<void> setHptMode(HptMode mode) async {
+    _userActed = true;
+    state = state.copyWith(hptMode: mode);
+    DartPrefs.instance.setInt('hptMode', mode.index);
+    await DartPrefs.instance.save();
+    await _bridge.saveSettings(state);
+  }
+
+  Future<void> setDefaultModel(String modelId) async {
+    _userActed = true;
+    state = state.copyWith(defaultModel: modelId);
+    await _bridge.saveSettings(state);
+  }
+
+  Future<void> setLanguage(String? language) async {
+    _userActed = true;
+    state = state.copyWith(language: language);
+    await _bridge.saveSettings(state);
   }
 
   Future<void> setDefaultMode(SessionMode mode) async {
@@ -82,140 +121,36 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     await _bridge.saveSettings(state);
   }
 
-  Future<void> setLibraryPath(String path) async {
-    _userActed = true;
-    state = AppSettings(
-      theme: state.theme,
-      defaultModel: state.defaultModel,
-      defaultMode: state.defaultMode,
-      libraryPath: path,
-      vadEnabled: state.vadEnabled,
-      language: state.language,
-      autoStopMinutes: state.autoStopMinutes,
-      defaultExportFormat: state.defaultExportFormat,
-      micDeviceId: state.micDeviceId,
-      speakerDeviceId: state.speakerDeviceId,
-      progressiveEnabled: state.progressiveEnabled,
-    );
-    await _bridge.saveSettings(state);
-  }
-
   Future<void> setVadEnabled(bool enabled) async {
     _userActed = true;
-    state = AppSettings(
-      theme: state.theme,
-      defaultModel: state.defaultModel,
-      defaultMode: state.defaultMode,
-      libraryPath: state.libraryPath,
-      vadEnabled: enabled,
-      language: state.language,
-      autoStopMinutes: state.autoStopMinutes,
-      defaultExportFormat: state.defaultExportFormat,
-      micDeviceId: state.micDeviceId,
-      speakerDeviceId: state.speakerDeviceId,
-      progressiveEnabled: state.progressiveEnabled,
-    );
-    await _bridge.saveSettings(state);
-  }
-
-  Future<void> setLanguage(String? language) async {
-    _userActed = true;
-    state = AppSettings(
-      theme: state.theme,
-      defaultModel: state.defaultModel,
-      defaultMode: state.defaultMode,
-      libraryPath: state.libraryPath,
-      vadEnabled: state.vadEnabled,
-      language: language,
-      autoStopMinutes: state.autoStopMinutes,
-      defaultExportFormat: state.defaultExportFormat,
-      micDeviceId: state.micDeviceId,
-      speakerDeviceId: state.speakerDeviceId,
-      progressiveEnabled: state.progressiveEnabled,
-    );
-    await _bridge.saveSettings(state);
-  }
-
-  Future<void> setProgressiveEnabled(bool enabled) async {
-    _userActed = true;
-    state = AppSettings(
-      theme: state.theme,
-      defaultModel: state.defaultModel,
-      defaultMode: state.defaultMode,
-      libraryPath: state.libraryPath,
-      vadEnabled: state.vadEnabled,
-      language: state.language,
-      autoStopMinutes: state.autoStopMinutes,
-      defaultExportFormat: state.defaultExportFormat,
-      micDeviceId: state.micDeviceId,
-      speakerDeviceId: state.speakerDeviceId,
-      progressiveEnabled: enabled,
-    );
-    await _bridge.saveSettings(state);
-  }
-
-  Future<void> setDefaultModel(String modelId) async {
-    _userActed = true;
-    state = AppSettings(
-      theme: state.theme,
-      defaultModel: modelId,
-      defaultMode: state.defaultMode,
-      libraryPath: state.libraryPath,
-      vadEnabled: state.vadEnabled,
-      language: state.language,
-      autoStopMinutes: state.autoStopMinutes,
-      defaultExportFormat: state.defaultExportFormat,
-      micDeviceId: state.micDeviceId,
-      speakerDeviceId: state.speakerDeviceId,
-      progressiveEnabled: state.progressiveEnabled,
-    );
+    state = state.copyWith(vadEnabled: enabled);
     await _bridge.saveSettings(state);
   }
 
   Future<void> setAutoStopMinutes(int? minutes) async {
     _userActed = true;
-    state = AppSettings(
-      theme: state.theme,
-      defaultModel: state.defaultModel,
-      defaultMode: state.defaultMode,
-      libraryPath: state.libraryPath,
-      vadEnabled: state.vadEnabled,
-      language: state.language,
-      autoStopMinutes: minutes,
-      defaultExportFormat: state.defaultExportFormat,
-      micDeviceId: state.micDeviceId,
-      speakerDeviceId: state.speakerDeviceId,
-      progressiveEnabled: state.progressiveEnabled,
-    );
+    state = state.copyWith(autoStopMinutes: minutes);
     await _bridge.saveSettings(state);
   }
 
   Future<void> setDefaultExportFormat(String format) async {
     _userActed = true;
-    state = AppSettings(
-      theme: state.theme,
-      defaultModel: state.defaultModel,
-      defaultMode: state.defaultMode,
-      libraryPath: state.libraryPath,
-      vadEnabled: state.vadEnabled,
-      language: state.language,
-      autoStopMinutes: state.autoStopMinutes,
-      defaultExportFormat: format,
-      micDeviceId: state.micDeviceId,
-      speakerDeviceId: state.speakerDeviceId,
-    );
-    // Persist to DartPrefs so the value survives app restarts.
+    state = state.copyWith(defaultExportFormat: format);
     DartPrefs.instance.setString('defaultExportFormat', format);
     await DartPrefs.instance.save();
+    await _bridge.saveSettings(state);
+  }
+
+  Future<void> setLibraryPath(String path) async {
+    _userActed = true;
+    state = state.copyWith(libraryPath: path);
     await _bridge.saveSettings(state);
   }
 
   Future<void> setMicDeviceName(String? name) async {
     _userActed = true;
     state = state.copyWith(micDeviceId: name);
-    if (name != null) {
-      DartPrefs.instance.setString('micDeviceId', name);
-    }
+    if (name != null) DartPrefs.instance.setString('micDeviceId', name);
     await DartPrefs.instance.save();
     await _bridge.saveSettings(state);
   }
@@ -223,17 +158,12 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
   Future<void> setSpeakerDeviceName(String? name) async {
     _userActed = true;
     state = state.copyWith(speakerDeviceId: name);
-    if (name != null) {
-      DartPrefs.instance.setString('speakerDeviceId', name);
-    }
+    if (name != null) DartPrefs.instance.setString('speakerDeviceId', name);
     await DartPrefs.instance.save();
     await _bridge.saveSettings(state);
   }
 }
 
 final settingsProvider = StateNotifierProvider<SettingsNotifier, AppSettings>((ref) {
-  // ref.read is correct here — RustBridge is a stable singleton, no need to
-  // watch it for rebuilds.  Using ref.watch would cause unnecessary rebuilds
-  // if the provider were ever invalidated.
   return SettingsNotifier(ref.read(rustBridgeProvider));
 });

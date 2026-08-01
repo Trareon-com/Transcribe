@@ -36,6 +36,22 @@ impl SessionMode {
     }
 }
 
+/// User-chosen strategy for Hybrid Progressive Transcription (HPT).
+///
+/// * `Auto`      — benchmark q5; direct single-pass on fast devices,
+///                 dual-pass base→q5 on slow ones (default).
+/// * `ForceDual` — always base quick → q5 refine (best for low-CPU devices
+///                 where the user wants instant partial text).
+/// * `ForceDirect` — skip the base pass, run q5 alone from the start
+///                 (best for fast devices; lower total latency).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
+pub enum HptMode {
+    #[default]
+    Auto = 0,
+    ForceDual = 1,
+    ForceDirect = 2,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SessionConfig {
     pub mic_enabled: bool,
@@ -50,6 +66,10 @@ pub struct SessionConfig {
     /// `None` = classic single-model live transcription.
     #[serde(default)]
     pub refine_model_path: Option<String>,
+    /// Overrides adaptive HPT routing. `Auto` benchmarks live; the other
+    /// variants force a specific path regardless of device capability.
+    #[serde(default)]
+    pub hpt_mode: HptMode,
     pub vad_enabled: bool,
     pub sample_rate: u32,
     pub chunk_duration_secs: u32,
@@ -66,6 +86,7 @@ impl SessionConfig {
             speaker_device_id: None,
             model_path,
             refine_model_path: None,
+            hpt_mode: HptMode::Auto,
             vad_enabled: true,
             sample_rate: 16_000,
             chunk_duration_secs: 30,

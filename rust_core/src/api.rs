@@ -82,6 +82,19 @@ pub fn recover_session(snapshot: SessionRecoverySnapshot) -> Result<String, Tran
 
 // --- Model management -----------------------------------------------------
 
+/// Benchmark a model's realtime factor (seconds of audio transcribed per
+/// second of wall-clock) using a 5s calibration chunk. Used by adaptive
+/// HPT to decide whether a device can run q5 in a single pass.
+/// Returns an error if the model cannot be loaded.
+/// (No network access — purely local inference benchmark.)
+pub fn benchmark_rtf(model_path: String) -> Result<f64, TranscribeError> {
+    let engine = crate::stt::WhisperEngine::load(std::path::Path::new(&model_path))
+        .map_err(|e| {
+            TranscribeError::Model(format!("benchmark model load failed: {e}"))
+        })?;
+    Ok(crate::benchmark::benchmark_rtf(&engine))
+}
+
 pub fn list_available_models(models_dir: String) -> Vec<ModelInfo> {
     crate::model::list_available_models(&PathBuf::from(models_dir))
 }

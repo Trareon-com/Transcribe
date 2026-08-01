@@ -11,7 +11,7 @@
 //! happens one level up, in `session::SessionState::collect_worker_events`,
 //! once both channels' segments have actually converged.
 
-use crate::audio::RingBuffer;
+use crate::audio::{HptMode, RingBuffer};
 use crate::diarization::Diarizer;
 use crate::error::{TranscribeError, TranscribeResult};
 use crate::export::Segment;
@@ -185,29 +185,39 @@ impl LiveWorker {
         })
     }
 
-    /// Adaptive HPT worker: benchmarks the refine (q5) model once at
-    /// session start. If q5 can transcribe ≥1s of audio per 1s wall-clock
-    /// (RTF ≥ 1.0), the device is fast enough to run q5 directly as the
-    /// single pass — no base quick pass needed, final text lands at the
-    /// same speed the quick pass would have. Otherwise it falls back to
-    /// dual-pass [`Self::spawn_hpt`] (base quick → q5 refine) so slow
-    /// laptops still get instant partial text.
+    /// Adaptive HPT worker. The [mode] (from the user's settings) decides the
+    /// exact strategy:
+    ///   * `Auto`      — benchmark q5 once; if RTF ≥ `HPT_DIRECT_THRESHOLD`
+    ///                   run q5 directly (single pass, reusing the loaded
+    ///                   engine — no double 548MB load). Otherwise fall back
+    ///                   to dual-pass [`Self::spawn_hpt`].
+    ///   * `ForceDual` — always dual-pass (base quick → q5 refine).
+    ///   * `ForceDirect` — always single q5 pass (reuse loaded engine).
+    ///
+    /// The benchmark itself is a no-network local inference probe over a 5s
+    /// synthetic sine wave, so no user audio ever leaves the device for it.
     pub fn spawn_adaptive(
         quick_model_path: impl AsRef<std::path::Path>,
         refine_model_path: impl AsRef<std::path::Path>,
+        mode: HptMode,
         source: impl Into<String>,
         language: Option<String>,
         samples_rx: std::sync::mpsc::Receiver<Vec<f32>>,
         events_tx: std::sync::mpsc::Sender<LiveEvent>,
     ) -> Result<Self, TranscribeError> {
-        // Load refine model once and benchmark it. RTF >= 1.0 means the
-        // q5 model itself keeps up with real-time audio → single pass,
-        // reusing the benchmark-loaded engine (no double 548MB load).
+        // Load refine model ONCE — used for both the benchmark and (when
+        // direct is chosen) the actual transcription engine.
         let engine = WhisperEngine::load(refine_model_path.as_ref())?;
         let rtf = crate::benchmark::benchmark_rtf(&engine);
-        tracing::info!(rtf, "adaptive hpt benchmark");
+        tracing::info!(rtf, mode = ?mode, "adaptive hpt benchmark");
 
-        if should_direct_q5(rtf) {
+        let direct = match mode {
+            HptMode::ForceDirect => true,
+            HptMode::ForceDual => false,
+            HptMode::Auto => should_direct_q5(rtf),
+        };
+
+        if direct {
             Self::spawn_with_engine(engine, source, language, samples_rx, events_tx)
         } else {
             drop(engine); // dual-pass loads both models itself
@@ -223,25 +233,30 @@ impl LiveWorker {
     }
 }
 
+/// RTF threshold for skipping the base quick pass. ≥1.2 means the q5 engine
+/// keeps up with real-time audio (with a 20% safety margin over plain 1.0 so
+/// borderline devices still get the instant-partial benefit of dual-pass).
+pub const HPT_DIRECT_THRESHOLD: f64 = 1.2;
+
 /// Pure decision: does this device run q5 fast enough to skip the base
-/// quick pass entirely? RTF = seconds of audio transcribed per second of
-/// wall-clock. ≥1.0 means real-time capable → direct q5 single pass.
+/// quick pass entirely? `rtf` = seconds of audio transcribed per second of
+/// wall-clock. ≥ `HPT_DIRECT_THRESHOLD` → direct q5 single pass.
 pub fn should_direct_q5(rtf: f64) -> bool {
-    rtf >= 1.0
+    rtf >= HPT_DIRECT_THRESHOLD
 }
 
 #[cfg(test)]
 mod adaptive_tests {
-    use super::should_direct_q5;
+    use super::{should_direct_q5, HptMode, HPT_DIRECT_THRESHOLD};
 
     #[test]
-    fn rtf_at_realtime_threshold_directs_q5() {
-        assert!(should_direct_q5(1.0));
+    fn rtf_at_threshold_directs_q5() {
+        assert!(should_direct_q5(HPT_DIRECT_THRESHOLD));
     }
 
     #[test]
     fn rtf_below_threshold_falls_back_to_dual_pass() {
-        assert!(!should_direct_q5(0.99));
+        assert!(!should_direct_q5(HPT_DIRECT_THRESHOLD - 0.001));
         assert!(!should_direct_q5(0.5));
         assert!(!should_direct_q5(0.0));
     }
@@ -251,6 +266,37 @@ mod adaptive_tests {
         assert!(should_direct_q5(1.2));
         assert!(should_direct_q5(5.0));
         assert!(should_direct_q5(12.0));
+    }
+
+    #[test]
+    fn threshold_is_strict_and_conservative() {
+        // 1.0 is real-time but below the 1.2 safety margin → dual-pass.
+        assert!(!should_direct_q5(1.0));
+        assert_eq!(HPT_DIRECT_THRESHOLD, 1.2);
+    }
+
+    #[test]
+    fn hpt_mode_force_direct_bypasses_benchmark() {
+        for rtf in [0.0, 0.5, 1.0, 1.2, 5.0] {
+            let direct = match HptMode::ForceDirect {
+                HptMode::ForceDirect => true,
+                HptMode::ForceDual => false,
+                HptMode::Auto => should_direct_q5(rtf),
+            };
+            assert!(direct, "ForceDirect at rtf={rtf} must direct");
+        }
+    }
+
+    #[test]
+    fn hpt_mode_force_dual_always_falls_back() {
+        for rtf in [0.0, 1.2, 5.0] {
+            let direct = match HptMode::ForceDual {
+                HptMode::ForceDual => false,
+                HptMode::ForceDirect => true,
+                HptMode::Auto => should_direct_q5(rtf),
+            };
+            assert!(!direct, "ForceDual at rtf={rtf} must dual");
+        }
     }
 }
 

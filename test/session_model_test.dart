@@ -30,6 +30,9 @@ class _NoopBridge implements RustBridge {
   Future<void> toggleSpeaker(String sessionId, bool enabled) async {}
 
   @override
+  Future<double> benchmarkRtf(String modelPath) async => 0.8;
+
+  @override
   Stream<TranscriptSegment> transcriptStream(String sessionId) => const Stream.empty();
 
   @override

@@ -6,10 +6,6 @@
 import 'frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `append_as_mono`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `clone`, `fmt`
-// These functions are ignored (category: IgnoreBecauseExplicitAttribute): `decode_audio_file`, `resample_to_target`
-
 /// Decoded audio, resampled to mono f32 PCM at [`TARGET_SAMPLE_RATE`].
 class AudioBuffer {
   final Float32List samples;

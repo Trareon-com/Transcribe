@@ -124,6 +124,7 @@ fn start_capture(
     device_name: Option<String>,
     model_path: &str,
     refine_model_path: Option<String>,
+    hpt_mode: crate::audio::HptMode,
     source: &str,
     language: Option<String>,
 ) -> Result<Option<CaptureChannel>, TranscribeError> {
@@ -148,7 +149,7 @@ fn start_capture(
     let worker = match refine_model_path {
         Some(refine) => {
             match LiveWorker::spawn_adaptive(
-                model_path, refine, source, language, samples_rx, events_tx,
+                model_path, refine, hpt_mode, source, language, samples_rx, events_tx,
             ) {
                 Ok(w) => w,
                 Err(e) => {
@@ -323,6 +324,7 @@ fn start_session_with_id(id: String, config: SessionConfig) -> Result<String, Tr
         config.mic_device_id.clone(),
         &config.model_path,
         refine_model_path.clone(),
+        config.hpt_mode,
         "mic",
         language.clone(),
     )?;
@@ -331,6 +333,7 @@ fn start_session_with_id(id: String, config: SessionConfig) -> Result<String, Tr
         config.speaker_device_id.clone(),
         &config.model_path,
         refine_model_path,
+        config.hpt_mode,
         "spk",
         language,
     )?;

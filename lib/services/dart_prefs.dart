@@ -52,4 +52,26 @@ class DartPrefs {
   String? getString(String key) => _data[key] as String?;
 
   void setString(String key, String value) => _data[key] = value;
+
+  bool? getBool(String key) {
+    final v = _data[key];
+    return v is bool ? v : null;
+  }
+
+  void setBool(String key, bool value) => _data[key] = value;
+
+  double? getDouble(String key) {
+    final v = _data[key];
+    if (v is num) return v.toDouble();
+    return null;
+  }
+
+  void setDouble(String key, double value) => _data[key] = value;
+
+  int? getInt(String key) {
+    final v = _data[key];
+    return v is int ? v : null;
+  }
+
+  void setInt(String key, int value) => _data[key] = value;
 }
