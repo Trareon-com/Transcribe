@@ -147,8 +147,9 @@ fn start_capture(
     let (events_tx, events_rx) = mpsc::channel();
     let worker = match refine_model_path {
         Some(refine) => {
-            match LiveWorker::spawn_hpt(model_path, refine, source, language, samples_rx, events_tx)
-            {
+            match LiveWorker::spawn_adaptive(
+                model_path, refine, source, language, samples_rx, events_tx,
+            ) {
                 Ok(w) => w,
                 Err(e) => {
                     tracing::warn!(source, %e, "skipping capture — hpt pipeline init failed");

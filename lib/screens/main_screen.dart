@@ -739,7 +739,9 @@ class _ShortcutRow extends StatelessWidget {
   }
 }
 
-/// Toggle kualitas: ⚡ Cepat (base) / 🎯 Akurat (large-v3-turbo-q5)
+/// Toggle kualitas: ⚡ Cepat (base) / 🎯 Akurat (large-v3-turbo-q5).
+/// With Progressive Mode on, ⚡ becomes adaptive: fast devices run q5
+/// directly (single pass), slow devices get base quick → q5 refine.
 class _QualityToggle extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -747,16 +749,24 @@ class _QualityToggle extends ConsumerWidget {
     final notifier = ref.read(settingsProvider.notifier);
     final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
     final isAkurat = settings.defaultModel == 'large-v3-turbo-q5';
+    final adaptive = !isAkurat && settings.progressiveEnabled;
 
     final targetModel = isAkurat ? 'base' : 'large-v3-turbo-q5';
     final targetAvailable = isModelAvailable(targetModel, libraryPath: settings.libraryPath);
 
+    final label = adaptive
+        ? 'Otomatis'
+        : (isAkurat ? 'Akurat' : 'Cepat');
+    final emoji = adaptive ? '⚡→🎯' : (isAkurat ? '🎯' : '⚡');
+
     return Tooltip(
-      message: isAkurat
-          ? 'Ganti ke mode Cepat (base)'
-          : 'Ganti ke mode Akurat (large-v3-turbo-q5)',
+      message: adaptive
+          ? 'Progressive: laptop kuat → q5 langsung, lemot → base dulu lalu q5. Ketuk untuk Akurat penuh.'
+          : isAkurat
+              ? 'Ganti ke mode Cepat (base)'
+              : 'Ganti ke mode Akurat (large-v3-turbo-q5)',
       child: Semantics(
-        label: 'Mode kualitas: ${isAkurat ? 'Akurat' : 'Cepat'}. '
+        label: 'Mode kualitas: $label. '
             'Ketuk untuk berpindah ke mode ${isAkurat ? 'Cepat' : 'Akurat'}.',
         button: true,
         child: GestureDetector(
@@ -773,10 +783,10 @@ class _QualityToggle extends ConsumerWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(isAkurat ? '🎯' : '⚡', style: const TextStyle(fontSize: 12)),
+                  Text(emoji, style: const TextStyle(fontSize: 12)),
                   const SizedBox(width: 4),
                   Text(
-                    isAkurat ? 'Akurat' : 'Cepat',
+                    label,
                     style: TextStyle(color: colors.textSecondary, fontSize: 12),
                   ),
                 ],

@@ -78,8 +78,8 @@ class SettingsScreen extends ConsumerWidget {
               icon: Icons.speed_outlined,
               label: 'Progressive Mode',
               subtitle: settings.progressiveEnabled
-                  ? 'Base dulu untuk hasil cepat, lalu q5 menyempurnakan teks di background.'
-                  : 'Aktifkan: teks muncul 3-5 detik, akurasi setara q5',
+                  ? 'Otomatis: laptop kuat → q5 langsung dari awal; lemot → base dulu, q5 menyusul.'
+                  : 'Aktifkan: teks cepat muncul, akurasi setara q5',
               value: settings.progressiveEnabled,
               onChanged: (enabled) {
                 if (enabled &&

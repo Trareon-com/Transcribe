@@ -49,6 +49,20 @@ impl LiveWorker {
         events_tx: std::sync::mpsc::Sender<LiveEvent>,
     ) -> Result<Self, TranscribeError> {
         let engine = WhisperEngine::load(model_path.as_ref())?;
+        Self::spawn_with_engine(engine, source, language, samples_rx, events_tx)
+    }
+
+    /// Single-model worker over an already-loaded engine. Used by
+    /// [`Self::spawn`] and by adaptive HPT's direct-q5 fast path so the
+    /// benchmark-loaded engine is reused instead of double-loading the
+    /// 548 MB refine model.
+    fn spawn_with_engine(
+        engine: WhisperEngine,
+        source: impl Into<String>,
+        language: Option<String>,
+        samples_rx: std::sync::mpsc::Receiver<Vec<f32>>,
+        events_tx: std::sync::mpsc::Sender<LiveEvent>,
+    ) -> Result<Self, TranscribeError> {
         let source = source.into();
         let (stop_tx, stop_rx) = std::sync::mpsc::channel();
         let thread = std::thread::spawn(move || {
@@ -169,6 +183,74 @@ impl LiveWorker {
             stop_tx: Some(stop_tx),
             thread: Some(thread),
         })
+    }
+
+    /// Adaptive HPT worker: benchmarks the refine (q5) model once at
+    /// session start. If q5 can transcribe ≥1s of audio per 1s wall-clock
+    /// (RTF ≥ 1.0), the device is fast enough to run q5 directly as the
+    /// single pass — no base quick pass needed, final text lands at the
+    /// same speed the quick pass would have. Otherwise it falls back to
+    /// dual-pass [`Self::spawn_hpt`] (base quick → q5 refine) so slow
+    /// laptops still get instant partial text.
+    pub fn spawn_adaptive(
+        quick_model_path: impl AsRef<std::path::Path>,
+        refine_model_path: impl AsRef<std::path::Path>,
+        source: impl Into<String>,
+        language: Option<String>,
+        samples_rx: std::sync::mpsc::Receiver<Vec<f32>>,
+        events_tx: std::sync::mpsc::Sender<LiveEvent>,
+    ) -> Result<Self, TranscribeError> {
+        // Load refine model once and benchmark it. RTF >= 1.0 means the
+        // q5 model itself keeps up with real-time audio → single pass,
+        // reusing the benchmark-loaded engine (no double 548MB load).
+        let engine = WhisperEngine::load(refine_model_path.as_ref())?;
+        let rtf = crate::benchmark::benchmark_rtf(&engine);
+        tracing::info!(rtf, "adaptive hpt benchmark");
+
+        if should_direct_q5(rtf) {
+            Self::spawn_with_engine(engine, source, language, samples_rx, events_tx)
+        } else {
+            drop(engine); // dual-pass loads both models itself
+            Self::spawn_hpt(
+                quick_model_path,
+                refine_model_path,
+                source,
+                language,
+                samples_rx,
+                events_tx,
+            )
+        }
+    }
+}
+
+/// Pure decision: does this device run q5 fast enough to skip the base
+/// quick pass entirely? RTF = seconds of audio transcribed per second of
+/// wall-clock. ≥1.0 means real-time capable → direct q5 single pass.
+pub fn should_direct_q5(rtf: f64) -> bool {
+    rtf >= 1.0
+}
+
+#[cfg(test)]
+mod adaptive_tests {
+    use super::should_direct_q5;
+
+    #[test]
+    fn rtf_at_realtime_threshold_directs_q5() {
+        assert!(should_direct_q5(1.0));
+    }
+
+    #[test]
+    fn rtf_below_threshold_falls_back_to_dual_pass() {
+        assert!(!should_direct_q5(0.99));
+        assert!(!should_direct_q5(0.5));
+        assert!(!should_direct_q5(0.0));
+    }
+
+    #[test]
+    fn fast_device_directs_q5() {
+        assert!(should_direct_q5(1.2));
+        assert!(should_direct_q5(5.0));
+        assert!(should_direct_q5(12.0));
     }
 }
 
