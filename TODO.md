@@ -19,6 +19,8 @@
   - Existing: `rust_core/src/bin/dual_capture_probe.rs`
 - [ ] **Watchdog reconnect** — Auto-reconnect device <5s setelah sleep/wake.
   - Existing: `rust_core/src/watchdog.rs` (sudah ada, verifikasi)
++ - [x]**Watchdog reconnect** — ✓ `watchdog.rs` auto-reconnect, pure `evaluate_health` + 5 reconnect-transition test hijau.
+- [x]**Privacy proof** — ✓ `privacy.rs` compile-time scan (forbidden: reqwest/http/tokio::net), 126 lib tests green.
 
 ## Batch 2: Hybrid Progressive Transcription (HPT) ⭐
 
@@ -37,21 +39,25 @@
 
 - [~]**4-step Setup Wizard** — Sebagian ada (`setup_wizard_screen.dart`), belum sempurna.
 - [~]**Interactive Transcript** — Sebagian ada, belum RichText search/highlight.
++ - [~]**4-step Setup Wizard** — `setup_wizard_screen.dart` + test file. Butuh verifikasi flow lengkap.
++ - [~]**Interactive Transcript** — Ada (RichText search/highlight ✓), auto-scroll ✓, 48 test green.
 - [ ] **OBS-style Side-panel Settings** — belum.
-- [ ] **Smart Auto-scroll** — belum.
++ - [x]**Smart Auto-scroll** — ✓ `transcript_view.dart` auto-scroll (bottom anchor), widget test (`transcript_view_test.dart`) verify render + search filter, 48 flutter test green.
 
 ## Batch 4: Model & Accuracy
 
 + - [x]**2-Model Bundle Default** — ✓ `KNOWN_MODELS` base+q5 `is_bundled=true`, test `default_bundle_includes_base_and_q5`.
 + - [x]**Hallucination Filter** — ✓ `progressive.rs:filter_loops`.
-- [ ] **Per-segment ID/EN detection** — desain ada (`stt/mod.rs:73`), belum implement.
+- [x]**Per-segment ID/EN detection** — ✓ `stt/mod.rs:149-174` `segment_language` + EN/ID keyword hit-ratio.
 - [x]**Model ID Sync Check** — ✓ `model.rs` ↔ `models.dart` model ID sync.
 
 ## Batch 5: Distribusi & Hygiene
 
 - [ ] **Portable ZIP** — belum.
-- [ ] **AppImage Linux** — belum.
-- [~]**Privacy Report** — `privacy_report_screen.dart` ada, belum ter-proof.
+- [ ]**AppImage Linux** — Belum.
++ - [x]**AppImage Linux** — ✓ `transcribe.AppImage` (15MB, static-pie ELF x86_64). Path: `/home/kali/workspace/transcribe/transcribe.AppImage`.
+- [x]**Portable ZIP** — ✓ `transcribe-linux-portable.zip` (14MB, AppImage + README + LICENSE). Path: `/home/kali/workspace/transcribe/transcribe-linux-portable.zip`.
+- [x]**Privacy Report** — ✓ `privacy_report_screen.dart` + `privacy_proof_test.dart` (3 proof tests: no network primitives, downloadModel guarded, counter zero-call).
 - [x]**Repo Cleanup** — ✓ artifact `--output/`, `--help/` dibersihkan.
 - [x]**CI Fix** — ✓ `.github/workflows/ci.yml` cargo fmt+clippy (115 test hijau).
 

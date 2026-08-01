@@ -98,6 +98,85 @@ class AppTheme {
           ),
         ),
       ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: colors.primary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: colors.surfaceElevated,
+        contentTextStyle: TextStyle(color: colors.text, fontSize: 13),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(color: colors.divider),
+        ),
+        elevation: 2,
+      ),
+      tooltipTheme: TooltipThemeData(
+        decoration: BoxDecoration(
+          color: colors.surfaceElevated,
+          borderRadius: BorderRadius.circular(6),
+          border: Border.all(color: colors.divider),
+        ),
+        textStyle: TextStyle(color: colors.text, fontSize: 12),
+        waitDuration: const Duration(milliseconds: 400),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: colors.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        titleTextStyle: TextStyle(
+          color: colors.text,
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+        contentTextStyle: TextStyle(color: colors.textSecondary, fontSize: 13),
+      ),
+      scrollbarTheme: ScrollbarThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => colors.textTertiary.withValues(alpha: 0.5),
+        ),
+        radius: const Radius.circular(4),
+        thickness: const WidgetStatePropertyAll(6),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          foregroundColor: WidgetStateProperty.resolveWith((states) =>
+              states.contains(WidgetState.selected)
+                  ? colors.onPrimary
+                  : colors.textSecondary),
+          backgroundColor: WidgetStateProperty.resolveWith((states) =>
+              states.contains(WidgetState.selected)
+                  ? colors.primary
+                  : Colors.transparent),
+          side: WidgetStatePropertyAll(BorderSide(color: colors.border)),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          textStyle: WidgetStatePropertyAll(
+            TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+          ),
+        ),
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: colors.primary,
+        linearTrackColor: colors.divider,
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: colors.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+          side: BorderSide(color: colors.divider),
+        ),
+        textStyle: TextStyle(color: colors.text, fontSize: 13),
+      ),
     );
   }
 }

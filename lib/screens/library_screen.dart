@@ -252,14 +252,43 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Icon(Icons.folder_open_outlined, size: 48, color: colors.textTertiary),
-                                  const SizedBox(height: 12),
-                                  Text('Belum ada sesi tersimpan', style: TextStyle(color: colors.textSecondary)),
+                                  Container(
+                                    width: 72,
+                                    height: 72,
+                                    decoration: BoxDecoration(
+                                      color: colors.primary.withValues(alpha: 0.10),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(Icons.folder_open_outlined, size: 34, color: colors.primary),
+                                  ),
+                                  const SizedBox(height: 16),
+                                  Text(
+                                    'Belum ada sesi tersimpan',
+                                    style: TextStyle(
+                                      color: colors.text,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    'Sesi transkripsi akan muncul di sini',
+                                    style: TextStyle(color: colors.textSecondary, fontSize: 13),
+                                  ),
                                 ],
                               ),
                             )
                           : filtered.isEmpty
-                              ? Center(child: Text('Tidak ada sesi cocok', style: TextStyle(color: colors.textSecondary)))
+                              ? Center(
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.search_off, size: 36, color: colors.textTertiary),
+                                      const SizedBox(height: 8),
+                                      Text('Tidak ada sesi cocok', style: TextStyle(color: colors.textSecondary, fontSize: 13)),
+                                    ],
+                                  ),
+                                )
                               : ListView.separated(
                                   padding: const EdgeInsets.symmetric(horizontal: 12),
                                   itemCount: filtered.length + 1, // +1 for storage bar

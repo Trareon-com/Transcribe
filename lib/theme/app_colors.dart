@@ -51,6 +51,7 @@ abstract class AppColorSet extends ThemeExtension<AppColorSet> {
   Color get chipSelectedBackground;
   Color get headerBackground;
   Color get transcriptBackground;
+  Color get primaryDark;
 }
 
 class LightColors extends AppColorSet {
@@ -64,13 +65,15 @@ class LightColors extends AppColorSet {
   @override
   Color get primary => const Color(0xFF00796B);
   @override
+  Color get primaryDark => const Color(0xFF004D40);
+  @override
   Color get onPrimary => const Color(0xFFFFFFFF);
   @override
   Color get text => const Color(0xFF333333);
   @override
   Color get textSecondary => const Color(0xFF666666);
   @override
-  Color get textTertiary => const Color(0xFF999999);
+  Color get textTertiary => const Color(0xFF757575);
   @override
   Color get divider => const Color(0xFFE0E0E0);
   @override
@@ -96,13 +99,15 @@ class DarkColors extends AppColorSet {
   @override
   Color get primary => const Color(0xFF4DB6AC);
   @override
+  Color get primaryDark => const Color(0xFF00796B);
+  @override
   Color get onPrimary => const Color(0xFF003D33);
   @override
   Color get text => const Color(0xFFE0E0E0);
   @override
   Color get textSecondary => const Color(0xFFB0B0B0);
   @override
-  Color get textTertiary => const Color(0xFF808080);
+  Color get textTertiary => const Color(0xFF9E9E9E);
   @override
   Color get divider => const Color(0xFF333333);
   @override

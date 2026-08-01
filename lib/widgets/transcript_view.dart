@@ -127,16 +127,34 @@ class _TranscriptViewState extends State<TranscriptView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.mic_none_outlined, size: 48, color: colors.textTertiary),
-            const SizedBox(height: 12),
+            // Icon dalam container bulat berwarna primary — affordance visual
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: colors.primary.withValues(alpha: 0.10),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.mic_none_outlined, size: 34, color: colors.primary),
+            ),
+            const SizedBox(height: 16),
             Text(
               'Belum ada transkrip',
-              style: TextStyle(color: colors.textSecondary, fontSize: 14),
+              style: TextStyle(
+                color: colors.text,
+                fontSize: 15,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              'Mulai sesi untuk memulai transkripsi',
+              style: TextStyle(color: colors.textSecondary, fontSize: 13),
             ),
             const SizedBox(height: 4),
             Text(
-              'Mulai sesi untuk memulai transkripsi',
-              style: TextStyle(color: colors.textTertiary, fontSize: 12),
+              'Tekan Mulai atau Ctrl+R (⌘R)',
+              style: TextStyle(color: colors.textTertiary, fontSize: 11),
             ),
           ],
         ),
@@ -156,15 +174,15 @@ class _TranscriptViewState extends State<TranscriptView> {
             children: [
               Expanded(
                 child: SizedBox(
-                  height: 32,
+                  height: 36,
                   child: TextField(
                     controller: _searchController,
                     onChanged: (val) => setState(() => _searchQuery = val),
-                    style: TextStyle(color: colors.text, fontSize: 12),
+                    style: TextStyle(color: colors.text, fontSize: 13),
                     decoration: InputDecoration(
                       hintText: 'Cari...',
-                      hintStyle: TextStyle(color: colors.textTertiary, fontSize: 12),
-                      prefixIcon: Icon(Icons.search, size: 14, color: colors.textTertiary),
+                      hintStyle: TextStyle(color: colors.textTertiary, fontSize: 13),
+                      prefixIcon: Icon(Icons.search, size: 16, color: colors.textTertiary),
                       suffixIcon: _searchQuery.isNotEmpty
                           ? IconButton(
                               icon: Icon(Icons.clear, size: 14, color: colors.textTertiary),

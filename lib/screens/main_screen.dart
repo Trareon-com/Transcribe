@@ -292,7 +292,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                         ),
                       ),
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                       color: colors.textSecondary,
                     ),
                     IconButton(
@@ -384,6 +384,107 @@ class _MainScreenState extends ConsumerState<MainScreen> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Footer bar: recording timer, minify to tray, diarization info
+class _FooterBar extends StatelessWidget {
+  final SessionLifecycle lifecycle;
+  final int segmentsCount;
+  final double elapsedSeconds;
+
+  const _FooterBar({
+    required this.lifecycle,
+    required this.segmentsCount,
+    this.elapsedSeconds = 0,
+  });
+
+  String _formatElapsed(double secs) {
+    final h = (secs / 3600).floor();
+    final m = ((secs % 3600) / 60).floor();
+    final s = (secs % 60).floor();
+    if (h > 0) return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final isRecording = lifecycle == SessionLifecycle.recording;
+    final isPaused = lifecycle == SessionLifecycle.paused;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(top: BorderSide(color: colors.divider, width: 0.5)),
+      ),
+      child: Row(
+        children: [
+          // Recording dot + timer
+          if (isRecording || isPaused) ...[
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: isRecording ? AppColors.statusActive : Colors.orange,
+                boxShadow: isRecording
+                    ? [BoxShadow(color: AppColors.statusActive.withValues(alpha: 0.5), blurRadius: 4, spreadRadius: 1)]
+                    : null,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _formatElapsed(elapsedSeconds),
+              style: TextStyle(
+                color: colors.text,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                fontFamily: 'monospace',
+              ),
+            ),
+            const SizedBox(width: 16),
+          ],
+
+          // Segments
+          if (segmentsCount > 0) ...[
+            Icon(Icons.chat_bubble_outline, size: 14, color: colors.textTertiary),
+            const SizedBox(width: 4),
+            Text(
+              '$segmentsCount',
+              style: TextStyle(color: colors.textTertiary, fontSize: 12, fontFamily: 'monospace'),
+            ),
+            const SizedBox(width: 16),
+          ],
+
+          const Spacer(),
+        ],
+      ),
+    );
+  }
+}
+
+/// Horizontal VU meter bar — reflects live audio level [0,1].
+class _VuBar extends StatelessWidget {
+  final double level;
+  final Color color;
+  const _VuBar({required this.level, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final clamped = level.clamp(0.0, 1.0);
+    return SizedBox(
+      width: 56,
+      height: 4,
+      child: LinearProgressIndicator(
+        value: clamped,
+        backgroundColor: colors.divider,
+        color: color,
+        borderRadius: BorderRadius.circular(2),
       ),
     );
   }
@@ -529,88 +630,21 @@ class _ControlBar extends StatelessWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  // VU meters (live audio level feedback)
+                  if (isActive) ...[
+                    _VuBar(level: vuMikrofonLevel, color: colors.primary),
+                    const SizedBox(width: 4),
+                    Text('MIC', style: TextStyle(color: colors.textTertiary, fontSize: 10)),
+                    const SizedBox(width: 6),
+                    _VuBar(level: vuSpeakerLevel, color: colors.primaryDark),
+                    const SizedBox(width: 4),
+                    Text('SPK', style: TextStyle(color: colors.textTertiary, fontSize: 10)),
+                  ],
                 ],
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Footer bar: recording timer, minify to tray, diarization info
-class _FooterBar extends StatelessWidget {
-  final SessionLifecycle lifecycle;
-  final int segmentsCount;
-  final double elapsedSeconds;
-
-  const _FooterBar({
-    required this.lifecycle,
-    required this.segmentsCount,
-    this.elapsedSeconds = 0,
-  });
-
-  String _formatElapsed(double secs) {
-    final h = (secs / 3600).floor();
-    final m = ((secs % 3600) / 60).floor();
-    final s = (secs % 60).floor();
-    if (h > 0) return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-    final isRecording = lifecycle == SessionLifecycle.recording;
-    final isPaused = lifecycle == SessionLifecycle.paused;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        border: Border(top: BorderSide(color: colors.divider, width: 0.5)),
-      ),
-      child: Row(
-        children: [
-          // Recording dot + timer
-          if (isRecording || isPaused) ...[
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: isRecording ? AppColors.statusActive : Colors.orange,
-                boxShadow: isRecording
-                    ? [BoxShadow(color: AppColors.statusActive.withValues(alpha: 0.5), blurRadius: 4, spreadRadius: 1)]
-                    : null,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              _formatElapsed(elapsedSeconds),
-              style: TextStyle(
-                color: colors.text,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'monospace',
-              ),
-            ),
-            const SizedBox(width: 16),
-          ],
-
-          // Segments
-          if (segmentsCount > 0) ...[
-            Icon(Icons.chat_bubble_outline, size: 14, color: colors.textTertiary),
-            const SizedBox(width: 4),
-            Text(
-              '$segmentsCount',
-              style: TextStyle(color: colors.textTertiary, fontSize: 12, fontFamily: 'monospace'),
-            ),
-            const SizedBox(width: 16),
-          ],
-
-          const Spacer(),
         ],
       ),
     );
@@ -717,27 +751,37 @@ class _QualityToggle extends ConsumerWidget {
     final targetModel = isAkurat ? 'base' : 'large-v3-turbo-q5';
     final targetAvailable = isModelAvailable(targetModel, libraryPath: settings.libraryPath);
 
-    return GestureDetector(
-      onTap: targetAvailable ? () => notifier.setDefaultModel(targetModel) : null,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: colors.chipBackground,
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: colors.border),
-        ),
-        child: Opacity(
-          opacity: targetAvailable ? 1.0 : 0.4,
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(isAkurat ? '🎯' : '⚡', style: const TextStyle(fontSize: 12)),
-              const SizedBox(width: 4),
-              Text(
-                isAkurat ? 'Akurat' : 'Cepat',
-                style: TextStyle(color: colors.textSecondary, fontSize: 12),
+    return Tooltip(
+      message: isAkurat
+          ? 'Ganti ke mode Cepat (base)'
+          : 'Ganti ke mode Akurat (large-v3-turbo-q5)',
+      child: Semantics(
+        label: 'Mode kualitas: ${isAkurat ? 'Akurat' : 'Cepat'}. '
+            'Ketuk untuk berpindah ke mode ${isAkurat ? 'Cepat' : 'Akurat'}.',
+        button: true,
+        child: GestureDetector(
+          onTap: targetAvailable ? () => notifier.setDefaultModel(targetModel) : null,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: colors.chipBackground,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: colors.border),
+            ),
+            child: Opacity(
+              opacity: targetAvailable ? 1.0 : 0.4,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(isAkurat ? '🎯' : '⚡', style: const TextStyle(fontSize: 12)),
+                  const SizedBox(width: 4),
+                  Text(
+                    isAkurat ? 'Akurat' : 'Cepat',
+                    style: TextStyle(color: colors.textSecondary, fontSize: 12),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
