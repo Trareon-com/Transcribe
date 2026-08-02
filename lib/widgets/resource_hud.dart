@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../state/session_model.dart';
 import '../theme/app_colors.dart';
+import '../utils/format_time.dart';
 
 /// Resource HUD: recording status, elapsed time, CPU, RAM, segment count
 class ResourceHud extends StatelessWidget {
@@ -22,24 +23,17 @@ class ResourceHud extends StatelessWidget {
     this.modelName = '',
   });
 
-  String _formatElapsed(double secs) {
-    final h = (secs / 3600).floor();
-    final m = ((secs % 3600) / 60).floor();
-    final s = (secs % 60).floor();
-    if (h > 0) return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
-  }
-
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final colors =
+        Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
     final isRecording = lifecycle == SessionLifecycle.recording;
     final isPaused = lifecycle == SessionLifecycle.paused;
     final statusColor = isRecording
         ? AppColors.statusActive
         : isPaused
-            ? Colors.orange
-            : colors.textTertiary;
+        ? Colors.orange
+        : colors.textTertiary;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
@@ -53,13 +47,23 @@ class ResourceHud extends StatelessWidget {
               shape: BoxShape.circle,
               color: statusColor,
               boxShadow: isRecording
-                  ? [BoxShadow(color: statusColor.withValues(alpha: 0.5), blurRadius: 4, spreadRadius: 1)]
+                  ? [
+                      BoxShadow(
+                        color: statusColor.withValues(alpha: 0.5),
+                        blurRadius: 4,
+                        spreadRadius: 1,
+                      ),
+                    ]
                   : null,
             ),
           ),
           const SizedBox(width: 8),
           Text(
-            isRecording ? _formatElapsed(elapsedSeconds) : _statusLabel(lifecycle),
+            isRecording
+                ? formatDuration(
+                    Duration(milliseconds: (elapsedSeconds * 1000).round()),
+                  )
+                : _statusLabel(lifecycle),
             style: TextStyle(
               color: isRecording ? colors.text : colors.textSecondary,
               fontSize: 12,
@@ -91,7 +95,11 @@ class ResourceHud extends StatelessWidget {
               padding: const EdgeInsets.only(right: 12),
               child: Text(
                 '🖥️ ${cpuUsage.toStringAsFixed(0)}%',
-                style: TextStyle(color: colors.textTertiary, fontSize: 11, fontFamily: 'monospace'),
+                style: TextStyle(
+                  color: colors.textTertiary,
+                  fontSize: 11,
+                  fontFamily: 'monospace',
+                ),
               ),
             ),
 
@@ -101,14 +109,22 @@ class ResourceHud extends StatelessWidget {
               padding: const EdgeInsets.only(right: 12),
               child: Text(
                 '🧠 ${ramUsageGb.toStringAsFixed(1)} GB',
-                style: TextStyle(color: colors.textTertiary, fontSize: 11, fontFamily: 'monospace'),
+                style: TextStyle(
+                  color: colors.textTertiary,
+                  fontSize: 11,
+                  fontFamily: 'monospace',
+                ),
               ),
             ),
 
           // Segments
           Text(
             '🗣️ $segmentsCount',
-            style: TextStyle(color: colors.textTertiary, fontSize: 11, fontFamily: 'monospace'),
+            style: TextStyle(
+              color: colors.textTertiary,
+              fontSize: 11,
+              fontFamily: 'monospace',
+            ),
           ),
         ],
       ),

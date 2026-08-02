@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../state/models.dart';
 import '../theme/app_colors.dart';
+import '../utils/format_time.dart';
 
 /// Card widget for displaying a session summary in the library list.
 class SessionCard extends StatelessWidget {
@@ -26,17 +27,11 @@ class SessionCard extends StatelessWidget {
     required this.onExport,
   });
 
-  String _formatDuration(double seconds) {
-    final h = (seconds / 3600).floor();
-    final m = ((seconds % 3600) / 60).floor();
-    if (h > 0) return '${h}j ${m}m';
-    return '$m menit';
-  }
-
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-    final durStr = _formatDuration(durationSeconds);
+    final colors =
+        Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final durStr = formatDurationLabel(durationSeconds);
 
     return Card(
       color: colors.surface,
@@ -60,7 +55,11 @@ class SessionCard extends StatelessWidget {
                   color: colors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(Icons.mic_outlined, color: colors.primary, size: 20),
+                child: Icon(
+                  Icons.mic_outlined,
+                  color: colors.primary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
 
@@ -82,18 +81,32 @@ class SessionCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        Icon(Icons.access_time, size: 12, color: colors.textTertiary),
+                        Icon(
+                          Icons.access_time,
+                          size: 12,
+                          color: colors.textTertiary,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           durStr,
-                          style: TextStyle(color: colors.textTertiary, fontSize: 12),
+                          style: TextStyle(
+                            color: colors.textTertiary,
+                            fontSize: 12,
+                          ),
                         ),
                         const SizedBox(width: 12),
-                        Icon(Icons.chat_bubble_outline, size: 12, color: colors.textTertiary),
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 12,
+                          color: colors.textTertiary,
+                        ),
                         const SizedBox(width: 4),
                         Text(
                           '$segmentsCount segmen',
-                          style: TextStyle(color: colors.textTertiary, fontSize: 12),
+                          style: TextStyle(
+                            color: colors.textTertiary,
+                            fontSize: 12,
+                          ),
                         ),
                       ],
                     ),
@@ -103,12 +116,20 @@ class SessionCard extends StatelessWidget {
 
               // Actions
               IconButton(
-                icon: Icon(Icons.upload_outlined, size: 18, color: colors.textTertiary),
+                icon: Icon(
+                  Icons.upload_outlined,
+                  size: 18,
+                  color: colors.textTertiary,
+                ),
                 tooltip: 'Export',
                 onPressed: onExport,
               ),
               IconButton(
-                icon: Icon(Icons.delete_outline, size: 18, color: colors.textTertiary),
+                icon: Icon(
+                  Icons.delete_outline,
+                  size: 18,
+                  color: colors.textTertiary,
+                ),
                 tooltip: 'Hapus',
                 onPressed: onDelete,
               ),

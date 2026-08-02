@@ -11,11 +11,6 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 // These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`
 // These functions are ignored (category: IgnoreBecauseExplicitAttribute): `export_segments`, `write_wav`
 
-/// Sanitize a user/window-title-derived name into a safe path component:
-/// no separators, no traversal, no control characters.
-Future<String> sanitizeFilename({required String raw}) =>
-    RustLib.instance.api.crateExportSanitizeFilename(raw: raw);
-
 enum ExportFormat { markdown, txt, json, srt, vtt, html, docx, wav }
 
 class ExportedFile {
