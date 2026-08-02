@@ -8,12 +8,12 @@
 use std::path::PathBuf;
 
 use crate::audio::{AudioDeviceInfo, SessionConfig, SessionMode};
-use crate::doctor::{run_checks, format_checks, Check};
+use crate::doctor::{format_checks, run_checks, Check};
 use crate::error::TranscribeError;
 use crate::export::{ExportFormat, ExportedFile, Segment};
 use crate::model::ModelInfo;
 use crate::session::{SessionEvent, SessionRecoverySnapshot, SessionStatus};
-use crate::settings::{AppSettings, AppConfig};
+use crate::settings::{AppConfig, AppSettings};
 
 pub fn get_app_config() -> AppConfig {
     AppConfig::load().unwrap_or_default()
@@ -28,12 +28,10 @@ pub fn format_preflight_checks(checks: Vec<Check>) -> String {
     format_checks(&checks)
 }
 
-pub fn resume_pending_transcriptions(
-    library_path: String,
-) -> Result<Vec<String>, TranscribeError> {
-    let paths = crate::pipeline::LiveWorker::resume_pending_transcriptions(
-        std::path::Path::new(&library_path),
-    )?;
+pub fn resume_pending_transcriptions(library_path: String) -> Result<Vec<String>, TranscribeError> {
+    let paths = crate::pipeline::LiveWorker::resume_pending_transcriptions(std::path::Path::new(
+        &library_path,
+    ))?;
     Ok(paths
         .iter()
         .map(|p| p.to_string_lossy().to_string())
@@ -115,9 +113,7 @@ pub fn recover_session(snapshot: SessionRecoverySnapshot) -> Result<String, Tran
 /// (No network access — purely local inference benchmark.)
 pub fn benchmark_rtf(model_path: String) -> Result<f64, TranscribeError> {
     let engine = crate::stt::WhisperEngine::load(std::path::Path::new(&model_path))
-        .map_err(|e| {
-            TranscribeError::Model(format!("benchmark model load failed: {e}"))
-        })?;
+        .map_err(|e| TranscribeError::Model(format!("benchmark model load failed: {e}")))?;
     Ok(crate::benchmark::benchmark_rtf(&engine))
 }
 

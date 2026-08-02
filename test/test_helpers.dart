@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:transcribe/main.dart';
 import 'package:transcribe/services/bridge_service.dart';
 import 'package:transcribe/state/models.dart';
 import 'package:transcribe/state/settings_model.dart';

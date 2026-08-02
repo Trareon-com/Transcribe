@@ -1,7 +1,6 @@
 //! Export module — Markdown / TXT / JSON / SRT / VTT / HTML / DOCX / WAV.
 
 use std::fs;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -155,7 +154,10 @@ pub fn export_segments(
 /// copy+remove on cross-device rename (e.g. /tmp on a different
 /// filesystem than the target).
 fn atomic_write(path: &Path, content: &[u8]) -> Result<(), TranscribeError> {
-    let temp_path = path.with_extension("tmp");
+    // Append ".tmp" to the FULL filename (not `with_extension`) so parallel
+    // exports of different formats ("Rapat Q3.md" vs "Rapat Q3.txt") never
+    // collide on the same temp path.
+    let temp_path = PathBuf::from(format!("{}.tmp", path.to_string_lossy()));
     fs::write(&temp_path, content).map_err(TranscribeError::from)?;
     match fs::rename(&temp_path, path) {
         Ok(()) => Ok(()),
@@ -363,6 +365,7 @@ mod tests {
     fn export_all_formats_writes_files() {
         let dir =
             std::env::temp_dir().join(format!("transcribe_export_test_{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&dir).unwrap();
         let segments = sample_segments();
         let formats = [
             ExportFormat::Markdown,

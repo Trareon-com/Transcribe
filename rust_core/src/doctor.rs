@@ -6,7 +6,6 @@
 
 use std::path::PathBuf;
 
-use crate::error::TranscribeError;
 use crate::settings::AppSettings;
 
 /// The outcome of a single diagnostic check.
@@ -101,12 +100,11 @@ fn check_library_path(settings: &AppSettings) -> Check {
 }
 /// Check that the default transcription model file exists on disk.
 fn check_model_available(settings: &AppSettings) -> Check {
-    let model_path =
-        crate::model::resolve_model_path(
-            std::path::Path::new(&settings.library_path),
-            &settings.default_model,
-        )
-        .unwrap_or_else(|_| std::path::PathBuf::from(&settings.library_path));
+    let model_path = crate::model::resolve_model_path(
+        std::path::Path::new(&settings.library_path),
+        &settings.default_model,
+    )
+    .unwrap_or_else(|_| std::path::PathBuf::from(&settings.library_path));
     if model_path.exists() {
         Check::ok("model")
     } else {
@@ -174,7 +172,9 @@ pub fn format_checks(checks: &[Check]) -> String {
 
 /// Return true if all checks passed (no failures; warnings are OK).
 pub fn all_ok(checks: &[Check]) -> bool {
-    checks.iter().all(|c| !matches!(c.status, CheckStatus::Fail(_)))
+    checks
+        .iter()
+        .all(|c| !matches!(c.status, CheckStatus::Fail(_)))
 }
 
 #[cfg(test)]

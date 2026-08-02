@@ -204,9 +204,9 @@ impl LiveWorker {
     /// Adaptive HPT worker. The [mode] (from the user's settings) decides the
     /// exact strategy:
     ///   * `Auto`      — benchmark q5 once; if RTF ≥ `HPT_DIRECT_THRESHOLD`
-    ///                   run q5 directly (single pass, reusing the loaded
-    ///                   engine — no double 548MB load). Otherwise fall back
-    ///                   to dual-pass [`Self::spawn_hpt`].
+    ///     run q5 directly (single pass, reusing the loaded
+    ///     engine — no double 548MB load). Otherwise fall back
+    ///     to dual-pass [`Self::spawn_hpt`].
     ///   * `ForceDual` — always dual-pass (base quick → q5 refine).
     ///   * `ForceDirect` — always single q5 pass (reuse loaded engine).
     ///
