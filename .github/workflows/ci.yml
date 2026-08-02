@@ -125,7 +125,8 @@ jobs:
         with:
           workspaces: rust_core
       - name: Build rust_core library
-        run: cd rust_core && cargo build --release --lib
+        run: cargo build --release --lib
+        working-directory: rust_core
       - uses: subosito/flutter-action@v2.23.0
         with:
           channel: stable
