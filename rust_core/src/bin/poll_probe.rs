@@ -23,6 +23,7 @@ fn main() {
         speaker_device_id: None,
         model_path: "tiny".to_string(),
         refine_model_path: None,
+        hpt_mode: rust_core::audio::HptMode::Auto,
         vad_enabled: false,
         sample_rate: 16_000,
         chunk_duration_secs: 30,
