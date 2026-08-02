@@ -32,14 +32,14 @@ impl Default for AppSettings {
     fn default() -> Self {
         Self {
             theme: Theme::Light,
-            default_model: "tiny".to_string(),
+            default_model: "large-v3-turbo".to_string(),
             default_mode: SessionMode::Online,
             library_path: default_library_path(),
             always_on_top: false,
             auto_save_interval_secs: 10,
             vad_enabled: true,
             echo_dedupe_enabled: true,
-            language: None,
+            language: Some("id".to_string()),
         }
     }
 }
@@ -88,7 +88,8 @@ mod tests {
     #[test]
     fn default_settings_are_sane() {
         let s = AppSettings::default();
-        assert_eq!(s.default_model, "tiny");
+        assert_eq!(s.default_model, "large-v3-turbo");
+        assert_eq!(s.language.as_deref(), Some("id"));
         assert!(s.vad_enabled);
         assert!(!s.library_path.is_empty());
     }
@@ -97,7 +98,7 @@ mod tests {
     fn load_missing_file_returns_default() {
         let path = Some(std::env::temp_dir().join("transcribe_settings_does_not_exist.json"));
         let s = load_settings_from(&path);
-        assert_eq!(s.default_model, "tiny");
+        assert_eq!(s.default_model, "large-v3-turbo");
     }
 
     #[test]
@@ -134,7 +135,7 @@ mod tests {
         std::fs::write(&path, "not valid json{{{").unwrap();
 
         let loaded = load_settings_from(&Some(path));
-        assert_eq!(loaded.default_model, "tiny");
+        assert_eq!(loaded.default_model, "large-v3-turbo");
 
         let _ = std::fs::remove_dir_all(&dir);
     }

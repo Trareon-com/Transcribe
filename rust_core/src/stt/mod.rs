@@ -97,13 +97,16 @@ impl WhisperEngine {
             .create_state()
             .map_err(|e| TranscribeError::Transcription(format!("failed to create state: {e}")))?;
 
-        let mut params = FullParams::new(SamplingStrategy::Greedy { best_of: 1 });
+        let mut params = FullParams::new(SamplingStrategy::BeamSearch {
+            beam_size: 5,
+            patience: 1.0,
+        });
         params.set_print_special(false);
         params.set_print_progress(false);
         params.set_print_realtime(false);
         params.set_print_timestamps(false);
         params.set_language(language.or(Some("auto")));
-        params.set_audio_ctx(512);
+        params.set_audio_ctx(1500);
         // params.token_timestamps(true);  // disabled until FRB regen
 
         state
