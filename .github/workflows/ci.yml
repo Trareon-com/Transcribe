@@ -12,9 +12,6 @@ jobs:
   rust:
     name: Rust (fmt, clippy, test, audit, deny)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: rust_core
     steps:
       - uses: actions/checkout@v4
       - name: Install native audio dependencies
@@ -27,25 +24,31 @@ jobs:
           workspaces: rust_core
 
       - name: cargo fmt --check
+        working-directory: rust_core
         run: cargo fmt --check
 
       - name: cargo clippy
+        working-directory: rust_core
         run: cargo clippy --all-targets -- -D warnings
 
       - name: cargo test
+        working-directory: rust_core
         run: cargo test --lib
 
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked
       - name: cargo audit
+        working-directory: rust_core
         run: cargo audit
 
       - name: Install cargo-deny
         run: cargo install cargo-deny --locked
       - name: cargo deny check
+        working-directory: rust_core
         run: cargo deny check
 
       - name: Verify Rust library compiles
+        working-directory: rust_core
         run: cargo check --lib
 
   flutter:
