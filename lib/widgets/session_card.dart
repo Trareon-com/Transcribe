@@ -110,6 +110,16 @@ class SessionCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (date.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        _formatDate(date),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: colors.textTertiary,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -138,6 +148,19 @@ class SessionCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _formatDate(String isoDate) {
+    try {
+      final d = DateTime.parse(isoDate);
+      const months = [
+        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 
+        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
+      ];
+      return '${d.day} ${months[d.month - 1]} ${d.year}';
+    } catch (_) {
+      return isoDate;
+    }
   }
 }
 
