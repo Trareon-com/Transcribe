@@ -585,7 +585,7 @@ class _SettingsSwitch extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: colors.primary,
+            activeThumbColor: colors.primary,
             activeTrackColor: colors.primary.withValues(alpha: 0.3),
             inactiveThumbColor: colors.textTertiary,
             inactiveTrackColor: colors.border,
