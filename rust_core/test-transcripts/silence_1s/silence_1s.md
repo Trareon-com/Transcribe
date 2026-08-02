@@ -1,2 +1,0 @@
-# silence_1s
-
