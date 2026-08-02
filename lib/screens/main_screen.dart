@@ -11,6 +11,7 @@ import '../state/settings_model.dart';
 import '../src/rust/session.dart' as rust_session;
 import '../theme/app_colors.dart';
 import '../utils/format_time.dart';
+import '../widgets/app_toast.dart';
 import '../widgets/mode_selector.dart';
 import '../widgets/model_download_dialog.dart';
 import '../widgets/stream_toggle.dart';
@@ -71,9 +72,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           .where((item) => item.sessionId != snapshot.sessionId)
           .toList(growable: false);
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Sesi ${snapshot.sessionId} dipulihkan.')),
-    );
+    AppToast.show(context, 'Sesi ${snapshot.sessionId} dipulihkan.',
+        type: ToastType.success);
   }
 
   Future<void> _handleBerhentiPressed(
@@ -122,16 +122,14 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       await ref.read(sessionProvider.notifier).start();
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$e')));
+      AppToast.show(context, '$e', type: ToastType.error);
     }
   }
 
   Future<void> _onEkspor(BuildContext context) async {
     final session = ref.read(sessionProvider);
     if (session.segments.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Tidak ada transkrip untuk diekspor.')),
-      );
+      AppToast.show(context, 'Tidak ada transkrip untuk diekspor.');
       return;
     }
     final settings = ref.read(settingsProvider);
@@ -153,14 +151,11 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         title: title,
       );
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ekspor berhasil ke: $selectedDir')),
-      );
+      AppToast.show(context, 'Ekspor berhasil ke: $selectedDir',
+          type: ToastType.success);
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ekspor gagal: $e')));
+      AppToast.show(context, 'Ekspor gagal: $e', type: ToastType.error);
     }
   }
 
