@@ -73,10 +73,6 @@ jobs:
           - os: ubuntu-latest
           - os: macos-latest
           - os: windows-latest
-    defaults:
-      run:
-        working-directory: rust_core
-        shell: bash
     steps:
       - uses: actions/checkout@v4
       - name: Install native audio dependencies (Linux)
@@ -87,6 +83,7 @@ jobs:
         with:
           workspaces: rust_core
       - name: cargo build --release --lib
+        working-directory: rust_core
         run: cargo build --release --lib
 
   flutter-build:
