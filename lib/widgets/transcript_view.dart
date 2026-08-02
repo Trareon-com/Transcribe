@@ -5,6 +5,7 @@ import '../state/models.dart';
 import '../theme/app_colors.dart';
 import '../utils/format_time.dart';
 import '../utils/speaker_color.dart';
+import 'speaker_avatar.dart';
 
 class TranscriptView extends StatefulWidget {
   final List<TranscriptSegment> segments;
@@ -447,7 +448,7 @@ class _SegmentTile extends StatelessWidget {
                     ),
                     // Speaker label + time
                     SizedBox(
-                      width: 72,
+                      width: 92, // Bumped from 72 to accommodate avatar
                       child: GestureDetector(
                         onTap: onRename != null
                             ? () => _openRenameDialog(context)
@@ -457,6 +458,12 @@ class _SegmentTile extends StatelessWidget {
                           children: [
                             Row(
                               children: [
+                                SpeakerAvatar(
+                                  name: displaySpeaker,
+                                  color: speakerColor,
+                                  size: 22,
+                                ),
+                                const SizedBox(width: 6),
                                 Flexible(
                                   child: Text(
                                     displaySpeaker,
@@ -481,17 +488,20 @@ class _SegmentTile extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: 2),
-                            Text(
-                              formatDuration(
-                                Duration(
-                                  milliseconds: (segment.timestamp * 1000)
-                                      .round(),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 28),
+                              child: Text(
+                                formatDuration(
+                                  Duration(
+                                    milliseconds: (segment.timestamp * 1000)
+                                        .round(),
+                                  ),
                                 ),
-                              ),
-                              style: TextStyle(
-                                color: colors.textTertiary,
-                                fontSize: 10,
-                                fontFeatures: [FontFeature.tabularFigures()],
+                                style: TextStyle(
+                                  color: colors.textTertiary,
+                                  fontSize: 10,
+                                  fontFeatures: [FontFeature.tabularFigures()],
+                                ),
                               ),
                             ),
                           ],
@@ -552,34 +562,34 @@ class _SegmentTile extends StatelessWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (onCopy != null)
-                          IconButton(
-                            icon: Icon(
-                              Icons.copy_outlined,
-                              size: 14,
-                              color: colors.textTertiary,
+                          SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.copy_outlined,
+                                size: 16,
+                                color: colors.textTertiary,
+                              ),
+                              onPressed: onCopy,
+                              padding: EdgeInsets.zero,
+                              tooltip: 'Salin segmen',
                             ),
-                            onPressed: onCopy,
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(
-                              minWidth: 28,
-                              minHeight: 28,
-                            ),
-                            tooltip: 'Salin segmen',
                           ),
                         if (onEdit != null)
-                          IconButton(
-                            icon: Icon(
-                              Icons.edit_outlined,
-                              size: 14,
-                              color: colors.textTertiary,
+                          SizedBox(
+                            width: 32,
+                            height: 32,
+                            child: IconButton(
+                              icon: Icon(
+                                Icons.edit_outlined,
+                                size: 16,
+                                color: colors.textTertiary,
+                              ),
+                              onPressed: () => _openEditDialog(context),
+                              padding: EdgeInsets.zero,
+                              tooltip: 'Edit',
                             ),
-                            onPressed: () => _openEditDialog(context),
-                            padding: EdgeInsets.zero,
-                            constraints: const BoxConstraints(
-                              minWidth: 28,
-                              minHeight: 28,
-                            ),
-                            tooltip: 'Edit',
                           ),
                       ],
                     ),
