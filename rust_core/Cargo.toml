@@ -63,7 +63,7 @@ flutter_rust_bridge = "=2.12.0"
 whisper-rs = "0.14"
 
 # OpenMP hanya untuk Linux — macOS GitHub Actions runner tidak punya libomp
-[target.'cfg(not(any(target_os = "windows", target_os = "macos")))'.dependencies.whisper-rs]
+[target.'cfg(target_os = "linux")'.dependencies.whisper-rs]
 version = "0.14"
 features = ["openmp"]
 
