@@ -210,6 +210,15 @@ jobs:
     if: true
     steps:
       - uses: actions/checkout@v4
+      - name: Install native audio dependencies
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y pkg-config libasound2-dev
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2.9.1
+        with:
+          workspaces: rust_core
+      - name: Build benchmark binary
+        working-directory: rust_core
+        run: cargo build --release --bin trareon-transcribe
       - name: Download benchmark model
         run: |
           curl -fL -o /tmp/ggml-tiny.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
