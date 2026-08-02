@@ -12,9 +12,12 @@ import '../src/rust/session.dart' as rust_session;
 import '../theme/app_colors.dart';
 import '../utils/format_time.dart';
 import '../widgets/app_toast.dart';
+import '../widgets/animated_record_button.dart';
 import '../widgets/mode_selector.dart';
 import '../widgets/model_download_dialog.dart';
 import '../widgets/stream_toggle.dart';
+import '../widgets/vu_meter.dart';
+
 import '../widgets/transcript_view.dart';
 import 'library_screen.dart';
 import 'settings_screen.dart';
@@ -308,7 +311,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    _QualityToggle(),
                     const Spacer(),
                     IconButton(
                       icon: Icon(Icons.upload_file_outlined, size: 18),
@@ -463,135 +465,142 @@ class _ControlBar extends StatelessWidget {
         Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       decoration: BoxDecoration(
         color: colors.surface,
         border: Border(bottom: BorderSide(color: colors.divider, width: 0.5)),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Session title
-          Expanded(
-            flex: 3,
-            child: Container(
-              height: 36,
-              padding: const EdgeInsets.symmetric(horizontal: 10),
-              decoration: BoxDecoration(
-                color: colors.chipBackground,
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: colors.border),
-              ),
+          // Row 1: Title + Quality Toggle
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    height: 36,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    decoration: BoxDecoration(
+                      color: colors.chipBackground,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: colors.border),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.edit_outlined,
+                          color: colors.textTertiary,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: titleController,
+                            onChanged: notifier.setTitle,
+                            onSubmitted: notifier.setTitle,
+                            style: TextStyle(color: colors.text, fontSize: 13),
+                            decoration: InputDecoration.collapsed(
+                              hintText: 'Judul sesi...',
+                              hintStyle: TextStyle(
+                                color: colors.textTertiary,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                _QualityToggle(),
+              ],
+            ),
+          ),
+
+          // Row 2: VU Meters (only when active)
+          if (isActive)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
               child: Row(
                 children: [
-                  Icon(
-                    Icons.edit_outlined,
-                    color: colors.textTertiary,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
                   Expanded(
-                    child: TextField(
-                      controller: titleController,
-                      onChanged: notifier.setTitle,
-                      onSubmitted: notifier.setTitle,
-                      style: TextStyle(color: colors.text, fontSize: 13),
-                      decoration: InputDecoration.collapsed(
-                        hintText: 'Judul sesi...',
-                        hintStyle: TextStyle(
-                          color: colors.textTertiary,
-                          fontSize: 13,
-                        ),
-                      ),
+                    child: _VuRow(
+                      label: 'Mikrofon',
+                      level: vuMikrofonLevel,
+                      accent: colors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _VuRow(
+                      label: 'Speaker',
+                      level: vuSpeakerLevel,
+                      accent: colors.primary,
                     ),
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(width: 12),
 
-          // Mode selector, audio indicators, and action buttons scale down
-          // together instead of overflowing when the window is narrower than
-          // their combined natural width.
-          Expanded(
-            flex: 5,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              alignment: Alignment.centerRight,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Mode selector — disabled while a session is active
-                  IgnorePointer(
-                    ignoring: isActive,
-                    child: Opacity(
-                      opacity: isActive ? 0.5 : 1.0,
-                      child: ModeSelector(
-                        selected: session.config.mode,
-                        onChanged: notifier.setMode,
-                      ),
+          // Row 3: Action Bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+            child: Row(
+              children: [
+                // Mode selector — disabled while a session is active
+                IgnorePointer(
+                  ignoring: isActive,
+                  child: Opacity(
+                    opacity: isActive ? 0.5 : 1.0,
+                    child: ModeSelector(
+                      selected: session.config.mode,
+                      onChanged: notifier.setMode,
                     ),
                   ),
-                  const SizedBox(width: 12),
+                ),
+                const SizedBox(width: 12),
 
-                  // MIC toggle interaktif
-                  StreamToggle(
-                    label: 'Mikrofon',
-                    enabled: session.config.micEnabled,
-                    accent: colors.primary,
-                    onChanged: (enabled) => notifier.toggleMic(enabled),
-                  ),
-                  const SizedBox(width: 8),
+                // MIC toggle interaktif
+                StreamToggle(
+                  label: 'Mik',
+                  enabled: session.config.micEnabled,
+                  accent: colors.primary,
+                  onChanged: (enabled) => notifier.toggleMic(enabled),
+                ),
+                const SizedBox(width: 8),
 
-                  // SPK toggle interaktif
-                  StreamToggle(
-                    label: 'Pengeras Suara',
-                    enabled: session.config.speakerEnabled,
-                    accent: colors.primary,
-                    onChanged: (enabled) => notifier.toggleSpeaker(enabled),
-                  ),
-                  const SizedBox(width: 12),
+                // SPK toggle interaktif
+                StreamToggle(
+                  label: 'Spk',
+                  enabled: session.config.speakerEnabled,
+                  accent: colors.primary,
+                  onChanged: (enabled) => notifier.toggleSpeaker(enabled),
+                ),
+                const Spacer(),
 
-                  // Start/Berhenti button
-                  SizedBox(
-                    height: 36,
-                    child: ElevatedButton.icon(
-                      onPressed: onStartBerhenti,
-                      icon: Icon(
-                        isActive ? Icons.stop : Icons.play_arrow,
-                        size: 18,
-                      ),
-                      label: Text(isActive ? 'Berhenti' : 'Mulai'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isActive
-                            ? AppColors.warning
-                            : colors.primary,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-
-                  // Ekspor button
-                  SizedBox(
+                // Ekspor button
+                Tooltip(
+                  message: session.segments.isEmpty
+                      ? 'Belum ada transkrip untuk diekspor'
+                      : 'Simpan transkrip ke file',
+                  child: SizedBox(
                     height: 36,
                     child: OutlinedButton.icon(
-                      onPressed: onEkspor,
+                      onPressed: session.segments.isEmpty ? null : onEkspor,
                       icon: Icon(
                         Icons.download_outlined,
                         size: 16,
-                        color: colors.text,
                       ),
-                      label: Text(
-                        'Ekspor',
-                        style: TextStyle(color: colors.text),
-                      ),
+                      label: const Text('Ekspor'),
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: colors.border),
+                        side: BorderSide(
+                          color: session.segments.isEmpty
+                              ? colors.divider
+                              : colors.border,
+                        ),
                         padding: const EdgeInsets.symmetric(horizontal: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -599,12 +608,54 @@ class _ControlBar extends StatelessWidget {
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+                const SizedBox(width: 12),
+
+                // Start/Berhenti button (Animated)
+                AnimatedRecordButton(
+                  isRecording: isActive,
+                  isPaused: session.lifecycle == SessionLifecycle.paused,
+                  onPressed: onStartBerhenti,
+                ),
+              ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// A row containing a label and a VU meter.
+class _VuRow extends StatelessWidget {
+  final String label;
+  final double level;
+  final Color accent;
+
+  const _VuRow({
+    required this.label,
+    required this.level,
+    required this.accent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors =
+        Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    return Row(
+      children: [
+        Text(
+          label,
+          style: TextStyle(color: colors.textTertiary, fontSize: 10),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: StreamVuMeter(
+            level: level,
+            accent: accent,
+          ),
+        ),
+      ],
     );
   }
 }
