@@ -1,0 +1,107 @@
+[package]
+name = "rust_core"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+description = "Trareon Transcribe Rust engine — audio capture, VAD, STT, export"
+autobins = false
+
+[lib]
+name = "rust_core"
+crate-type = ["staticlib", "cdylib", "lib"]
+
+[[bin]]
+name = "gen_fixtures"
+path = "src/bin/gen_fixtures.rs"
+
+[[bin]]
+name = "trareon-transcribe"
+path = "src/bin/transcribe.rs"
+
+[[bin]]
+name = "transcribe_cli"
+path = "src/bin/transcribe_cli.rs"
+
+[[bin]]
+name = "device_probe"
+path = "src/bin/device_probe.rs"
+
+[[bin]]
+name = "dual_capture_probe"
+path = "src/bin/dual_capture_probe.rs"
+
+[[bin]]
+name = "poll_probe"
+path = "src/bin/poll_probe.rs"
+
+[dependencies]
+thiserror = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["rt-multi-thread", "sync", "macros", "time"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1", features = ["v4"] }
+chrono = "0.4"
+cpal = "0.15"
+rubato = "0.15"
+symphonia = { version = "0.5", features = ["mp3", "aac", "isomp4", "ogg", "flac", "vorbis", "wav", "opt-simd"] }
+webrtc-vad = "0.4"
+sha2 = "0.10"
+hex = "0.4"
+hound = "3"
+strsim = "0.11"
+reqwest = { version = "0.12", default-features = false, features = ["rustls-tls-native-roots", "rustls-tls-webpki-roots", "stream"] }
+futures-util = "0.3"
+bytes = "1"
+dirs = "5"
+docx-rs = { version = "0.4.22", default-features = false }
+clap = { version = "4.6.4", features = ["derive"] }
+glob = "0.3.4"
+sysinfo = "0.39.6"
+flutter_rust_bridge = "=2.12.0"
+whisper-rs = "0.14"
+
+# OpenMP hanya untuk Linux — macOS GitHub Actions runner tidak punya libomp
+[target.'cfg(not(any(target_os = "windows", target_os = "macos")))'.dependencies.whisper-rs]
+version = "0.14"
+features = ["openmp"]
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+screencapturekit = "8"
+
+# Linux: fallback to ffmpeg/parec — PipeWire native can be added later
+# when libpipewire-0.3-dev is available in the build environment
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.52", features = [
+    "Win32_System_Threading",
+    "Win32_Foundation",
+    "Win32_Media_Audio",
+    "Win32_Devices_Properties",
+    "Win32_System_Com",
+]}
+# Used only by audio/loopback.rs's WASAPI capture: unlike windows-sys, this
+# generates ergonomic method-call bindings for COM interfaces (needed for
+# client.Start(), cc.GetBuffer(), etc. — windows-sys only exposes raw
+# *mut c_void pointers with no vtable dispatch).
+windows = { version = "0.62", features = [
+    "Win32_Media_Audio",
+    "Win32_System_Com",
+    "Win32_System_Com_StructuredStorage",
+    "Win32_Foundation",
+]}
+
+[dev-dependencies]
+
+
+[lints.rust]
+unexpected_cfgs = { level = "allow", check-cfg = ["cfg(frb_expand)"] }
+
+[profile.release]
+opt-level = 3
+lto = true
+strip = true
