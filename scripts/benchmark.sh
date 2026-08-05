@@ -36,11 +36,26 @@ if command -v cargo &>/dev/null && [ -f "rust_core/Cargo.toml" ]; then
         if [ -f "$MODEL" ]; then
             START=$SECONDS
             cd rust_core
-            RESULT=$(cargo run --bin transcribe_cli --quiet -- \
-                --batch /tmp/test_en.wav \
-                --model "$MODEL" \
-                --format txt \
-                --output /tmp/bench_stt 2>/dev/null)
+            cargo build --release --bin transcribe_cli >/dev/null 2>bench_build_err.log
+            BUILD_STATUS=$?
+            if [ "$BUILD_STATUS" -ne 0 ]; then
+                echo "  ❌ BLOCK: cargo build transcribe_cli failed (exit $BUILD_STATUS)"
+                cat bench_build_err.log
+                FAILED=1
+            else
+                RESULT=$(./target/release/transcribe_cli \
+                    --batch /tmp/test_en.wav \
+                    --model "$MODEL" \
+                    --format txt \
+                    --output /tmp/bench_stt 2>bench_run_err.log)
+                RUN_STATUS=$?
+                if [ "$RUN_STATUS" -ne 0 ]; then
+                    echo "  ❌ BLOCK: transcribe_cli failed (exit $RUN_STATUS)"
+                    cat bench_run_err.log
+                    FAILED=1
+                fi
+            fi
+            rm -f bench_build_err.log bench_run_err.log
             DURATION=$((SECONDS - START))
             echo "  Time: ${DURATION}s"
             if [ "$DURATION" -gt "$STT_LATENCY_MS_BLOCK" ]; then
