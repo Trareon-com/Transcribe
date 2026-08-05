@@ -68,11 +68,6 @@ fn is_apple_silicon() -> bool {
         .unwrap_or(false)
 }
 
-#[cfg(not(target_os = "macos"))]
-fn is_apple_silicon() -> bool {
-    false
-}
-
 /// Detect and return the recommended backend name for diagnostics.
 pub fn detect_backend() -> String {
     best_backend().to_string()

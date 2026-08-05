@@ -67,7 +67,6 @@ jobs:
         with:
           channel: stable
           cache: true
-          cache-dependency-path: pubspec.yaml
       - name: flutter pub get
         run: flutter pub get
       - name: flutter analyze
@@ -157,7 +156,6 @@ jobs:
         with:
           channel: stable
           cache: true
-          cache-dependency-path: pubspec.yaml
 
       - name: flutter pub get
         run: flutter pub get
@@ -193,7 +191,6 @@ jobs:
         with:
           channel: stable
           cache: true
-          cache-dependency-path: pubspec.yaml
 
       - name: flutter pub get
         run: flutter pub get
@@ -237,7 +234,6 @@ jobs:
         with:
           channel: stable
           cache: true
-          cache-dependency-path: pubspec.yaml
 
       - name: flutter pub get
         run: flutter pub get

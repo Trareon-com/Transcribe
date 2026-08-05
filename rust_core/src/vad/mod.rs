@@ -12,6 +12,8 @@ use webrtc_vad::{SampleRate, Vad, VadMode};
 use crate::error::{TranscribeError, TranscribeResult};
 
 #[cfg(feature = "silero-onnx")]
+mod silero;
+#[cfg(feature = "silero-onnx")]
 pub use silero::SileroVad;
 
 /// Frame size WebRTC VAD accepts at 16kHz (10ms, 20ms, or 30ms frames).
@@ -118,10 +120,9 @@ impl SpeechDetector for SileroDetector {
     fn is_speech(&mut self, frame_i16: &[i16]) -> bool {
         #[cfg(feature = "silero-onnx")]
         {
-            return self
-                .inner
+            self.inner
                 .is_speech(frame_i16)
-                .unwrap_or_else(|_| EnergyDetector::new(0.02).is_speech(frame_i16));
+                .unwrap_or_else(|_| EnergyDetector::new(0.02).is_speech(frame_i16))
         }
         #[cfg(not(feature = "silero-onnx"))]
         {

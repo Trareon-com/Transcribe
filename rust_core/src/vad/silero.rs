@@ -6,19 +6,15 @@
 
 use std::path::Path;
 
-use ort::{
-    session::Session,
-    value::Tensor,
-};
+use ort::{session::Session, value::Tensor};
 
 use crate::error::{TranscribeError, TranscribeResult};
 
 const SILERO_FRAME_SAMPLES: usize = 512;
-const SILERO_ACCUM_FRAMES: usize = SILERO_FRAME_SAMPLES / crate::vad::FRAME_SAMPLES_10MS;
 
 pub struct SileroVad {
     session: Session,
-    state: [f32; 2 * 1 * 128],
+    state: [f32; 256],
     sample_rate: i64,
     accum_buf: Vec<i16>,
     threshold: f32,
@@ -62,8 +58,8 @@ impl SileroVad {
             return Ok(None);
         }
 
-        let frame_i16 = &self.accum_buf[..SILERO_FRAME_SAMPLES];
-        self.accum_buf.drain(..SILERO_FRAME_SAMPLES);
+        let frame_i16: Vec<i16> = self.accum_buf.drain(..SILERO_FRAME_SAMPLES).collect();
+        self.accum_buf.shrink_to_fit();
 
         let audio: Vec<f32> = frame_i16
             .iter()
@@ -72,11 +68,9 @@ impl SileroVad {
 
         let input = Tensor::from_array(([1usize, SILERO_FRAME_SAMPLES], audio.into_boxed_slice()))
             .map_err(|e| TranscribeError::Model(format!("Silero input tensor failed: {e}")))?;
-        let state = Tensor::from_array(
-            ([2usize, 1, 128], self.state.to_vec().into_boxed_slice()),
-        )
-        .map_err(|e| TranscribeError::Model(format!("Silero state tensor failed: {e}")))?;
-        let sr = Tensor::from_array(([], vec![self.sample_rate].into_boxed_slice()))
+        let state = Tensor::from_array(([2usize, 1, 128], self.state.to_vec().into_boxed_slice()))
+            .map_err(|e| TranscribeError::Model(format!("Silero state tensor failed: {e}")))?;
+        let sr = Tensor::from_array(([1usize], vec![self.sample_rate].into_boxed_slice()))
             .map_err(|e| {
                 TranscribeError::Model(format!("Silero sample-rate tensor failed: {e}"))
             })?;
@@ -88,23 +82,20 @@ impl SileroVad {
 
         let (prob, new_state) = outputs
             .into_iter()
-            .find(|(name, _)| name == "output" || name == "output0")
+            .find(|(name, _)| *name == "output" || *name == "output0")
             .ok_or_else(|| TranscribeError::Model("Silero output tensor not found".into()))
-            .and_then(|(name, v)| {
+            .and_then(|(_, v)| {
                 let tensor = v
                     .try_extract_tensor::<f32>()
                     .map_err(|e| TranscribeError::Model(format!("Silero extract failed: {e}")))?;
-                let shape = tensor.view().shape();
-                if shape.len() == 3 {
-                    let slice = tensor.view().as_slice().map_err(|_| {
-                        TranscribeError::Model("Silero output shape mismatch".into())
-                    })?;
-                    Ok((
-                        slice.first().copied().unwrap_or(0.0),
-                        slice[128..].to_vec(),
-                    ))
+                let slice = tensor.1;
+                let n = tensor.0.num_elements();
+                if n >= 128 {
+                    Ok((slice.first().copied().unwrap_or(0.0), slice[128..].to_vec()))
                 } else {
-                    Err(TranscribeError::Model("Silero unexpected output shape".into()))
+                    Err(TranscribeError::Model(
+                        "Silero unexpected output shape".into(),
+                    ))
                 }
             })?;
 
