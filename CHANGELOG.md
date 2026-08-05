@@ -1,11 +1,32 @@
 # Changelog
 
 All notable changes to this project are documented here. Format loosely
-follows [Keep a Changelog](https://keepachangelog.com/); this project is
-pre-1.0 so versions aren't cut yet — entries are grouped by development
-phase instead.
+follows [Keep a Changelog](https://keepachangelog.com/).
 
-|## [0.1.2] — 2026-07-28
+## [1.0.0] — 2026-08-06
+
+### Added
+- First-launch onboarding screen: model download progress, zero-config setup (no model names exposed to user).
+- Slide-up overlay toast system (replaces SnackBar), unified `EmptyState` widget, speaker avatars with initials.
+- Pulsing animated record button, 3-row control bar, gradient VU meters (green → amber → red).
+- Shared `formatTime` / `speakerColor` utilities (removed 4 duplicated implementations).
+- Silero VAD (ONNX, 87.7% TPR vs WebRTC 50%) with graceful energy-VAD fallback on platforms without prebuilt ort.
+- Confidence routing: hallucination discard + low-confidence segment flags.
+- Initial-prompt injection: 200-char rolling context between chunks.
+- Whisper config: large-v3-turbo default, `language=id`, `audio_ctx=1500`, beam search 5.
+- Speaker diarization harness (pyannote v3.3) + LLM post-correction/summary harness (Qwen2.5-7B, MLX/llama.cpp/pass-through).
+- Whisper-CD contrastive decoding harness.
+
+### Fixed
+- Settings dropdown crash when stored default model not in choices (default → `base`).
+- Export atomic-write race: unique `.tmp` per format (7 formats now export reliably).
+- Confidence routing now uses real per-segment signals (previously always accepted).
+- Duplicate Privacy Report / Usage Dashboard screens — single source in `lib/screens/`.
+- macOS packaging: APP_NAME matches PRODUCT_NAME "Trareon Transcribe"; Intel slice builds with `--no-default-features` (ort has no prebuilt for macOS x86_64).
+- CI: flutter-action pinned to v2.23.0; invalid rust-cache inputs removed; benchmark installs libasound2-dev and runs `transcribe_cli`.
+- Full test suite green: 55 Flutter tests + 102 Rust tests.
+
+## [0.1.2] — 2026-07-28
 
 ### Fixed
 - ToneTest step number 3→4 (UI title + wizard test name) to match actual 4-step wizard.
