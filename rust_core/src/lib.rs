@@ -1,5 +1,6 @@
 pub mod api;
 pub mod benchmark;
+pub mod confidence;
 pub mod doctor;
 pub mod error;
 mod frb_generated;
@@ -9,6 +10,7 @@ pub mod decode;
 pub mod dedupe;
 pub mod diarization;
 pub mod export;
+pub mod llm_correction;
 pub mod memory;
 pub mod model;
 pub mod pipeline;

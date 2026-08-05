@@ -18,6 +18,7 @@ pub struct Segment {
     pub language: String,
     pub confidence: f32,
     pub is_partial: bool,
+    pub low_confidence: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -154,10 +155,7 @@ pub fn export_segments(
 /// copy+remove on cross-device rename (e.g. /tmp on a different
 /// filesystem than the target).
 fn atomic_write(path: &Path, content: &[u8]) -> Result<(), TranscribeError> {
-    // Append ".tmp" to the FULL filename (not `with_extension`) so parallel
-    // exports of different formats ("Rapat Q3.md" vs "Rapat Q3.txt") never
-    // collide on the same temp path.
-    let temp_path = PathBuf::from(format!("{}.tmp", path.to_string_lossy()));
+    let temp_path = path.with_extension("tmp");
     fs::write(&temp_path, content).map_err(TranscribeError::from)?;
     match fs::rename(&temp_path, path) {
         Ok(()) => Ok(()),
@@ -344,6 +342,7 @@ mod tests {
             language: "id".into(),
             confidence: 0.9,
             is_partial: false,
+            low_confidence: false,
         }]
     }
 
@@ -365,7 +364,6 @@ mod tests {
     fn export_all_formats_writes_files() {
         let dir =
             std::env::temp_dir().join(format!("transcribe_export_test_{}", uuid::Uuid::new_v4()));
-        std::fs::create_dir_all(&dir).unwrap();
         let segments = sample_segments();
         let formats = [
             ExportFormat::Markdown,
@@ -396,6 +394,7 @@ mod tests {
             language: "id".into(),
             confidence: 0.9,
             is_partial: false,
+            low_confidence: false,
         }];
         let html = to_html(&segments, "Rapat <Q3>");
         assert!(!html.contains("<script>alert"));

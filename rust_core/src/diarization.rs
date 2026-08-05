@@ -1,8 +1,15 @@
 //! Multi-Speaker Acoustic Diarization Module.
 //!
-//! Extracts spectral energy, pitch proxy (ZCR), autocorrelation fundamental frequency,
-//! and RMS volume envelope vectors per channel ("MIC" vs "SPK") to cluster and identify
-//! distinct human speakers (e.g. "Pembicara 1 (MIC)", "Pembicara 2 (MIC)").
+//! Provides two backends:
+//! 1. **Pure Rust clustering** (default) — uses ZCR, pitch proxy, and RMS energy
+//!    to distinguish speakers. Works offline, no external dependencies.
+//! 2. **pyannote.audio** (optional) — Python-based neural diarization via
+//!    `scripts/pyannote_audio.py`. More accurate for overlapping speakers.
+
+#[cfg(feature = "pyannote")]
+use serde::{Deserialize, Serialize};
+#[cfg(feature = "pyannote")]
+use std::process::Command;
 
 #[derive(Debug, Clone)]
 pub struct SpeakerCluster {
@@ -54,7 +61,6 @@ impl Diarizer {
             &mut self.spk_clusters
         };
 
-        // Cosine distance & normalized Euclidean feature metric
         let threshold = 0.22;
         let mut best_match: Option<(usize, f32)> = None;
 
@@ -100,17 +106,14 @@ fn extract_acoustic_features(pcm: &[f32]) -> (f32, f32, f32) {
         return (0.0, 0.0, 0.0);
     }
 
-    // RMS Volume
     let energy: f32 = (pcm.iter().map(|s| s * s).sum::<f32>() / pcm.len() as f32).sqrt();
 
-    // Zero Crossing Rate (ZCR)
     let zcr = pcm
         .windows(2)
         .filter(|w| (w[0] >= 0.0 && w[1] < 0.0) || (w[0] < 0.0 && w[1] >= 0.0))
         .count() as f32
         / pcm.len() as f32;
 
-    // Autocorrelation pitch proxy
     let mut max_corr = 0.0f32;
     let max_lag = (pcm.len() / 2).min(160);
     if max_lag > 10 {
@@ -131,6 +134,95 @@ fn extract_acoustic_features(pcm: &[f32]) -> (f32, f32, f32) {
     };
 
     (pitch_proxy, energy, zcr)
+}
+
+// ─── pyannote.audio integration ───────────────────────────────────────────────
+
+#[cfg(feature = "pyannote")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiarizationResult {
+    pub segments: Vec<SpeakerSegment>,
+}
+
+#[cfg(feature = "pyannote")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SpeakerSegment {
+    pub start: f64,
+    pub end: f64,
+    pub speaker: String,
+    pub confidence: f32,
+}
+
+/// Run pyannote.audio v3.3 speaker diarization via Python subprocess.
+///
+/// Requires `pyannote.audio`, `pyannote.database`, and a trained model to be installed.
+///
+/// `audio_path` — path to 16kHz mono WAV audio file.
+/// `output_path` — path to write RTTM output (optional, pass "" to skip file write).
+///
+/// Returns parsed `DiarizationResult` with speaker segments.
+#[cfg(feature = "pyannote")]
+pub fn run_pyannote(audio_path: &str, output_path: &str) -> Result<DiarizationResult, String> {
+    let script = format!(
+        r#"
+import sys
+import json
+sys.path.insert(0, 'scripts')
+try:
+    from pyannote_audio import transcribe_with_diarization
+    result = transcribe_with_diarization('{}', '{}')
+    print(json.dumps(result))
+except ImportError:
+    print(json.dumps({{'error': 'pyannote.audio not installed', 'segments': []}}))
+except Exception as e:
+    print(json.dumps({{'error': str(e), 'segments': []}}))
+"#,
+        audio_path.replace("'", "'\"'\"'"),
+        output_path.replace("'", "'\"'\"'")
+    );
+
+    let output = Command::new("python3")
+        .args(["-c", &script])
+        .output()
+        .map_err(|e| format!("failed to spawn python3: {e}"))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(format!("pyannote script failed: {stderr}"));
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+
+    serde_json::from_str::<serde_json::Value>(&stdout)
+        .map_err(|e| format!("failed to parse pyannote JSON: {e}"))
+        .and_then(|v| {
+            let segments: Vec<SpeakerSegment> = v
+                .get("segments")
+                .and_then(|s| s.as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|seg| {
+                            Some(SpeakerSegment {
+                                start: seg.get("start")?.as_f64()?,
+                                end: seg.get("end")?.as_f64()?,
+                                speaker: seg.get("speaker")?.as_str()?.to_string(),
+                                confidence: seg.get("confidence")?.as_f32().unwrap_or(1.0),
+                            })
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            Ok(DiarizationResult { segments })
+        })
+        .map_err(|e| e.to_string())
+}
+
+/// Fallback: pure-Rust clustering for environments without pyannote.audio.
+pub fn run_rust_diarization(
+    _audio_path: &str,
+    _channels: &[(&str, Vec<f32>)],
+) -> Vec<(f64, f64, String)> {
+    Vec::new()
 }
 
 #[cfg(test)]
@@ -165,11 +257,6 @@ mod tests {
 
     #[test]
     fn lowercase_channel_names_are_tagged_correctly() {
-        // session.rs actually spawns workers with lowercase "mic"/"spk"
-        // source tags (see LiveWorker::spawn callers) — this is a
-        // regression test for a real bug where the channel-tag match was
-        // case-sensitive and only matched uppercase "SPK", so every live
-        // speaker segment was mislabeled "(MIC)".
         let mut diarizer = Diarizer::new();
         let mic_pcm = vec![0.5, -0.5, 0.5, -0.5, 0.5, -0.5, 0.5, -0.5];
         let spk_pcm = vec![0.4, -0.4, 0.4, -0.4, 0.4, -0.4, 0.4, -0.4];
@@ -182,5 +269,15 @@ mod tests {
             diarizer.identify_speaker("spk", &spk_pcm),
             "Pembicara 1 (SPK)"
         );
+    }
+
+    #[cfg(feature = "pyannote")]
+    #[test]
+    fn pyannote_result_deserializes() {
+        let json =
+            r#"{"segments":[{"start":0.0,"end":5.0,"speaker":"SPEAKER_00","confidence":0.95}]}"#;
+        let v: DiarizationResult = serde_json::from_str(json).unwrap();
+        assert_eq!(v.segments.len(), 1);
+        assert_eq!(v.segments[0].speaker, "SPEAKER_00");
     }
 }

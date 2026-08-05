@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../state/models.dart';
 import '../theme/app_colors.dart';
-import '../utils/format_time.dart';
 
 /// Card widget for displaying a session summary in the library list.
 class SessionCard extends StatelessWidget {
@@ -27,11 +26,36 @@ class SessionCard extends StatelessWidget {
     required this.onExport,
   });
 
+  String _formatDuration(double seconds) {
+    final h = (seconds / 3600).floor();
+    final m = ((seconds % 3600) / 60).floor();
+    if (h > 0) return '${h}j ${m}m';
+    return '$m menit';
+  }
+
+  static const _indonesianMonths = [
+    'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
+    'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+  ];
+
+  String _formatDate(String isoDate) {
+    try {
+      final parts = isoDate.split('-');
+      if (parts.length != 3) return isoDate;
+      final year = parts[0];
+      final monthIndex = int.parse(parts[1]) - 1;
+      final day = parts[2];
+      if (monthIndex < 0 || monthIndex > 11) return isoDate;
+      return '$day ${_indonesianMonths[monthIndex]} $year';
+    } catch (_) {
+      return isoDate;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colors =
-        Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-    final durStr = formatDurationLabel(durationSeconds);
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final durStr = _formatDuration(durationSeconds);
 
     return Card(
       color: colors.surface,
@@ -55,11 +79,7 @@ class SessionCard extends StatelessWidget {
                   color: colors.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Icon(
-                  Icons.mic_outlined,
-                  color: colors.primary,
-                  size: 20,
-                ),
+                child: Icon(Icons.mic_outlined, color: colors.primary, size: 20),
               ),
               const SizedBox(width: 12),
 
@@ -81,65 +101,40 @@ class SessionCard extends StatelessWidget {
                     const SizedBox(height: 2),
                     Row(
                       children: [
-                        Icon(
-                          Icons.access_time,
-                          size: 12,
-                          color: colors.textTertiary,
+                        Icon(Icons.calendar_today, size: 12, color: colors.textTertiary),
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatDate(date),
+                          style: TextStyle(color: colors.textTertiary, fontSize: 12),
                         ),
+                        const SizedBox(width: 12),
+                        Icon(Icons.access_time, size: 12, color: colors.textTertiary),
                         const SizedBox(width: 4),
                         Text(
                           durStr,
-                          style: TextStyle(
-                            color: colors.textTertiary,
-                            fontSize: 12,
-                          ),
+                          style: TextStyle(color: colors.textTertiary, fontSize: 12),
                         ),
                         const SizedBox(width: 12),
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 12,
-                          color: colors.textTertiary,
-                        ),
+                        Icon(Icons.chat_bubble_outline, size: 12, color: colors.textTertiary),
                         const SizedBox(width: 4),
                         Text(
                           '$segmentsCount segmen',
-                          style: TextStyle(
-                            color: colors.textTertiary,
-                            fontSize: 12,
-                          ),
+                          style: TextStyle(color: colors.textTertiary, fontSize: 12),
                         ),
                       ],
                     ),
-                    if (date.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        _formatDate(date),
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: colors.textTertiary,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
 
               // Actions
               IconButton(
-                icon: Icon(
-                  Icons.upload_outlined,
-                  size: 18,
-                  color: colors.textTertiary,
-                ),
+                icon: Icon(Icons.upload_outlined, size: 18, color: colors.textTertiary),
                 tooltip: 'Export',
                 onPressed: onExport,
               ),
               IconButton(
-                icon: Icon(
-                  Icons.delete_outline,
-                  size: 18,
-                  color: colors.textTertiary,
-                ),
+                icon: Icon(Icons.delete_outline, size: 18, color: colors.textTertiary),
                 tooltip: 'Hapus',
                 onPressed: onDelete,
               ),
@@ -148,19 +143,6 @@ class SessionCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatDate(String isoDate) {
-    try {
-      final d = DateTime.parse(isoDate);
-      const months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 
-        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
-      ];
-      return '${d.day} ${months[d.month - 1]} ${d.year}';
-    } catch (_) {
-      return isoDate;
-    }
   }
 }
 

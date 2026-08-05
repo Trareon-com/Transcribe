@@ -60,11 +60,16 @@ clap = { version = "4.6.4", features = ["derive"] }
 glob = "0.3.4"
 sysinfo = "0.39.6"
 flutter_rust_bridge = "=2.12.0"
-whisper-rs = "0.13"
+whisper-rs = "0.14"
+ort = { version = "2.0.0-rc.13", features = ["download-binaries"] }
+
+[features]
+default = []
+pyannote = []  # Enable pyannote.audio Python integration for neural diarization
 
 # OpenMP hanya untuk Linux — macOS GitHub Actions runner tidak punya libomp
-[target.'cfg(target_os = "linux")'.dependencies.whisper-rs]
-version = "0.13"
+[target.'cfg(not(any(target_os = "windows", target_os = "macos")))'.dependencies.whisper-rs]
+version = "0.14"
 features = ["openmp"]
 
 [target.'cfg(unix)'.dependencies]

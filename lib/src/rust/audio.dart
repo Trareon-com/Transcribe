@@ -9,11 +9,11 @@ import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 /// User-chosen strategy for Hybrid Progressive Transcription (HPT).
 ///
 /// * `Auto`      — benchmark q5; direct single-pass on fast devices,
-///                 dual-pass base→q5 on slow ones (default).
+///   dual-pass base→q5 on slow ones (default).
 /// * `ForceDual` — always base quick → q5 refine (best for low-CPU devices
-///                 where the user wants instant partial text).
+///   where the user wants instant partial text).
 /// * `ForceDirect` — skip the base pass, run q5 alone from the start
-///                 (best for fast devices; lower total latency).
+///   (best for fast devices; lower total latency).
 enum HptMode { auto, forceDual, forceDirect }
 
 class SessionConfig {

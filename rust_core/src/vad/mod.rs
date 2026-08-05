@@ -7,15 +7,12 @@
 //! provides a real ONNX Runtime-backed path when the model/runtime is
 //! available.
 
-#[cfg(feature = "silero-onnx")]
-use std::path::{Path, PathBuf};
-
-#[cfg(feature = "silero-onnx")]
-use ort::value::Tensor;
-
 use webrtc_vad::{SampleRate, Vad, VadMode};
 
 use crate::error::{TranscribeError, TranscribeResult};
+
+#[cfg(feature = "silero-onnx")]
+pub use silero::SileroVad;
 
 /// Frame size WebRTC VAD accepts at 16kHz (10ms, 20ms, or 30ms frames).
 pub const FRAME_SAMPLES_10MS: usize = 160;
@@ -36,7 +33,7 @@ impl Default for VadConfig {
         Self {
             webrtc_mode: VadAggressiveness::HighQuality,
             confirmation_threshold: 0.02,
-            silero_model_path: None,
+            silero_model_path: Some("models/silero_vad.onnx"),
         }
     }
 }
@@ -96,85 +93,23 @@ impl SpeechDetector for EnergyDetector {
 /// call sites again.
 pub struct SileroDetector {
     #[cfg(feature = "silero-onnx")]
-    session: ort::session::Session,
-    #[cfg(feature = "silero-onnx")]
-    state: [f32; 2 * 1 * 128],
-    #[cfg(feature = "silero-onnx")]
-    sample_rate: i64,
+    inner: crate::vad::silero::SileroVad,
     #[cfg(not(feature = "silero-onnx"))]
+    #[allow(dead_code)]
     model_path: std::path::PathBuf,
 }
 
 impl SileroDetector {
     pub fn new(model_path: impl Into<std::path::PathBuf>) -> TranscribeResult<Self> {
         let model_path = model_path.into();
-        if !model_path.exists() {
-            return Err(TranscribeError::Model(format!(
-                "Silero VAD model not found at {}",
-                model_path.display()
-            )));
-        }
         #[cfg(feature = "silero-onnx")]
         {
-            ort::init().commit();
-            let session = ort::session::Session::builder()
-                .map_err(|e| TranscribeError::Model(format!("Silero VAD init failed: {e}")))?
-                .commit_from_file(&model_path)
-                .map_err(|e| TranscribeError::Model(format!("Silero VAD load failed: {e}")))?;
-            return Ok(Self {
-                session,
-                state: [0.0; 256],
-                sample_rate: 16_000,
-            });
+            let inner = crate::vad::silero::SileroVad::load(&model_path, 0.5)?;
+            Ok(Self { inner })
         }
         #[cfg(not(feature = "silero-onnx"))]
         {
             Ok(Self { model_path })
-        }
-    }
-
-    #[cfg(feature = "silero-onnx")]
-    fn run_probability(&mut self, frame_i16: &[i16]) -> TranscribeResult<f32> {
-        if frame_i16.len() != 512 {
-            return Err(TranscribeError::InvalidInput(format!(
-                "Silero VAD expects 512 samples, got {}",
-                frame_i16.len()
-            )));
-        }
-        let audio: Vec<f32> = frame_i16
-            .iter()
-            .map(|s| *s as f32 / i16::MAX as f32)
-            .collect();
-        let input = Tensor::from_array(([1usize, 512], audio.into_boxed_slice()))
-            .map_err(|e| TranscribeError::Model(format!("Silero input tensor failed: {e}")))?;
-        let state = Tensor::from_array(([2usize, 1, 128], self.state.to_vec().into_boxed_slice()))
-            .map_err(|e| TranscribeError::Model(format!("Silero state tensor failed: {e}")))?;
-        let sr =
-            Tensor::from_array(([], vec![self.sample_rate].into_boxed_slice())).map_err(|e| {
-                TranscribeError::Model(format!("Silero sample-rate tensor failed: {e}"))
-            })?;
-        let outputs = self
-            .session
-            .run(ort::inputs![input, state, sr])
-            .map_err(|e| TranscribeError::Model(format!("Silero inference failed: {e}")))?;
-        let prob = outputs
-            .get("output")
-            .and_then(|v| v.try_extract_tensor::<f32>().ok())
-            .and_then(|tensor| tensor.view().as_slice().and_then(|s| s.first().copied()))
-            .ok_or_else(|| TranscribeError::Model("Silero output missing probability".into()))?;
-        Ok(prob)
-    }
-
-    pub fn model_path(&self) -> &std::path::Path {
-        #[cfg(feature = "silero-onnx")]
-        {
-            // The loaded session owns the path implicitly; expose a stable
-            // placeholder so callers can still report which model is active.
-            return Path::new("silero-vad.onnx");
-        }
-        #[cfg(not(feature = "silero-onnx"))]
-        {
-            &self.model_path
         }
     }
 }
@@ -184,8 +119,8 @@ impl SpeechDetector for SileroDetector {
         #[cfg(feature = "silero-onnx")]
         {
             return self
-                .run_probability(frame_i16)
-                .map(|p| p >= 0.5)
+                .inner
+                .is_speech(frame_i16)
                 .unwrap_or_else(|_| EnergyDetector::new(0.02).is_speech(frame_i16));
         }
         #[cfg(not(feature = "silero-onnx"))]

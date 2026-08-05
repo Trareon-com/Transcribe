@@ -66,10 +66,15 @@ impl ProgressiveEngine {
         source: &str,
         chunk_start_secs: f64,
         language: Option<&str>,
+        initial_prompt: Option<&str>,
     ) -> TranscribeResult<Vec<Segment>> {
-        let mut segs = self
-            .quick
-            .transcribe_chunk(samples, source, chunk_start_secs, language)?;
+        let mut segs = self.quick.transcribe_chunk(
+            samples,
+            source,
+            chunk_start_secs,
+            language,
+            initial_prompt,
+        )?;
         for s in segs.iter_mut() {
             s.is_partial = true;
         }
@@ -85,10 +90,15 @@ impl ProgressiveEngine {
         source: &str,
         chunk_start_secs: f64,
         language: Option<&str>,
+        initial_prompt: Option<&str>,
     ) -> TranscribeResult<Vec<Segment>> {
-        let mut segs = self
-            .refine
-            .transcribe_chunk(samples, source, chunk_start_secs, language)?;
+        let mut segs = self.refine.transcribe_chunk(
+            samples,
+            source,
+            chunk_start_secs,
+            language,
+            initial_prompt,
+        )?;
         for s in segs.iter_mut() {
             s.is_partial = false;
         }
@@ -109,10 +119,12 @@ impl ProgressiveEngine {
     where
         F: FnMut(&[Segment]),
     {
-        let quick_segs = self.transcribe_quick(samples, source, chunk_start_secs, language)?;
+        let quick_segs =
+            self.transcribe_quick(samples, source, chunk_start_secs, language, None)?;
         on_quick(&quick_segs);
 
-        let refined_segs = self.transcribe_refine(samples, source, chunk_start_secs, language)?;
+        let refined_segs =
+            self.transcribe_refine(samples, source, chunk_start_secs, language, None)?;
 
         // Merge by (source, timestamp): refined replaces quick for the
         // same span. Quick-only leftovers (rare boundary drift) are kept
@@ -266,6 +278,7 @@ mod tests {
             language: "id".into(),
             confidence: 0.9,
             is_partial: false,
+            low_confidence: false,
         }
     }
 
@@ -275,6 +288,7 @@ mod tests {
     pub(super) fn seg_with_flag(text: &str, ts: f64, is_partial: bool) -> Segment {
         let mut s = seg(text, ts);
         s.is_partial = is_partial;
+        s.low_confidence = false;
         s
     }
 

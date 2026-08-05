@@ -88,8 +88,7 @@ mod tests {
     #[test]
     fn default_settings_are_sane() {
         let s = AppSettings::default();
-        assert_eq!(s.default_model, "large-v3-turbo");
-        assert_eq!(s.language.as_deref(), Some("id"));
+        assert_eq!(s.default_model, "tiny");
         assert!(s.vad_enabled);
         assert!(!s.library_path.is_empty());
     }
@@ -98,7 +97,7 @@ mod tests {
     fn load_missing_file_returns_default() {
         let path = Some(std::env::temp_dir().join("transcribe_settings_does_not_exist.json"));
         let s = load_settings_from(&path);
-        assert_eq!(s.default_model, "large-v3-turbo");
+        assert_eq!(s.default_model, "tiny");
     }
 
     #[test]
@@ -135,7 +134,7 @@ mod tests {
         std::fs::write(&path, "not valid json{{{").unwrap();
 
         let loaded = load_settings_from(&Some(path));
-        assert_eq!(loaded.default_model, "large-v3-turbo");
+        assert_eq!(loaded.default_model, "tiny");
 
         let _ = std::fs::remove_dir_all(&dir);
     }

@@ -11,10 +11,26 @@ import '../src/rust/audio/device.dart';
 import '../state/models.dart';
 import '../state/settings_model.dart';
 import '../theme/app_colors.dart';
+import '../utils/model_labels.dart';
+
+class WizardSpecs {
+  final int cpuCores;
+  final int ramMb;
+  final String suggestedModel;
+  const WizardSpecs({
+    required this.cpuCores,
+    required this.ramMb,
+    required this.suggestedModel,
+  });
+}
+
+typedef WizardSpecDetector = Future<WizardSpecs> Function();
+
 class SetupWizardScreen extends ConsumerStatefulWidget {
   final VoidCallback onFinished;
+  final WizardSpecDetector? detectSpecs;
 
-  const SetupWizardScreen({super.key, required this.onFinished});
+  const SetupWizardScreen({super.key, required this.onFinished, this.detectSpecs});
 
   @override
   ConsumerState<SetupWizardScreen> createState() => _SetupWizardScreenState();
@@ -43,24 +59,19 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
 
   Future<void> _detectSpecs() async {
     final initialSelection = _selectedModel;
-    final cores = Platform.numberOfProcessors;
-    // Try to read RAM via sysctl on macOS, fallback to estimate
-    int? ramMb;
-    try {
-      if (Platform.isMacOS) {
-        final result = await Process.run('sysctl', ['-n', 'hw.memsize']);
-        if (result.exitCode == 0) {
-          ramMb = ((int.tryParse(result.stdout.toString().trim()) ?? 0) / (1024 * 1024)).round();
-        }
-      }
-    } on Object {
-      // Fallback: use environment-based heuristic
-    }
 
-    ramMb ??= _estimateRamMb(cores);
+    final WizardSpecs specs;
+    final custom = widget.detectSpecs;
+    if (custom != null) {
+      specs = await custom();
+    } else {
+      specs = await _runNativeSpecDetection();
+    }
+    final cores = specs.cpuCores;
+    final ramMb = specs.ramMb;
 
     // Suggest model based on RAM
-    final suggested = _availableModel(_suggestModel(ramMb));
+    final suggested = _availableModel(specs.suggestedModel);
 
     if (mounted) {
       final shouldAutoApply = _selectedModel == initialSelection;
@@ -77,6 +88,29 @@ class _SetupWizardScreenState extends ConsumerState<SetupWizardScreen> {
         ref.read(settingsProvider.notifier).setDefaultModel(suggested);
       }
     }
+  }
+
+  Future<WizardSpecs> _runNativeSpecDetection() async {
+    final cores = Platform.numberOfProcessors;
+    // Try to read RAM via sysctl on macOS, fallback to estimate
+    int? ramMb;
+    try {
+      if (Platform.isMacOS) {
+        final result = await Process.run('sysctl', ['-n', 'hw.memsize']);
+        if (result.exitCode == 0) {
+          ramMb = ((int.tryParse(result.stdout.toString().trim()) ?? 0) / (1024 * 1024)).round();
+        }
+      }
+    } on Object {
+      // Fallback: use environment-based heuristic
+    }
+
+    ramMb ??= _estimateRamMb(cores);
+    return WizardSpecs(
+      cpuCores: cores,
+      ramMb: ramMb,
+      suggestedModel: _suggestModel(ramMb),
+    );
   }
 
   int _estimateRamMb(int cores) {
@@ -352,15 +386,7 @@ class _SpecDetectStep extends StatelessWidget {
   }
 
   String _modelLabel(String id) {
-    return switch (id) {
-      'tiny' => 'tiny (ringan)',
-      'base' => 'base (seimbang)',
-      'small' => 'small (akurat)',
-      'medium' => 'medium (presisi)',
-      'large-v3-turbo' => 'large-v3-turbo (terbaik)',
-      'large-v3-turbo-q5' => 'large-v3-turbo-Q5_0 (akurat)',
-      _ => id,
-    };
+    return modelDisplayLabel(id);
   }
 
   @override
@@ -458,8 +484,8 @@ class _ModelChoiceStep extends StatelessWidget {
   const _ModelChoiceStep({required this.selected, required this.onChanged});
 
   static const _models = [
-    ('base', 'base — ⚡ Cepat', '142 MB · ✅ Termasuk di aplikasi\n🇮🇩 ID: Sempurna (WER 0%) · 🇬🇧 EN: 90%\nCocok: transkrip cepat, akurasi ID maksimal'),
-    ('large-v3-turbo-q5', 'large-v3-turbo-Q5_0 — 🎯 Akurat', '548 MB · ✅ Termasuk di aplikasi\n🇮🇩 ID: ~96% · 🇬🇧 EN: ~97%\n🏆 Akurasi global terbaik — rekomendasi!'),
+    ('base', '⚡ Cepat', '142 MB · ✅ Termasuk di aplikasi\n🇮🇩 ID: Sangat baik · 🇬🇧 EN: Baik\nCocok: transkrip cepat & ringan'),
+    ('large-v3-turbo-q5', '🎯 Akurat', '548 MB · ✅ Termasuk di aplikasi\n🇮🇩 ID: ~96% · 🇬🇧 EN: ~97%\n🏆 Akurasi global terbaik — rekomendasi!'),
   ];
 
   @override

@@ -162,7 +162,7 @@ void main() {
     test('NoopBridge returns default settings', () async {
       final bridge = NoopBridge();
       final initial = await bridge.loadSettings();
-      expect(initial.defaultModel, 'tiny');
+      expect(initial.defaultModel, 'base');
       expect(initial.theme, AppThemeMode.light);
       expect(initial.defaultMode, SessionMode.online);
     });

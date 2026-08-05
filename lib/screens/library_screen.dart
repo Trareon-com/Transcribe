@@ -12,6 +12,7 @@ import '../theme/app_colors.dart';
 import '../widgets/file_upload_zone.dart';
 import '../widgets/session_card.dart';
 import '../widgets/storage_bar.dart';
+import '../widgets/empty_state.dart';
 import 'transcript_player_screen.dart';
 import '../widgets/export_dialog.dart';
 
@@ -248,47 +249,16 @@ class _LibraryScreenState extends ConsumerState<LibraryScreen> {
                   child: _loading
                       ? const Center(child: CircularProgressIndicator())
                       : _sessions.isEmpty
-                          ? Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    width: 72,
-                                    height: 72,
-                                    decoration: BoxDecoration(
-                                      color: colors.primary.withValues(alpha: 0.10),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(Icons.folder_open_outlined, size: 34, color: colors.primary),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'Belum ada sesi tersimpan',
-                                    style: TextStyle(
-                                      color: colors.text,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    'Sesi transkripsi akan muncul di sini',
-                                    style: TextStyle(color: colors.textSecondary, fontSize: 13),
-                                  ),
-                                ],
-                              ),
+                          ? const EmptyState(
+                              icon: Icons.folder_open_outlined,
+                              title: 'Belum ada sesi tersimpan',
+                              subtitle: 'Sesi transkripsi akan muncul di sini',
                             )
-                          : filtered.isEmpty
-                              ? Center(
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.search_off, size: 36, color: colors.textTertiary),
-                                      const SizedBox(height: 8),
-                                      Text('Tidak ada sesi cocok', style: TextStyle(color: colors.textSecondary, fontSize: 13)),
-                                    ],
-                                  ),
-                                )
+                              : filtered.isEmpty
+                                  ? const EmptyState(
+                                      icon: Icons.search_off,
+                                      title: 'Tidak ada sesi cocok',
+                                    )
                               : ListView.separated(
                                   padding: const EdgeInsets.symmetric(horizontal: 12),
                                   itemCount: filtered.length + 1, // +1 for storage bar

@@ -11,6 +11,12 @@ import 'package:transcribe/src/rust/session.dart' as rust_session;
 import 'package:transcribe/src/rust/export.dart' as rust_export;
 import 'package:transcribe/src/rust/stt/file.dart' as rust_stt_file;
 
+Future<WizardSpecs> _detectSpecs() async => const WizardSpecs(
+      cpuCores: 8,
+      ramMb: 16384,
+      suggestedModel: 'large-v3-turbo-q5',
+    );
+
 class _FakeBridge implements RustBridge {
   AppSettings savedSettings = AppSettings.defaults();
   final List<(String, String)> downloadModelCalls = [];
@@ -97,7 +103,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [rustBridgeProvider.overrideWithValue(bridge)],
-        child: MaterialApp(home: SetupWizardScreen(onFinished: () => finished = true)),
+        child: MaterialApp(home: SetupWizardScreen(onFinished: () => finished = true, detectSpecs: _detectSpecs)),
       ),
     );
 
@@ -127,7 +133,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [rustBridgeProvider.overrideWithValue(bridge)],
-        child: MaterialApp(home: SetupWizardScreen(onFinished: () {})),
+        child: MaterialApp(home: SetupWizardScreen(onFinished: () {}, detectSpecs: _detectSpecs)),
       ),
     );
 
@@ -153,7 +159,7 @@ void main() {
       ProviderScope(
         overrides: [rustBridgeProvider.overrideWithValue(bridge)],
         child: MaterialApp(
-          home: SetupWizardScreen(onFinished: () {}),
+          home: SetupWizardScreen(onFinished: () {}, detectSpecs: _detectSpecs),
         ),
       ),
     );
@@ -164,7 +170,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Step 2: tap the bundled 'large-v3-turbo-q5' model card to change selection
-    await tester.tap(find.text('large-v3-turbo-Q5_0 — 🎯 Akurat'));
+    await tester.tap(find.text('🎯 Akurat'));
     await tester.pumpAndSettle();
 
     expect(bridge.savedSettings.defaultModel, 'large-v3-turbo-q5');

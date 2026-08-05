@@ -2,53 +2,59 @@ name: CI
 
 on:
   pull_request:
+    branches: [main]
   push:
     branches: [main]
 
 env:
   NODE_OPTIONS: --experimental-vm-modules
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   rust:
     name: Rust (fmt, clippy, test, audit, deny)
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: rust_core
     steps:
       - uses: actions/checkout@v4
       - name: Install native audio dependencies
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y pkg-config libasound2-dev
-      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt, clippy
-      - uses: Swatinem/rust-cache@v2.9.1
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2.9.1
         with:
           workspaces: rust_core
 
       - name: cargo fmt --check
-        working-directory: rust_core
-        run: cargo fmt --check
+        run: cargo fmt --all -- --check
 
       - name: cargo clippy
-        working-directory: rust_core
         run: cargo clippy --all-targets -- -D warnings
 
       - name: cargo test
-        working-directory: rust_core
         run: cargo test --lib
 
       - name: Install cargo-audit
         run: cargo install cargo-audit --locked
       - name: cargo audit
-        working-directory: rust_core
         run: cargo audit
 
       - name: Install cargo-deny
         run: cargo install cargo-deny --locked
       - name: cargo deny check
-        working-directory: rust_core
         run: cargo deny check
 
       - name: Verify Rust library compiles
-        working-directory: rust_core
         run: cargo check --lib
 
   flutter:
@@ -56,15 +62,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2.23.0
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2.25.3
         with:
           channel: stable
+          cache: true
+          cache-dependency-path: pubspec.yaml
       - name: flutter pub get
         run: flutter pub get
       - name: flutter analyze
         run: flutter analyze
       - name: flutter test
-        run: flutter test
+        run: flutter test --no-pub
 
   rust-build:
     name: Rust build (${{ matrix.os }})
@@ -74,19 +83,30 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
+            shell: bash
           - os: macos-latest
+            shell: bash
           - os: windows-latest
+            shell: pwsh
+    defaults:
+      run:
+        working-directory: rust_core
+        shell: bash
     steps:
       - uses: actions/checkout@v4
       - name: Install native audio dependencies (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install --no-install-recommends -y pkg-config libasound2-dev
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2.9.1
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2.9.1
         with:
           workspaces: rust_core
+
       - name: cargo build --release --lib
-        working-directory: rust_core
         run: cargo build --release --lib
 
   flutter-build:
@@ -120,24 +140,36 @@ jobs:
             libpulse-dev libpcaudio-dev \
             libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
             libappindicator3-dev
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2.9.1
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2.9.1
         with:
           workspaces: rust_core
+
       - name: Build rust_core library
-        run: cargo build --release --lib
-        working-directory: rust_core
-      - uses: subosito/flutter-action@v2.23.0
+        run: cd rust_core && cargo build --release --lib
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2.25.3
         with:
           channel: stable
+          cache: true
+          cache-dependency-path: pubspec.yaml
+
       - name: flutter pub get
         run: flutter pub get
+
       - name: flutter build linux
         if: matrix.target == 'linux'
         run: flutter build linux --release
+
       - name: flutter build macos
         if: matrix.target == 'macos'
         run: flutter build macos --release
+
       - name: flutter build windows
         if: matrix.target == 'windows'
         run: flutter build windows --release
@@ -145,26 +177,40 @@ jobs:
   macos-packaging-smoke-test:
     name: macOS packaging smoke test (build, ad-hoc sign, dmg)
     runs-on: macos-latest
-    if: true
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2.9.1
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2.9.1
         with:
           workspaces: rust_core
-      - uses: subosito/flutter-action@v2.23.0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2.25.3
         with:
           channel: stable
+          cache: true
+          cache-dependency-path: pubspec.yaml
+
       - name: flutter pub get
         run: flutter pub get
+
       - name: Download bundled models
         run: |
           mkdir -p models
           curl -fL -o models/ggml-tiny.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
           curl -fL -o models/ggml-base.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin
           curl -fL -o models/ggml-large-v3-turbo-q5_0.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin
+
+      - name: Make package script executable
+        run: chmod +x ./scripts/package_macos.sh
+
       - name: Package macOS (build + ad-hoc sign + dmg)
         run: ./scripts/package_macos.sh
+
       - name: Upload dmg as CI artifact
         uses: actions/upload-artifact@v4
         with:
@@ -178,25 +224,40 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2.9.1
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build
+        uses: Swatinem/rust-cache@v2.9.1
         with:
           workspaces: rust_core
-      - uses: subosito/flutter-action@v2.23.0
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2.25.3
         with:
           channel: stable
+          cache: true
+          cache-dependency-path: pubspec.yaml
+
       - name: flutter pub get
         run: flutter pub get
+
       - name: Download bundled models
         run: |
           New-Item -ItemType Directory -Force -Path models | Out-Null
-          Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin" -OutFile "models\ggml-tiny.bin"
-          Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin" -OutFile "models\ggml-base.bin"
-          Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin" -OutFile "models\ggml-large-v3-turbo-q5_0.bin"
+          Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin" -OutFile "models\\ggml-tiny.bin"
+          Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin" -OutFile "models\\ggml-base.bin"
+          Invoke-WebRequest -Uri "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin" -OutFile "models\\ggml-large-v3-turbo-q5_0.bin"
         shell: pwsh
+
+      - name: Make package script executable
+        run: chmod +x ./scripts/package_windows.ps1
+        shell: bash
+
       - name: Package Windows (build + zip)
         run: ./scripts/package_windows.ps1
         shell: pwsh
+
       - name: Upload zip as CI artifact
         uses: actions/upload-artifact@v4
         with:
@@ -207,31 +268,27 @@ jobs:
   benchmark:
     name: Performance benchmark
     runs-on: ubuntu-latest
-    if: true
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
     steps:
       - uses: actions/checkout@v4
-      - name: Install native audio dependencies
-        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y pkg-config libasound2-dev
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2.9.1
-        with:
-          workspaces: rust_core
-      - name: Build benchmark binary
-        working-directory: rust_core
-        run: cargo build --release --bin trareon-transcribe
+
       - name: Download benchmark model
         run: |
           curl -fL -o /tmp/ggml-tiny.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
           echo "MODEL_PATH=/tmp/ggml-tiny.bin" >> $GITHUB_ENV
+
       - name: Generate test audio
         run: |
           python3 -c "
           import struct, math, wave
           with wave.open('/tmp/test_en.wav', 'w') as w:
-            w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000)
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(16000)
             for i in range(16000*5):
               w.writeframes(struct.pack('<h', int(math.sin(2*math.pi*440*i/16000)*8000)))
           "
+
       - name: Run benchmarks
         run: |
           chmod +x scripts/benchmark.sh

@@ -94,13 +94,16 @@ void main() {
     expect(find.text('VAD (deteksi suara)'), findsOneWidget);
     expect(find.text('Echo Dedupe'), findsOneWidget);
 
-    // Scroll down to the "Sistem & Informasi" section (below viewport in lazy ListView)
-    final listView = find.byType(ListView);
-    await tester.drag(listView, const Offset(0, -600));
+    // Scroll down to the "Lainnya" section (below viewport in lazy ListView)
+    await tester.scrollUntilVisible(
+      find.text('Laporan Privasi'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.pumpAndSettle();
 
     expect(find.text('Laporan Privasi'), findsOneWidget);
-    expect(find.text('Statistik Penggunaan'), findsOneWidget);
+    expect(find.text('Dasbor Penggunaan'), findsOneWidget);
   });
 
   testWidgets('theme dropdown changes theme', (WidgetTester tester) async {

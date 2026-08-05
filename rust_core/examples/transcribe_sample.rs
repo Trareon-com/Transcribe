@@ -46,7 +46,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 4. Transcribe
     let transcribe_start = Instant::now();
     let result = engine
-        .transcribe_chunk(&audio.samples, "sample", 0.0, Some("id"))
+        .transcribe_chunk(&audio.samples, "sample", 0.0, Some("id"), None)
         .map_err(|e| format!("Transcribe error: {}", e))?;
 
     println!("⏱️  Transcribed in {:?}", transcribe_start.elapsed());

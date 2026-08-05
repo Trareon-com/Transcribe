@@ -12,7 +12,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 VERSION="${1:-$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d+ -f1)}"
-APP_NAME="Trareon Transcribe"
+APP_NAME="transcribe"
 BUILD_DIR="build/macos/Build/Products/Release"
 APP_PATH="$BUILD_DIR/$APP_NAME.app"
 DIST_DIR="dist"

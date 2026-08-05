@@ -29,6 +29,7 @@ pub struct LivePipeline<'a> {
     source: String,
     language: Option<String>,
     samples_seen: u64,
+    last_transcript_tail: String,
 }
 
 #[derive(Debug, Clone)]
@@ -337,7 +338,20 @@ impl<'a> LivePipeline<'a> {
             source: source.into(),
             language,
             samples_seen: 0,
+            last_transcript_tail: String::new(),
         })
+    }
+
+    /// Updates the rolling prompt context with the last transcript tail (up to
+    /// 200 characters) to improve continuity in subsequent transcription chunks.
+    pub fn update_prompt_context(&mut self, transcript_tail: &str) {
+        const MAX_TAIL: usize = 200;
+        if transcript_tail.len() > MAX_TAIL {
+            self.last_transcript_tail =
+                transcript_tail[transcript_tail.len() - MAX_TAIL..].to_string();
+        } else {
+            self.last_transcript_tail = transcript_tail.to_string();
+        }
     }
 
     /// Ingest one or more 16 kHz mono f32 samples.
@@ -380,11 +394,17 @@ impl<'a> LivePipeline<'a> {
                 &self.source,
                 chunk_start,
                 self.language.as_deref(),
+                Some(&self.last_transcript_tail),
             )?;
             for mut segment in segments {
                 segment.speaker = self.diarizer.identify_speaker(&self.source, &chunk);
                 fresh.push(segment);
             }
+        }
+        crate::progressive::filter_loops(&mut fresh);
+        crate::confidence::apply_confidence_routing(&mut fresh);
+        if let Some(last) = fresh.last() {
+            self.update_prompt_context(&last.text);
         }
         Ok(fresh)
     }
@@ -460,10 +480,10 @@ impl<'a> LivePipelineHpt<'a> {
             let language = self.language.as_deref();
             let mut quick_segs =
                 self.engine
-                    .transcribe_quick(&chunk, &self.source, chunk_start, language)?;
+                    .transcribe_quick(&chunk, &self.source, chunk_start, language, None)?;
             let mut refined_segs =
                 self.engine
-                    .transcribe_refine(&chunk, &self.source, chunk_start, language)?;
+                    .transcribe_refine(&chunk, &self.source, chunk_start, language, None)?;
             for segment in quick_segs.iter_mut() {
                 segment.speaker = self.diarizer.identify_speaker(&self.source, &chunk);
             }
@@ -477,6 +497,8 @@ impl<'a> LivePipelineHpt<'a> {
         // file-mode HPT in api.rs).
         crate::progressive::filter_loops(&mut quick);
         crate::progressive::filter_loops(&mut refined);
+        crate::confidence::apply_confidence_routing(&mut quick);
+        crate::confidence::apply_confidence_routing(&mut refined);
         Ok((quick, refined))
     }
 }
@@ -549,6 +571,7 @@ mod tests {
             language: "id".into(),
             confidence: 0.9,
             is_partial: false,
+            low_confidence: false,
         }
     }
 }

@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
-
 import '../theme/app_colors.dart';
 
 enum ToastType { info, success, error }
 
-/// Slide-up overlay toast that auto-dismisses. Replaces
-/// `ScaffoldMessenger.showSnackBar` for non-blocking user feedback.
 class AppToast {
   static OverlayEntry? _current;
 
@@ -119,8 +116,7 @@ class _ToastWidgetState extends State<_ToastWidget>
               borderRadius: BorderRadius.circular(10),
               color: widget.colors.surfaceElevated,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(color: widget.colors.border),

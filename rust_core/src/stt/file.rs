@@ -41,12 +41,12 @@ pub fn transcribe_file(
 
     if audio.samples.len() <= chunk_samples {
         // Small file — single shot is the fast path.
-        let segments = engine.transcribe_chunk(&audio.samples, "file", 0.0, language)?;
+        let segments = engine.transcribe_chunk(&audio.samples, "file", 0.0, language, None)?;
         all_segments = segments;
     } else {
         for (chunk_idx, chunk) in audio.samples.chunks(chunk_samples).enumerate() {
             let chunk_start = chunk_idx as f64 * CHUNK_DURATION_SECS;
-            let segments = engine.transcribe_chunk(chunk, "file", chunk_start, language)?;
+            let segments = engine.transcribe_chunk(chunk, "file", chunk_start, language, None)?;
             all_segments.extend(segments);
         }
     }

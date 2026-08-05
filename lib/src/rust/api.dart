@@ -134,6 +134,12 @@ Future<List<ExportedFile>> exportSession({
   title: title,
 );
 
+/// Sanitize a candidate filename so it is safe to use on all target
+/// filesystems (Windows/macOS/Linux). Falls back to "untitled" when the
+/// input would otherwise be empty after stripping.
+Future<String> exportSanitizeFilename({required String raw}) =>
+    RustLib.instance.api.crateApiExportSanitizeFilename(raw: raw);
+
 Future<AudioBuffer> decodeAudioFile({required String path}) =>
     RustLib.instance.api.crateApiDecodeAudioFile(path: path);
 

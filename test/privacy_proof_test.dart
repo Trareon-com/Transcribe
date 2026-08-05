@@ -57,14 +57,13 @@ void main() {
 
     // Definition (bridge_service) + any legit UI call sites. The wizard
     // download step was REMOVED (models bundled), so the only expected hit
-    // is the bridge definition itself. The model-download dialog is an
-    // explicit user-initiated download UI, so it is also allowed.
+    // is the bridge definition itself.
     expect(hits, contains('services/bridge_service.dart'));
     for (final h in hits) {
       expect(
         h == 'services/bridge_service.dart' ||
             h.startsWith('screens/setup_wizard') ||
-            h == 'widgets/model_download_dialog.dart' ||
+            h.startsWith('widgets/model_download_dialog') ||
             h.startsWith('src/rust/'), // generated FRB bindings — allowed
         isTrue,
         reason: 'unexpected downloadModel call site: $h',

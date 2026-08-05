@@ -188,6 +188,7 @@ class _TestBridge extends _NoopBridge {
             language: 'id',
             confidence: 0.9,
             isPartial: false,
+            lowConfidence: false,
           ),
         ],
         language: 'id',

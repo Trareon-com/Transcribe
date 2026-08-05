@@ -109,6 +109,7 @@ class RustBridgeMock implements RustBridge {
             language: 'id',
             confidence: 0.92,
             isPartial: false,
+            lowConfidence: false,
           ),
         );
       }
@@ -449,6 +450,7 @@ class RustEngineBridge implements RustBridge {
               language: s.language,
               confidence: s.confidence,
               isPartial: s.isPartial,
+              lowConfidence: s.lowConfidence,
             ),
           )
           .toList(),

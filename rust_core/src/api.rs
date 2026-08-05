@@ -163,6 +163,13 @@ pub fn export_session(
     crate::export::export_segments(&segments, &formats, &PathBuf::from(output_dir), &title)
 }
 
+/// Sanitize a candidate filename so it is safe to use on all target
+/// filesystems (Windows/macOS/Linux). Falls back to "untitled" when the
+/// input would otherwise be empty after stripping.
+pub fn export_sanitize_filename(raw: String) -> String {
+    crate::export::sanitize_filename(&raw)
+}
+
 // --- File transcription -----------------------------------------------------
 
 pub fn decode_audio_file(path: String) -> Result<crate::decode::AudioBuffer, TranscribeError> {
@@ -209,9 +216,9 @@ pub fn progressive_transcribe_file(
 
     if audio.samples.len() <= chunk_samples {
         quick_segments =
-            engine.transcribe_quick(&audio.samples, "file", 0.0, language.as_deref())?;
+            engine.transcribe_quick(&audio.samples, "file", 0.0, language.as_deref(), None)?;
         refined_segments =
-            engine.transcribe_refine(&audio.samples, "file", 0.0, language.as_deref())?;
+            engine.transcribe_refine(&audio.samples, "file", 0.0, language.as_deref(), None)?;
     } else {
         for (idx, chunk) in audio.samples.chunks(chunk_samples).enumerate() {
             let start = idx as f64 * CHUNK_SECS;
@@ -220,12 +227,14 @@ pub fn progressive_transcribe_file(
                 "file",
                 start,
                 language.as_deref(),
+                None,
             )?);
             refined_segments.extend(engine.transcribe_refine(
                 chunk,
                 "file",
                 start,
                 language.as_deref(),
+                None,
             )?);
         }
     }

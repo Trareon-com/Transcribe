@@ -45,3 +45,6 @@ AppDir
 dist/
 transcribe.AppImage
 transcribe-linux-portable.zip
+
+# OpenWork workspace artifacts
+.opencode/

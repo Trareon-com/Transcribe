@@ -193,6 +193,7 @@ class TranscriptSegment {
   final String language;
   final double confidence;
   final bool isPartial;
+  final bool lowConfidence;
 
   const TranscriptSegment({
     required this.source,
@@ -203,6 +204,7 @@ class TranscriptSegment {
     required this.language,
     required this.confidence,
     required this.isPartial,
+    this.lowConfidence = false,
   });
 
   TranscriptSegment copyWith({String? speaker, String? text}) {
@@ -215,6 +217,7 @@ class TranscriptSegment {
       language: language,
       confidence: confidence,
       isPartial: isPartial,
+      lowConfidence: lowConfidence,
     );
   }
 
@@ -281,7 +284,7 @@ class AppSettings {
 
   factory AppSettings.defaults() => const AppSettings(
     theme: AppThemeMode.light,
-    defaultModel: 'tiny',
+    defaultModel: 'base',
     defaultMode: SessionMode.online,
     libraryPath: '~/Documents/TrareonTranscribe',
     vadEnabled: true,

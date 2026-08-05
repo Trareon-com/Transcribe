@@ -66,6 +66,7 @@ mod tests {
             language: "id".to_string(),
             confidence: 0.9,
             is_partial: false,
+            low_confidence: false,
         }
     }
 

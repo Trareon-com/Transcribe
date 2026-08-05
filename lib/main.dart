@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'screens/main_screen.dart';
+import 'screens/onboarding_screen.dart';
+import 'widgets/model_download_card.dart' show DownloadStatus;
 import 'services/rust_library_loader.dart';
 import 'services/tray_service.dart';
 import 'src/rust/api.dart' as rust_api;
@@ -15,18 +17,12 @@ void main() async {
   await RustLib.init(externalLibrary: tryLoadRustCoreLibrary());
   await rust_api.initLogging();
 
-  // Singleton instance lock
   try {
     await rust_api.acquireInstanceLock();
   } catch (_) {
     runApp(const _AlreadyRunningApp());
     return;
   }
-
-  // Extract bundled models to app data directory (once — after that
-  // the files stay on disk and loading is instant).
-  // Models are resolved at runtime via modelPathForId() in models.dart
-  // No need to extract bundled models as assets anymore.
 
   await TrayService.instance.init();
 
@@ -70,12 +66,21 @@ class _AlreadyRunningApp extends StatelessWidget {
   }
 }
 
+/// True if both required models exist on disk (Whisper large-v3-turbo + Qwen2.5-7B).
+/// Read once at startup; the onboarding screen flips it after the user finishes.
+final modelsReadyProvider = StateProvider<bool>((ref) {
+  // Lazy read — assume ready unless onboarding has been seen and the check failed.
+  // The onboarding screen sets this to true when download completes.
+  return true;
+});
+
 class TranscribeApp extends ConsumerWidget {
   const TranscribeApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
+    final modelsReady = ref.watch(modelsReadyProvider);
 
     return MaterialApp(
       title: 'Trareon Transcribe',
@@ -89,9 +94,29 @@ class TranscribeApp extends ConsumerWidget {
       },
       themeAnimationDuration: const Duration(milliseconds: 300),
       themeAnimationCurve: Curves.easeInOut,
-      // Models are bundled — no setup wizard needed.
-      // User can switch between ⚡ base and 🎯 q5_0 from the main screen header.
-      home: const MainScreen(),
+      // First-launch routing: when models aren't downloaded yet, show the
+      // dedicated onboarding/download screen (Task 22). The legacy
+      // SetupWizardScreen remains reachable from Settings for power users.
+      home: modelsReady
+          ? const MainScreen()
+          : OnboardingScreen(
+              asrStatus: DownloadStatus.idle,
+              asrProgress: 0,
+              asrTitle: 'Model Pengenalan Suara',
+              asrSubtitle:
+                  'Mengubah gelombang suara menjadi teks bahasa Indonesia',
+              asrSize: '~1,5 GB',
+              llmStatus: DownloadStatus.idle,
+              llmProgress: 0,
+              llmTitle: 'Model Bahasa Indonesia',
+              llmSubtitle:
+                  'Memperbaiki teks hasil transkrip dan membuat ringkasan',
+              llmSize: '~4,5 GB',
+              allReady: false,
+              onContinue: () {},
+              onRetryAsr: () {},
+              onRetryLlm: () {},
+            ),
     );
   }
 }

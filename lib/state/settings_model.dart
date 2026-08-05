@@ -64,7 +64,7 @@ class SettingsNotifier extends StateNotifier<AppSettings> {
     if (isModelAvailable(settings.defaultModel, libraryPath: settings.libraryPath)) {
       return settings;
     }
-    const fallback = 'tiny';
+    const fallback = 'base';
     if (settings.defaultModel == fallback) return settings;
     return settings.copyWith(defaultModel: fallback);
   }

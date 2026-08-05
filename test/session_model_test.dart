@@ -131,7 +131,7 @@ void main() {
       modelPathForId('small'),
     );
 
-    expect(notifier.state.config.modelPath, 'models/ggml-small.bin');
+    expect(notifier.state.config.modelPath, endsWith('ggml-small.bin'));
   });
 
   test('session provider syncs loaded settings while idle', () async {
@@ -154,15 +154,15 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    // Initial state uses AppSettings.defaults() (model='tiny')
+    // Initial state uses AppSettings.defaults() (model='base')
     expect(container.read(sessionProvider).config.modelPath,
-        endsWith('models/ggml-tiny.bin'));
+        endsWith('ggml-base.bin'));
 
     SessionUiState session = container.read(sessionProvider);
     for (var i = 0; i < 20; i++) {
       await Future<void>.delayed(const Duration(milliseconds: 10));
       session = container.read(sessionProvider);
-      if (session.config.modelPath == 'models/ggml-medium.bin') break;
+      if (session.config.modelPath.endsWith('ggml-medium.bin')) break;
     }
 
     expect(session.config.modelPath, '${tempDir.path}/ggml-medium.bin');

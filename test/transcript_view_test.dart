@@ -20,15 +20,15 @@ void main() {
     await tester.pump();
     tester.takeException();
     await tester.pumpAndSettle();
-    // Speaker labels are plain Text widgets; toolbar segmen-count too.
+    // Speaker labels + avatar initials render twice per segment.
     expect(find.text('2 segmen'), findsOneWidget);
-    expect(find.text('A'), findsOneWidget);
-    expect(find.text('B'), findsOneWidget);
+    expect(find.text('A'), findsNWidgets(2));
+    expect(find.text('B'), findsNWidgets(2));
 
     // Test Search — filter hides non-matching segments
     await tester.enterText(find.byType(TextField), 'Halo');
     await tester.pumpAndSettle();
-    expect(find.text('A'), findsOneWidget);
+    expect(find.text('A'), findsNWidgets(2));
     expect(find.text('B'), findsNothing);
   });
 }

@@ -6,12 +6,7 @@
 import 'frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
 
-// These functions are ignored because they are not marked as `pub`: `fmt_srt_time`, `fmt_timestamp`, `fmt_vtt_time`, `generate_wav_from_segments`, `html_escape`, `to_docx_bytes`, `to_html`, `to_markdown`, `to_srt`, `to_txt`, `to_vtt`, `write_wav_to_bytes`
-// These types are ignored because they are neither used by any `pub` functions nor (for structs and enums) marked `#[frb(unignore)]`: `WordTimestamp`
-// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `clone`, `clone`, `clone`, `clone`, `eq`, `fmt`, `fmt`, `fmt`, `fmt`
-// These functions are ignored (category: IgnoreBecauseExplicitAttribute): `export_segments`, `write_wav`
-
-enum ExportFormat { markdown, txt, json, srt, vtt, html, docx, wav }
+enum ExportFormat { markdown, txt, json, srt, vtt, html, docx }
 
 class ExportedFile {
   final String filename;
@@ -46,6 +41,7 @@ class Segment {
   final String language;
   final double confidence;
   final bool isPartial;
+  final bool lowConfidence;
 
   const Segment({
     required this.source,
@@ -56,6 +52,7 @@ class Segment {
     required this.language,
     required this.confidence,
     required this.isPartial,
+    required this.lowConfidence,
   });
 
   @override
@@ -67,7 +64,8 @@ class Segment {
       duration.hashCode ^
       language.hashCode ^
       confidence.hashCode ^
-      isPartial.hashCode;
+      isPartial.hashCode ^
+      lowConfidence.hashCode;
 
   @override
   bool operator ==(Object other) =>
@@ -81,5 +79,6 @@ class Segment {
           duration == other.duration &&
           language == other.language &&
           confidence == other.confidence &&
-          isPartial == other.isPartial;
+          isPartial == other.isPartial &&
+          lowConfidence == other.lowConfidence;
 }

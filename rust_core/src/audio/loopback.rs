@@ -132,7 +132,7 @@ pub(crate) mod macos {
                     if let Some(list) = sample.audio_buffer_list() {
                         for buf in list.iter() {
                             let ptr = buf.data().as_ptr() as *const f32;
-                            let len = buf.data_byte_size() as usize / 4;
+                            let len = buf.data_byte_size() / 4;
                             if !ptr.is_null() && len > 0 {
                                 let samples = unsafe { std::slice::from_raw_parts(ptr, len) };
                                 let _ = tx.send(samples.to_vec());

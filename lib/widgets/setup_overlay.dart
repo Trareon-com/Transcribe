@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../src/rust/api.dart' as rust_api;
-import '../src/rust/doctor.dart' as rust_doctor;
+import '../src/rust/doctor.dart';
 
 /// A flag to skip preflight checks during tests.
 /// Set to true before running tests, or use SetupOverlay.test() constructor.
@@ -36,7 +36,7 @@ class _SetupOverlayState extends ConsumerState<SetupOverlay> {
 
   Future<void> _runPreflight() async {
     final checks = await rust_api.runPreflightChecks();
-    final failed = checks.any((c) => c.status is! rust_doctor.CheckStatus_Ok);
+    final failed = checks.any((c) => c.status is! CheckStatus_Ok);
     String? error;
     if (failed) {
       error = await rust_api.formatPreflightChecks(checks: checks);

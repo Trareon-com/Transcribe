@@ -9,7 +9,6 @@ import 'package:audioplayers/audioplayers.dart';
 import '../state/models.dart';
 import '../state/settings_model.dart';
 import '../theme/app_colors.dart';
-import '../utils/format_time.dart';
 import '../widgets/export_dialog.dart';
 import '../widgets/transcript_view.dart';
 
@@ -30,12 +29,10 @@ class TranscriptPlayerScreen extends ConsumerStatefulWidget {
   });
 
   @override
-  ConsumerState<TranscriptPlayerScreen> createState() =>
-      _TranscriptPlayerScreenState();
+  ConsumerState<TranscriptPlayerScreen> createState() => _TranscriptPlayerScreenState();
 }
 
-class _TranscriptPlayerScreenState
-    extends ConsumerState<TranscriptPlayerScreen> {
+class _TranscriptPlayerScreenState extends ConsumerState<TranscriptPlayerScreen> {
   double _positionSeconds = 0;
   double _speed = 1.0;
   bool _playing = false;
@@ -58,9 +55,7 @@ class _TranscriptPlayerScreenState
 
   Future<void> _initPlayer() async {
     if (widget.audioPath == null) {
-      setState(
-        () => _error = 'File audio sumber tidak tersedia untuk diputar.',
-      );
+      setState(() => _error = 'File audio sumber tidak tersedia untuk diputar.');
       return;
     }
     try {
@@ -98,7 +93,8 @@ class _TranscriptPlayerScreenState
   void _renameSpeaker(String oldLabel, String newLabel) {
     setState(() {
       _segments = _segments
-          .map((s) => s.speaker == oldLabel ? s.copyWith(speaker: newLabel) : s)
+          .map((s) =>
+              s.speaker == oldLabel ? s.copyWith(speaker: newLabel) : s)
           .toList();
     });
     widget.onSegmentsChanged?.call(List.unmodifiable(_segments));
@@ -107,10 +103,7 @@ class _TranscriptPlayerScreenState
 
   void _schedulePersist() {
     _persistDebounce?.cancel();
-    _persistDebounce = Timer(
-      const Duration(milliseconds: 400),
-      _persistSegments,
-    );
+    _persistDebounce = Timer(const Duration(milliseconds: 400), _persistSegments);
   }
 
   Future<void> _persistSegments() async {
@@ -124,26 +117,26 @@ class _TranscriptPlayerScreenState
           .where((f) => f.path.endsWith('.json'))
           .firstOrNull;
       final jsonFile = existing ?? File('${sessionDir.path}/transcript.json');
-      final json = jsonEncode(
-        _segments
-            .map(
-              (s) => {
-                'source': s.source,
-                'speaker': s.speaker,
-                'text': s.text,
-                'timestamp': s.timestamp,
-                'duration': s.duration,
-                'language': s.language,
-                'confidence': s.confidence,
-                'is_partial': s.isPartial,
-              },
-            )
-            .toList(),
-      );
+      final json = jsonEncode(_segments.map((s) => {
+        'source': s.source,
+        'speaker': s.speaker,
+        'text': s.text,
+        'timestamp': s.timestamp,
+        'duration': s.duration,
+        'language': s.language,
+        'confidence': s.confidence,
+        'is_partial': s.isPartial,
+      }).toList());
       await jsonFile.writeAsString(json);
     } catch (e) {
       debugPrint('_persistSegments error: $e');
     }
+  }
+
+  String _formatTime(double secs) {
+    final m = (secs / 60).floor();
+    final s = (secs % 60).floor();
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
   }
 
   Future<void> _togglePlayback() async {
@@ -154,9 +147,7 @@ class _TranscriptPlayerScreenState
       } else {
         await _player.setPlaybackRate(_speed);
         if (_positionSeconds > 0) {
-          await _player.seek(
-            Duration(milliseconds: (_positionSeconds * 1000).round()),
-          );
+          await _player.seek(Duration(milliseconds: (_positionSeconds * 1000).round()));
         }
         await _player.resume();
       }
@@ -189,22 +180,17 @@ class _TranscriptPlayerScreenState
 
   @override
   Widget build(BuildContext context) {
-    final colors =
-        Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-    final maxSeconds =
-        (widget.durationSeconds > 0
-                ? widget.durationSeconds
-                : (_duration?.inMilliseconds ?? 0) / 1000.0)
-            .toDouble()
-            .clamp(1.0, double.infinity);
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final maxSeconds = (widget.durationSeconds > 0
+            ? widget.durationSeconds
+            : (_duration?.inMilliseconds ?? 0) / 1000.0)
+        .toDouble()
+        .clamp(1.0, double.infinity);
 
     // Find the active segment index based on current playback position
     final activeIndex = _positionSeconds > 0
         ? _segments.lastIndexWhere(
-            (s) =>
-                s.timestamp <= _positionSeconds &&
-                (s.timestamp + s.duration) > _positionSeconds,
-          )
+            (s) => s.timestamp <= _positionSeconds && (s.timestamp + s.duration) > _positionSeconds)
         : -1;
 
     return Scaffold(
@@ -212,10 +198,7 @@ class _TranscriptPlayerScreenState
       appBar: AppBar(
         backgroundColor: colors.headerBackground,
         foregroundColor: colors.text,
-        title: Text(
-          widget.title,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
+        title: Text(widget.title, style: const TextStyle(fontWeight: FontWeight.w600)),
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new, size: 20),
@@ -248,10 +231,7 @@ class _TranscriptPlayerScreenState
                     alignment: Alignment.centerLeft,
                     child: Text(
                       _error!,
-                      style: const TextStyle(
-                        color: AppColors.warning,
-                        fontSize: 12,
-                      ),
+                      style: const TextStyle(color: AppColors.warning, fontSize: 12),
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -259,39 +239,19 @@ class _TranscriptPlayerScreenState
                 // Seek slider
                 Row(
                   children: [
-                    Text(
-                      formatDuration(
-                        Duration(
-                          milliseconds: (_positionSeconds * 1000).round(),
-                        ),
-                      ),
-                      style: TextStyle(
-                        color: colors.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
+                    Text(_formatTime(_positionSeconds),
+                      style: TextStyle(color: colors.textSecondary, fontSize: 12)),
                     Expanded(
                       child: Slider(
-                        value: _positionSeconds
-                            .clamp(0.0, maxSeconds)
-                            .toDouble(),
+                        value: _positionSeconds.clamp(0.0, maxSeconds).toDouble(),
                         max: maxSeconds,
                         activeColor: colors.primary,
-                        onChanged: widget.audioPath == null
-                            ? null
-                            : (v) => setState(() => _positionSeconds = v),
+                        onChanged: widget.audioPath == null ? null : (v) => setState(() => _positionSeconds = v),
                         onChangeEnd: widget.audioPath == null ? null : _seekTo,
                       ),
                     ),
-                    Text(
-                      formatDuration(
-                        Duration(milliseconds: (maxSeconds * 1000).round()),
-                      ),
-                      style: TextStyle(
-                        color: colors.textSecondary,
-                        fontSize: 12,
-                      ),
-                    ),
+                    Text(_formatTime(maxSeconds),
+                      style: TextStyle(color: colors.textSecondary, fontSize: 12)),
                   ],
                 ),
 
@@ -306,23 +266,17 @@ class _TranscriptPlayerScreenState
                       color: colors.textSecondary,
                       onPressed: widget.audioPath == null
                           ? null
-                          : () => _seekTo(
-                              (_positionSeconds - 10).clamp(0, maxSeconds),
-                            ),
+                          : () => _seekTo((_positionSeconds - 10).clamp(0, maxSeconds)),
                       tooltip: 'Mundur 10 detik',
                     ),
                     const SizedBox(width: 8),
                     IconButton(
                       iconSize: 40,
                       icon: Icon(
-                        _playing
-                            ? Icons.pause_circle_filled
-                            : Icons.play_circle_filled,
+                        _playing ? Icons.pause_circle_filled : Icons.play_circle_filled,
                         color: colors.primary,
                       ),
-                      onPressed: widget.audioPath == null
-                          ? null
-                          : _togglePlayback,
+                      onPressed: widget.audioPath == null ? null : _togglePlayback,
                     ),
                     const SizedBox(width: 8),
                     // Skip forward 10s
@@ -332,9 +286,7 @@ class _TranscriptPlayerScreenState
                       color: colors.textSecondary,
                       onPressed: widget.audioPath == null
                           ? null
-                          : () => _seekTo(
-                              (_positionSeconds + 10).clamp(0, maxSeconds),
-                            ),
+                          : () => _seekTo((_positionSeconds + 10).clamp(0, maxSeconds)),
                       tooltip: 'Maju 10 detik',
                     ),
                     const SizedBox(width: 16),
@@ -352,12 +304,7 @@ class _TranscriptPlayerScreenState
                         dropdownColor: colors.surface,
                         style: TextStyle(color: colors.text, fontSize: 13),
                         items: _speedOptions
-                            .map(
-                              (s) => DropdownMenuItem(
-                                value: s,
-                                child: Text('${s}x'),
-                              ),
-                            )
+                            .map((s) => DropdownMenuItem(value: s, child: Text('${s}x')))
                             .toList(),
                         onChanged: (v) {
                           if (v != null) {
@@ -377,20 +324,12 @@ class _TranscriptPlayerScreenState
                   children: [
                     OutlinedButton.icon(
                       icon: const Icon(Icons.upload_outlined, size: 16),
-                      label: const Text(
-                        'Export',
-                        style: TextStyle(fontSize: 13),
-                      ),
+                      label: const Text('Export', style: TextStyle(fontSize: 13)),
                       onPressed: () => _exportTranscript(context),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: colors.primary,
-                        side: BorderSide(
-                          color: colors.primary.withValues(alpha: 0.3),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 6,
-                        ),
+                        side: BorderSide(color: colors.primary.withValues(alpha: 0.3)),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -418,15 +357,14 @@ class _TranscriptPlayerScreenState
     if (!context.mounted) return;
 
     // Determine default output dir per platform
-    final home =
-        Platform.environment['HOME'] ??
-        Platform.environment['USERPROFILE'] ??
-        '/tmp';
+    final home = Platform.environment['HOME']
+        ?? Platform.environment['USERPROFILE']
+        ?? '/tmp';
     final defaultDir = Platform.isMacOS
         ? '$home/Documents/TrareonTranscribe'
         : Platform.isWindows
-        ? '${Platform.environment['USERPROFILE']}\\Documents\\TrareonTranscribe'
-        : '$home/Documents/TrareonTranscribe';
+            ? '${Platform.environment['USERPROFILE']}\\Documents\\TrareonTranscribe'
+            : '$home/Documents/TrareonTranscribe';
 
     final bridge = ref.read(rustBridgeProvider);
     final settings = ref.read(settingsProvider);

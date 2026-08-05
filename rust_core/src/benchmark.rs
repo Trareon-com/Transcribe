@@ -7,7 +7,7 @@ pub fn benchmark_rtf(engine: &WhisperEngine) -> f64 {
         .map(|i| ((i as f32 / 16000.0) * 440.0 * 2.0 * std::f32::consts::PI).sin())
         .collect::<Vec<f32>>();
     let start = Instant::now();
-    let _ = engine.transcribe_chunk(&samples, "benchmark", 0.0, Some("id"));
+    let _ = engine.transcribe_chunk(&samples, "benchmark", 0.0, Some("id"), None);
     let elapsed = start.elapsed().as_secs_f64();
     if elapsed == 0.0 {
         10.0

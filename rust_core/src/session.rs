@@ -655,6 +655,7 @@ mod tests {
             language: "auto".to_string(),
             confidence: 1.0,
             is_partial: false,
+            low_confidence: false,
         }
     }
 

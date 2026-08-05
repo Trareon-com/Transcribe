@@ -10,14 +10,11 @@ import '../state/session_model.dart';
 import '../state/settings_model.dart';
 import '../src/rust/session.dart' as rust_session;
 import '../theme/app_colors.dart';
-import '../utils/format_time.dart';
 import '../widgets/app_toast.dart';
-import '../widgets/animated_record_button.dart';
 import '../widgets/mode_selector.dart';
 import '../widgets/model_download_dialog.dart';
 import '../widgets/stream_toggle.dart';
-import '../widgets/vu_meter.dart';
-
+import '../widgets/animated_record_button.dart';
 import '../widgets/transcript_view.dart';
 import 'library_screen.dart';
 import 'settings_screen.dart';
@@ -75,14 +72,10 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           .where((item) => item.sessionId != snapshot.sessionId)
           .toList(growable: false);
     });
-    AppToast.show(context, 'Sesi ${snapshot.sessionId} dipulihkan.',
-        type: ToastType.success);
+    AppToast.show(context, 'Sesi ${snapshot.sessionId} dipulihkan.', type: ToastType.success);
   }
 
-  Future<void> _handleBerhentiPressed(
-    BuildContext context,
-    WidgetRef ref,
-  ) async {
+  Future<void> _handleBerhentiPressed(BuildContext context, WidgetRef ref) async {
     final segments = ref.read(sessionProvider).segments;
     if (segments.isNotEmpty) {
       final confirmed = await showDialog<bool>(
@@ -115,8 +108,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   Future<void> _toggleStartBerhenti(BuildContext context, WidgetRef ref) async {
     final lifecycle = ref.read(sessionProvider).lifecycle;
     final isActive =
-        lifecycle == SessionLifecycle.recording ||
-        lifecycle == SessionLifecycle.paused;
+        lifecycle == SessionLifecycle.recording || lifecycle == SessionLifecycle.paused;
     if (isActive) {
       await _handleBerhentiPressed(context, ref);
       return;
@@ -125,7 +117,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
       await ref.read(sessionProvider.notifier).start();
     } catch (e) {
       if (!context.mounted) return;
-      AppToast.show(context, '$e', type: ToastType.error);
+      AppToast.show(context, '$e');
     }
   }
 
@@ -154,8 +146,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         title: title,
       );
       if (!context.mounted) return;
-      AppToast.show(context, 'Ekspor berhasil ke: $selectedDir',
-          type: ToastType.success);
+      AppToast.show(context, 'Ekspor berhasil ke: $selectedDir', type: ToastType.success);
     } catch (e) {
       if (!context.mounted) return;
       AppToast.show(context, 'Ekspor gagal: $e', type: ToastType.error);
@@ -168,11 +159,9 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     final notifier = ref.read(sessionProvider.notifier);
     final lifecycle = session.lifecycle;
     final isActive =
-        lifecycle == SessionLifecycle.recording ||
-        lifecycle == SessionLifecycle.paused;
+        lifecycle == SessionLifecycle.recording || lifecycle == SessionLifecycle.paused;
     final isPaused = lifecycle == SessionLifecycle.paused;
-    final colors =
-        Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final vuLevel = ref.watch(vuLevelProvider).valueOrNull;
 
@@ -181,9 +170,8 @@ class _MainScreenState extends ConsumerState<MainScreen> {
     ref.listen(sessionProvider.select((s) => s.sessionTitle), (_, next) {
       if (_titleController.text != next) {
         _titleController.text = next;
-        _titleController.selection = TextSelection.fromPosition(
-          TextPosition(offset: next.length),
-        );
+        _titleController.selection =
+            TextSelection.fromPosition(TextPosition(offset: next.length));
       }
     });
 
@@ -208,31 +196,19 @@ class _MainScreenState extends ConsumerState<MainScreen> {
           }
         },
         SingleActivator(LogicalKeyboardKey.keyL, meta: true): () =>
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (ctx) {
-                  final lp = ref.read(settingsProvider).libraryPath;
-                  return LibraryScreen(libraryPath: resolveTilde(lp));
-                },
-              ),
-            ),
+            Navigator.of(context).push(MaterialPageRoute(builder: (ctx) {
+              final lp = ref.read(settingsProvider).libraryPath;
+              return LibraryScreen(libraryPath: resolveTilde(lp));
+            })),
         SingleActivator(LogicalKeyboardKey.keyL, control: true): () =>
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (ctx) {
-                  final lp = ref.read(settingsProvider).libraryPath;
-                  return LibraryScreen(libraryPath: resolveTilde(lp));
-                },
-              ),
-            ),
+            Navigator.of(context).push(MaterialPageRoute(builder: (ctx) {
+              final lp = ref.read(settingsProvider).libraryPath;
+              return LibraryScreen(libraryPath: resolveTilde(lp));
+            })),
         SingleActivator(LogicalKeyboardKey.comma, meta: true): () =>
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
         SingleActivator(LogicalKeyboardKey.comma, control: true): () =>
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
+            Navigator.of(context).push(MaterialPageRoute(builder: (_) => const SettingsScreen())),
         SingleActivator(LogicalKeyboardKey.slash, meta: true): () =>
             setState(() => _showShortcuts = !_showShortcuts),
         SingleActivator(LogicalKeyboardKey.slash, control: true): () =>
@@ -251,10 +227,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 Material(
                   color: colors.chipBackground,
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     child: Row(
                       children: [
                         Icon(Icons.restore_outlined, color: colors.primary),
@@ -266,16 +239,11 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                           ),
                         ),
                         TextButton(
-                          onPressed: () =>
-                              setState(() => _recoverableSessions = const []),
+                          onPressed: () => setState(() => _recoverableSessions = const []),
                           child: const Text('Abaikan'),
                         ),
                         FilledButton(
-                          onPressed: () => _recoverSession(
-                            context,
-                            ref,
-                            _recoverableSessions.first,
-                          ),
+                          onPressed: () => _recoverSession(context, ref, _recoverableSessions.first),
                           child: const Text('Pulihkan'),
                         ),
                       ],
@@ -289,18 +257,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 decoration: BoxDecoration(
                   color: colors.headerBackground,
-                  border: Border(
-                    bottom: BorderSide(color: colors.divider, width: 0.5),
-                  ),
+                  border: Border(bottom: BorderSide(color: colors.divider, width: 0.5)),
                 ),
                 child: Row(
                   children: [
-                    Image.asset(
-                      'assets/logo.png',
-                      width: 20,
-                      height: 20,
-                      errorBuilder: (_, _, _) => const SizedBox.shrink(),
-                    ),
+                    Image.asset('assets/logo.png', width: 20, height: 20,
+                        errorBuilder: (_, _, _) => const SizedBox.shrink()),
                     const SizedBox(width: 8),
                     Text(
                       'Trareon Transcribe',
@@ -310,7 +272,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(width: 12),
                     const Spacer(),
                     IconButton(
                       icon: Icon(Icons.upload_file_outlined, size: 18),
@@ -324,10 +285,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                         ),
                       ),
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 32,
-                        minHeight: 32,
-                      ),
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                       color: colors.textSecondary,
                     ),
                     IconButton(
@@ -342,32 +300,22 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                         ),
                       ),
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 32,
-                        minHeight: 32,
-                      ),
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                       color: colors.textSecondary,
                     ),
                     IconButton(
                       icon: Icon(Icons.settings_outlined, size: 18),
                       tooltip: 'Pengaturan',
                       onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => const SettingsScreen(),
-                        ),
+                        MaterialPageRoute(builder: (_) => const SettingsScreen()),
                       ),
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 32,
-                        minHeight: 32,
-                      ),
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                       color: colors.textSecondary,
                     ),
                     IconButton(
                       icon: Icon(
-                        isDark
-                            ? Icons.light_mode_outlined
-                            : Icons.dark_mode_outlined,
+                        isDark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
                         size: 18,
                       ),
                       tooltip: isDark ? 'Mode Terang' : 'Mode Gelap',
@@ -376,10 +324,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                         notifier.toggleTheme();
                       },
                       padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(
-                        minWidth: 32,
-                        minHeight: 32,
-                      ),
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                       color: colors.textSecondary,
                     ),
                   ],
@@ -391,6 +336,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 session: session,
                 notifier: notifier,
                 isActive: isActive,
+                isPaused: isPaused,
                 vuMikrofonLevel: vuLevel?.micLevel ?? 0.0,
                 vuSpeakerLevel: vuLevel?.speakerLevel ?? 0.0,
                 titleController: _titleController,
@@ -437,11 +383,12 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 }
 
-/// Control bar: title, mode selector, mic/spk indicators, start/export
+/// Control bar: 3 rows - title+quality, VU meters, action buttons
 class _ControlBar extends StatelessWidget {
   final SessionUiState session;
   final SessionNotifier notifier;
   final bool isActive;
+  final bool isPaused;
   final double vuMikrofonLevel;
   final double vuSpeakerLevel;
   final TextEditingController titleController;
@@ -452,6 +399,7 @@ class _ControlBar extends StatelessWidget {
     required this.session,
     required this.notifier,
     required this.isActive,
+    required this.isPaused,
     required this.vuMikrofonLevel,
     required this.vuSpeakerLevel,
     required this.titleController,
@@ -461,11 +409,10 @@ class _ControlBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors =
-        Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
 
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
       decoration: BoxDecoration(
         color: colors.surface,
         border: Border(bottom: BorderSide(color: colors.divider, width: 0.5)),
@@ -473,152 +420,116 @@ class _ControlBar extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Row 1: Title + Quality Toggle
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    height: 36,
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
-                    decoration: BoxDecoration(
-                      color: colors.chipBackground,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: colors.border),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.edit_outlined,
-                          color: colors.textTertiary,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: TextField(
-                            controller: titleController,
-                            onChanged: notifier.setTitle,
-                            onSubmitted: notifier.setTitle,
-                            style: TextStyle(color: colors.text, fontSize: 13),
-                            decoration: InputDecoration.collapsed(
-                              hintText: 'Judul sesi...',
-                              hintStyle: TextStyle(
-                                color: colors.textTertiary,
-                                fontSize: 13,
-                              ),
-                            ),
+          // Row 1: title + quality toggle
+          Row(
+            children: [
+              Expanded(
+                child: Container(
+                  height: 36,
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    color: colors.chipBackground,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: colors.border),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.edit_outlined, color: colors.textTertiary, size: 16),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: TextField(
+                          controller: titleController,
+                          onChanged: notifier.setTitle,
+                          onSubmitted: notifier.setTitle,
+                          style: TextStyle(color: colors.text, fontSize: 13),
+                          decoration: InputDecoration.collapsed(
+                            hintText: 'Judul sesi...',
+                            hintStyle: TextStyle(color: colors.textTertiary, fontSize: 13),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: 12),
-                _QualityToggle(),
-              ],
-            ),
-          ),
-
-          // Row 2: VU Meters (only when active)
-          if (isActive)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: _VuRow(
-                      label: 'Mikrofon',
-                      level: vuMikrofonLevel,
-                      accent: colors.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _VuRow(
-                      label: 'Speaker',
-                      level: vuSpeakerLevel,
-                      accent: colors.primary,
-                    ),
-                  ),
-                ],
               ),
-            ),
+              const SizedBox(width: 12),
+              _QualityToggle(),
+            ],
+          ),
+          const SizedBox(height: 8),
 
-          // Row 3: Action Bar
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-            child: Row(
+          // Row 2: VU meters (visible during recording)
+          if (isActive) ...[
+            Row(
               children: [
-                // Mode selector — disabled while a session is active
-                IgnorePointer(
-                  ignoring: isActive,
-                  child: Opacity(
-                    opacity: isActive ? 0.5 : 1.0,
-                    child: ModeSelector(
-                      selected: session.config.mode,
-                      onChanged: notifier.setMode,
-                    ),
+                Expanded(
+                  child: _VuMeterRow(
+                    micLevel: vuMikrofonLevel,
+                    speakerLevel: vuSpeakerLevel,
                   ),
-                ),
-                const SizedBox(width: 12),
-
-                // MIC toggle interaktif
-                StreamToggle(
-                  label: 'Mik',
-                  enabled: session.config.micEnabled,
-                  accent: colors.primary,
-                  onChanged: (enabled) => notifier.toggleMic(enabled),
-                ),
-                const SizedBox(width: 8),
-
-                // SPK toggle interaktif
-                StreamToggle(
-                  label: 'Spk',
-                  enabled: session.config.speakerEnabled,
-                  accent: colors.primary,
-                  onChanged: (enabled) => notifier.toggleSpeaker(enabled),
-                ),
-                const Spacer(),
-
-                // Ekspor button
-                Tooltip(
-                  message: session.segments.isEmpty
-                      ? 'Belum ada transkrip untuk diekspor'
-                      : 'Simpan transkrip ke file',
-                  child: SizedBox(
-                    height: 36,
-                    child: OutlinedButton.icon(
-                      onPressed: session.segments.isEmpty ? null : onEkspor,
-                      icon: Icon(
-                        Icons.download_outlined,
-                        size: 16,
-                      ),
-                      label: const Text('Ekspor'),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(
-                          color: session.segments.isEmpty
-                              ? colors.divider
-                              : colors.border,
-                        ),
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-
-                // Start/Berhenti button (Animated)
-                AnimatedRecordButton(
-                  isRecording: isActive,
-                  isPaused: session.lifecycle == SessionLifecycle.paused,
-                  onPressed: onStartBerhenti,
                 ),
               ],
             ),
+            const SizedBox(height: 8),
+          ],
+
+          // Row 3: action buttons
+          Row(
+            children: [
+              // Mode selector — disabled while a session is active
+              IgnorePointer(
+                ignoring: isActive,
+                child: Opacity(
+                  opacity: isActive ? 0.5 : 1.0,
+                  child: ModeSelector(
+                    selected: session.config.mode,
+                    onChanged: notifier.setMode,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // MIC toggle interaktif
+              StreamToggle(
+                label: 'Mikrofon',
+                enabled: session.config.micEnabled,
+                accent: colors.primary,
+                onChanged: (enabled) => notifier.toggleMic(enabled),
+              ),
+              const SizedBox(width: 8),
+
+              // SPK toggle interaktif
+              StreamToggle(
+                label: 'Pengeras Suara',
+                enabled: session.config.speakerEnabled,
+                accent: colors.primary,
+                onChanged: (enabled) => notifier.toggleSpeaker(enabled),
+              ),
+              const Spacer(),
+
+              // Ekspor button
+              SizedBox(
+                height: 36,
+                child: OutlinedButton.icon(
+                  onPressed: onEkspor,
+                  icon: Icon(Icons.download_outlined, size: 16, color: colors.text),
+                  label: Text('Ekspor', style: TextStyle(color: colors.text)),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: colors.border),
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // Animated record button
+              AnimatedRecordButton(
+                isRecording: isActive,
+                isPaused: isPaused,
+                onPressed: onStartBerhenti,
+              ),
+            ],
           ),
         ],
       ),
@@ -626,36 +537,65 @@ class _ControlBar extends StatelessWidget {
   }
 }
 
-/// A row containing a label and a VU meter.
-class _VuRow extends StatelessWidget {
-  final String label;
-  final double level;
-  final Color accent;
+class _VuMeterRow extends StatelessWidget {
+  final double micLevel;
+  final double speakerLevel;
 
-  const _VuRow({
-    required this.label,
-    required this.level,
-    required this.accent,
-  });
+  const _VuMeterRow({required this.micLevel, required this.speakerLevel});
 
   @override
   Widget build(BuildContext context) {
-    final colors =
-        Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
-    return Row(
-      children: [
-        Text(
-          label,
-          style: TextStyle(color: colors.textTertiary, fontSize: 10),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: StreamVuMeter(
-            level: level,
-            accent: accent,
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: colors.chipBackground,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.mic, size: 14, color: colors.textSecondary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _AudioLevelBar(level: micLevel, color: const Color(0xFF2E7D32)),
           ),
-        ),
-      ],
+          const SizedBox(width: 16),
+          Icon(Icons.volume_up, size: 14, color: colors.textSecondary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: _AudioLevelBar(level: speakerLevel, color: const Color(0xFFE65100)),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AudioLevelBar extends StatelessWidget {
+  final double level;
+  final Color color;
+
+  const _AudioLevelBar({required this.level, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(2),
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: level.clamp(0.0, 1.0)),
+        duration: const Duration(milliseconds: 80),
+        curve: Curves.easeOut,
+        builder: (context, value, _) {
+          return LinearProgressIndicator(
+            value: value,
+            minHeight: 6,
+            color: color,
+            backgroundColor: colors.border.withValues(alpha: 0.3),
+          );
+        },
+      ),
     );
   }
 }
@@ -672,10 +612,17 @@ class _FooterBar extends StatelessWidget {
     this.elapsedSeconds = 0,
   });
 
+  String _formatElapsed(double secs) {
+    final h = (secs / 3600).floor();
+    final m = ((secs % 3600) / 60).floor();
+    final s = (secs % 60).floor();
+    if (h > 0) return '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final colors =
-        Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
     final isRecording = lifecycle == SessionLifecycle.recording;
     final isPaused = lifecycle == SessionLifecycle.paused;
 
@@ -696,21 +643,13 @@ class _FooterBar extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: isRecording ? AppColors.statusActive : Colors.orange,
                 boxShadow: isRecording
-                    ? [
-                        BoxShadow(
-                          color: AppColors.statusActive.withValues(alpha: 0.5),
-                          blurRadius: 4,
-                          spreadRadius: 1,
-                        ),
-                      ]
+                    ? [BoxShadow(color: AppColors.statusActive.withValues(alpha: 0.5), blurRadius: 4, spreadRadius: 1)]
                     : null,
               ),
             ),
             const SizedBox(width: 8),
             Text(
-              formatDuration(
-                Duration(milliseconds: (elapsedSeconds * 1000).round()),
-              ),
+              _formatElapsed(elapsedSeconds),
               style: TextStyle(
                 color: colors.text,
                 fontSize: 12,
@@ -723,19 +662,11 @@ class _FooterBar extends StatelessWidget {
 
           // Segments
           if (segmentsCount > 0) ...[
-            Icon(
-              Icons.chat_bubble_outline,
-              size: 14,
-              color: colors.textTertiary,
-            ),
+            Icon(Icons.chat_bubble_outline, size: 14, color: colors.textTertiary),
             const SizedBox(width: 4),
             Text(
               '$segmentsCount',
-              style: TextStyle(
-                color: colors.textTertiary,
-                fontSize: 12,
-                fontFamily: 'monospace',
-              ),
+              style: TextStyle(color: colors.textTertiary, fontSize: 12, fontFamily: 'monospace'),
             ),
             const SizedBox(width: 16),
           ],
@@ -755,8 +686,7 @@ class _ShortcutsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors =
-        Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -811,17 +741,13 @@ class _ShortcutRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors =
-        Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
           Expanded(
-            child: Text(
-              label,
-              style: TextStyle(color: colors.text, fontSize: 13),
-            ),
+            child: Text(label, style: TextStyle(color: colors.text, fontSize: 13)),
           ),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -831,11 +757,7 @@ class _ShortcutRow extends StatelessWidget {
             ),
             child: Text(
               shortcut,
-              style: TextStyle(
-                color: colors.textSecondary,
-                fontSize: 12,
-                fontFamily: 'monospace',
-              ),
+              style: TextStyle(color: colors.textSecondary, fontSize: 12, fontFamily: 'monospace'),
             ),
           ),
         ],
@@ -850,15 +772,11 @@ class _QualityToggle extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(settingsProvider);
     final notifier = ref.read(settingsProvider.notifier);
-    final colors =
-        Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
+    final colors = Theme.of(context).extension<AppColorSet>() ?? AppColors.light;
     final isAkurat = settings.defaultModel == 'large-v3-turbo';
 
     final targetModel = isAkurat ? 'base' : 'large-v3-turbo';
-    final targetAvailable = isModelAvailable(
-      targetModel,
-      libraryPath: settings.libraryPath,
-    );
+    final targetAvailable = isModelAvailable(targetModel, libraryPath: settings.libraryPath);
 
     return GestureDetector(
       onTap: () async {
@@ -870,6 +788,7 @@ class _QualityToggle extends ConsumerWidget {
             bridge: ref.read(rustBridgeProvider),
             modelId: targetModel,
             modelsDir: modelsDir,
+            displayName: isAkurat ? 'Model Akurat' : 'Model Cepat',
           );
           if (ok) {
             await notifier.setDefaultModel(targetModel);
