@@ -195,7 +195,7 @@ except Exception as e:
 
     serde_json::from_str::<serde_json::Value>(&stdout)
         .map_err(|e| format!("failed to parse pyannote JSON: {e}"))
-        .and_then(|v| {
+        .map(|v| {
             let segments: Vec<SpeakerSegment> = v
                 .get("segments")
                 .and_then(|s| s.as_array())
@@ -206,13 +206,17 @@ except Exception as e:
                                 start: seg.get("start")?.as_f64()?,
                                 end: seg.get("end")?.as_f64()?,
                                 speaker: seg.get("speaker")?.as_str()?.to_string(),
-                                confidence: seg.get("confidence")?.as_f32().unwrap_or(1.0),
+                                confidence: seg
+                                    .get("confidence")?
+                                    .as_f64()
+                                    .map(|v| v as f32)
+                                    .unwrap_or(1.0),
                             })
                         })
                         .collect()
                 })
                 .unwrap_or_default();
-            Ok(DiarizationResult { segments })
+            DiarizationResult { segments }
         })
         .map_err(|e| e.to_string())
 }

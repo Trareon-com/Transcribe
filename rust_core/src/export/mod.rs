@@ -155,7 +155,10 @@ pub fn export_segments(
 /// copy+remove on cross-device rename (e.g. /tmp on a different
 /// filesystem than the target).
 fn atomic_write(path: &Path, content: &[u8]) -> Result<(), TranscribeError> {
-    let temp_path = path.with_extension("tmp");
+    // Unique temp name per target file — `with_extension("tmp")` would
+    // collide across formats (Rapat Q3.md / .txt / .json → same .tmp),
+    // causing parallel export threads to overwrite each other.
+    let temp_path = PathBuf::from(format!("{}.tmp", path.display()));
     fs::write(&temp_path, content).map_err(TranscribeError::from)?;
     match fs::rename(&temp_path, path) {
         Ok(()) => Ok(()),

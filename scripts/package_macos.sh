@@ -27,7 +27,7 @@ echo "==> Building rust_core for aarch64-apple-darwin"
 (cd rust_core && cargo build --release --target aarch64-apple-darwin --lib)
 
 echo "==> Building rust_core for x86_64-apple-darwin"
-(cd rust_core && cargo build --release --target x86_64-apple-darwin --lib)
+(cd rust_core && cargo build --release --target x86_64-apple-darwin --lib --no-default-features)  # ort: no prebuilt for macOS Intel → energy VAD fallback
 
 echo "==> Creating universal librust_core.dylib"
 mkdir -p rust_core/target/universal

@@ -268,6 +268,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install native audio dependencies
+        run: sudo apt-get update && sudo apt-get install --no-install-recommends -y pkg-config libasound2-dev
+
       - name: Download benchmark model
         run: |
           curl -fL -o /tmp/ggml-tiny.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin
