@@ -5,7 +5,6 @@
 
 import 'dart:io';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:trascribe/services/flight_recorder.dart';
 import 'package:trascribe/services/preflight_check.dart';
