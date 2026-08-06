@@ -5,6 +5,7 @@
 //! `transcript_stream`, live audio thread wiring) land once FRB codegen is
 //! set up against the actual Flutter app.
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 
 use crate::audio::{AudioDeviceInfo, SessionConfig, SessionMode};
@@ -287,6 +288,62 @@ pub fn load_settings() -> AppSettings {
 
 pub fn save_settings(settings: AppSettings) -> Result<(), TranscribeError> {
     crate::settings::save_settings(&settings)
+}
+
+// --- Flight recorder -----------------------------------------------------
+//
+// Privacy-conscious, metadata-only event logger. See `flight_recorder.rs`
+// for the full contract. All functions are fire-and-forget: they never
+// block, never panic and never crash the host app.
+
+/// Points the recorder at the app-support directory. Call once at startup
+/// (right after `RustLib.init()`); creates the directory if missing.
+pub fn init_flight_recorder(app_support_dir: String) -> Result<(), TranscribeError> {
+    crate::flight_recorder::init(&app_support_dir)?;
+    Ok(())
+}
+
+pub fn flight_log_lifecycle(session_id: String, from: String, to: String) {
+    crate::flight_recorder::log_lifecycle(&session_id, &from, &to);
+}
+
+pub fn flight_log_segment_batch(
+    session_id: String,
+    batch_size: usize,
+    total_segments: usize,
+    queue_depth: usize,
+) {
+    crate::flight_recorder::log_segment_batch(&session_id, batch_size, total_segments, queue_depth);
+}
+
+pub fn flight_log_error(session_id: String, source: String, message: String) {
+    crate::flight_recorder::log_error(&session_id, &source, &message);
+}
+
+pub fn flight_log_auto_stop(session_id: String, minutes: u64) {
+    crate::flight_recorder::log_auto_stop(&session_id, minutes);
+}
+
+pub fn flight_log_system(event: String, details: Option<HashMap<String, String>>) {
+    let pairs = details.map(|m| m.into_iter().collect::<Vec<(String, String)>>());
+    crate::flight_recorder::log_system(&event, pairs);
+}
+
+/// Reads the current flight-recorder contents (raw JSONL) for diagnostics.
+pub fn flight_read_log() -> String {
+    crate::flight_recorder::read_log()
+}
+
+pub fn flight_clear_log() {
+    crate::flight_recorder::clear_log();
+}
+
+pub fn flight_entry_count() -> usize {
+    crate::flight_recorder::entry_count()
+}
+
+pub fn flight_set_enabled(enabled: bool) {
+    crate::flight_recorder::set_enabled(enabled);
 }
 
 // --- Singleton instance lock -----------------------------------------------------

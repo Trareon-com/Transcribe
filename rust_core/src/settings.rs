@@ -151,18 +151,21 @@ pub struct AppConfig {
 }
 
 impl AppConfig {
+    #[flutter_rust_bridge::frb(ignore)]
     pub fn config_path() -> Result<PathBuf, TranscribeError> {
         let dir = dirs::config_dir()
             .ok_or_else(|| TranscribeError::InvalidInput("no config directory".into()))?;
         Ok(dir.join("TrareonTranscribe").join("config.json"))
     }
 
+    #[flutter_rust_bridge::frb(ignore)]
     pub fn load() -> Option<Self> {
         let path = Self::config_path().ok()?;
         let content = fs::read_to_string(&path).ok()?;
         serde_json::from_str(&content).ok()
     }
 
+    #[flutter_rust_bridge::frb(ignore)]
     pub fn resolve_recordings_dir(cli_override: Option<&str>) -> PathBuf {
         if let Some(dir) = cli_override {
             return PathBuf::from(dir);
@@ -175,16 +178,19 @@ impl AppConfig {
         PathBuf::from(default_library_path())
     }
 
+    #[flutter_rust_bridge::frb(ignore)]
     pub fn on_stop_hook() -> Option<String> {
         Self::load()?.on_stop
     }
 
+    #[flutter_rust_bridge::frb(ignore)]
     pub fn transcription_enabled() -> bool {
         Self::load()
             .and_then(|c| c.transcription_enabled)
             .unwrap_or(true)
     }
 
+    #[flutter_rust_bridge::frb(ignore)]
     pub fn doctor_check_on_start() -> bool {
         Self::load()
             .and_then(|c| c.doctor_check_on_start)

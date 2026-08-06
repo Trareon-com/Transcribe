@@ -4,8 +4,22 @@
 // ignore_for_file: invalid_use_of_internal_member, unused_import, unnecessary_import
 
 import 'audio.dart';
+import 'error.dart';
 import 'frb_generated.dart';
 import 'package:flutter_rust_bridge/flutter_rust_bridge_for_generated.dart';
+
+// These functions are ignored because they are not marked as `pub`: `load_settings_from`, `settings_path`
+// These function are ignored because they are on traits that is not defined in current crate (put an empty `#[frb]` on it to unignore): `assert_fields_are_eq`, `clone`, `clone`, `clone`, `eq`, `fmt`, `fmt`, `fmt`
+// These functions are ignored (category: IgnoreBecauseExplicitAttribute): `config_path`, `doctor_check_on_start`, `load`, `on_stop_hook`, `resolve_recordings_dir`, `transcription_enabled`
+
+Future<String> defaultLibraryPath() =>
+    RustLib.instance.api.crateSettingsDefaultLibraryPath();
+
+Future<AppSettings> loadSettings() =>
+    RustLib.instance.api.crateSettingsLoadSettings();
+
+Future<void> saveSettings({required AppSettings settings}) =>
+    RustLib.instance.api.crateSettingsSaveSettings(settings: settings);
 
 class AppConfig {
   final String? recordingsDir;
@@ -19,6 +33,9 @@ class AppConfig {
     this.transcriptionEnabled,
     this.doctorCheckOnStart,
   });
+
+  static Future<AppConfig> default_() =>
+      RustLib.instance.api.crateSettingsAppConfigDefault();
 
   @override
   int get hashCode =>
@@ -60,6 +77,9 @@ class AppSettings {
     required this.echoDedupeEnabled,
     this.language,
   });
+
+  static Future<AppSettings> default_() =>
+      RustLib.instance.api.crateSettingsAppSettingsDefault();
 
   @override
   int get hashCode =>

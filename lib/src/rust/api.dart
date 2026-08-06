@@ -175,6 +175,72 @@ Future<AppSettings> loadSettings() =>
 Future<void> saveSettings({required AppSettings settings}) =>
     RustLib.instance.api.crateApiSaveSettings(settings: settings);
 
+/// Points the recorder at the app-support directory. Call once at startup
+/// (right after `RustLib.init()`); creates the directory if missing.
+Future<void> initFlightRecorder({required String appSupportDir}) => RustLib
+    .instance
+    .api
+    .crateApiInitFlightRecorder(appSupportDir: appSupportDir);
+
+Future<void> flightLogLifecycle({
+  required String sessionId,
+  required String from,
+  required String to,
+}) => RustLib.instance.api.crateApiFlightLogLifecycle(
+  sessionId: sessionId,
+  from: from,
+  to: to,
+);
+
+Future<void> flightLogSegmentBatch({
+  required String sessionId,
+  required BigInt batchSize,
+  required BigInt totalSegments,
+  required BigInt queueDepth,
+}) => RustLib.instance.api.crateApiFlightLogSegmentBatch(
+  sessionId: sessionId,
+  batchSize: batchSize,
+  totalSegments: totalSegments,
+  queueDepth: queueDepth,
+);
+
+Future<void> flightLogError({
+  required String sessionId,
+  required String source,
+  required String message,
+}) => RustLib.instance.api.crateApiFlightLogError(
+  sessionId: sessionId,
+  source: source,
+  message: message,
+);
+
+Future<void> flightLogAutoStop({
+  required String sessionId,
+  required BigInt minutes,
+}) => RustLib.instance.api.crateApiFlightLogAutoStop(
+  sessionId: sessionId,
+  minutes: minutes,
+);
+
+Future<void> flightLogSystem({
+  required String event,
+  Map<String, String>? details,
+}) => RustLib.instance.api.crateApiFlightLogSystem(
+  event: event,
+  details: details,
+);
+
+/// Reads the current flight-recorder contents (raw JSONL) for diagnostics.
+Future<String> flightReadLog() => RustLib.instance.api.crateApiFlightReadLog();
+
+Future<void> flightClearLog() => RustLib.instance.api.crateApiFlightClearLog();
+
+Future<BigInt> flightEntryCount() =>
+    RustLib.instance.api.crateApiFlightEntryCount();
+
+Future<void> flightSetEnabled({required bool enabled}) =>
+    RustLib.instance.api.crateApiFlightSetEnabled(enabled: enabled);
+
 Future<bool> isAnotherInstanceRunning() =>
     RustLib.instance.api.crateApiIsAnotherInstanceRunning();
 

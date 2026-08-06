@@ -31,6 +31,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   });
 
   @protected
+  Map<String, String> dco_decode_Map_String_String_None(dynamic raw);
+
+  @protected
   String dco_decode_String(dynamic raw);
 
   @protected
@@ -46,10 +49,16 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   AudioDeviceInfo dco_decode_audio_device_info(dynamic raw);
 
   @protected
+  AutoSplitReason dco_decode_auto_split_reason(dynamic raw);
+
+  @protected
   bool dco_decode_bool(dynamic raw);
 
   @protected
   AppSettings dco_decode_box_autoadd_app_settings(dynamic raw);
+
+  @protected
+  AutoSplitReason dco_decode_box_autoadd_auto_split_reason(dynamic raw);
 
   @protected
   bool dco_decode_box_autoadd_bool(dynamic raw);
@@ -120,6 +129,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List dco_decode_list_prim_u_8_strict(dynamic raw);
 
   @protected
+  List<(String, String)> dco_decode_list_record_string_string(dynamic raw);
+
+  @protected
   List<Segment> dco_decode_list_segment(dynamic raw);
 
   @protected
@@ -139,7 +151,13 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ModelInfo dco_decode_model_info(dynamic raw);
 
   @protected
+  Map<String, String>? dco_decode_opt_Map_String_String_None(dynamic raw);
+
+  @protected
   String? dco_decode_opt_String(dynamic raw);
+
+  @protected
+  AutoSplitReason? dco_decode_opt_box_autoadd_auto_split_reason(dynamic raw);
 
   @protected
   bool? dco_decode_opt_box_autoadd_bool(dynamic raw);
@@ -149,6 +167,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ProgressiveFileResult dco_decode_progressive_file_result(dynamic raw);
+
+  @protected
+  (bool, bool) dco_decode_record_bool_bool(dynamic raw);
+
+  @protected
+  (String, String) dco_decode_record_string_string(dynamic raw);
 
   @protected
   (BigInt, BigInt) dco_decode_record_u_64_u_64(dynamic raw);
@@ -196,6 +220,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void dco_decode_unit(dynamic raw);
 
   @protected
+  BigInt dco_decode_usize(dynamic raw);
+
+  @protected
+  Map<String, String> sse_decode_Map_String_String_None(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   String sse_decode_String(SseDeserializer deserializer);
 
   @protected
@@ -211,10 +243,18 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   AudioDeviceInfo sse_decode_audio_device_info(SseDeserializer deserializer);
 
   @protected
+  AutoSplitReason sse_decode_auto_split_reason(SseDeserializer deserializer);
+
+  @protected
   bool sse_decode_bool(SseDeserializer deserializer);
 
   @protected
   AppSettings sse_decode_box_autoadd_app_settings(SseDeserializer deserializer);
+
+  @protected
+  AutoSplitReason sse_decode_box_autoadd_auto_split_reason(
+    SseDeserializer deserializer,
+  );
 
   @protected
   bool sse_decode_box_autoadd_bool(SseDeserializer deserializer);
@@ -295,6 +335,11 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   Uint8List sse_decode_list_prim_u_8_strict(SseDeserializer deserializer);
 
   @protected
+  List<(String, String)> sse_decode_list_record_string_string(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   List<Segment> sse_decode_list_segment(SseDeserializer deserializer);
 
   @protected
@@ -316,7 +361,17 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   ModelInfo sse_decode_model_info(SseDeserializer deserializer);
 
   @protected
+  Map<String, String>? sse_decode_opt_Map_String_String_None(
+    SseDeserializer deserializer,
+  );
+
+  @protected
   String? sse_decode_opt_String(SseDeserializer deserializer);
+
+  @protected
+  AutoSplitReason? sse_decode_opt_box_autoadd_auto_split_reason(
+    SseDeserializer deserializer,
+  );
 
   @protected
   bool? sse_decode_opt_box_autoadd_bool(SseDeserializer deserializer);
@@ -328,6 +383,14 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   ProgressiveFileResult sse_decode_progressive_file_result(
+    SseDeserializer deserializer,
+  );
+
+  @protected
+  (bool, bool) sse_decode_record_bool_bool(SseDeserializer deserializer);
+
+  @protected
+  (String, String) sse_decode_record_string_string(
     SseDeserializer deserializer,
   );
 
@@ -381,6 +444,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_decode_unit(SseDeserializer deserializer);
 
   @protected
+  BigInt sse_decode_usize(SseDeserializer deserializer);
+
+  @protected
+  void sse_encode_Map_String_String_None(
+    Map<String, String> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_String(String self, SseSerializer serializer);
 
   @protected
@@ -399,11 +471,23 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_auto_split_reason(
+    AutoSplitReason self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_bool(bool self, SseSerializer serializer);
 
   @protected
   void sse_encode_box_autoadd_app_settings(
     AppSettings self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_box_autoadd_auto_split_reason(
+    AutoSplitReason self,
     SseSerializer serializer,
   );
 
@@ -504,6 +588,12 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   );
 
   @protected
+  void sse_encode_list_record_string_string(
+    List<(String, String)> self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_list_segment(List<Segment> self, SseSerializer serializer);
 
   @protected
@@ -528,7 +618,19 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   void sse_encode_model_info(ModelInfo self, SseSerializer serializer);
 
   @protected
+  void sse_encode_opt_Map_String_String_None(
+    Map<String, String>? self,
+    SseSerializer serializer,
+  );
+
+  @protected
   void sse_encode_opt_String(String? self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_opt_box_autoadd_auto_split_reason(
+    AutoSplitReason? self,
+    SseSerializer serializer,
+  );
 
   @protected
   void sse_encode_opt_box_autoadd_bool(bool? self, SseSerializer serializer);
@@ -542,6 +644,15 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
   @protected
   void sse_encode_progressive_file_result(
     ProgressiveFileResult self,
+    SseSerializer serializer,
+  );
+
+  @protected
+  void sse_encode_record_bool_bool((bool, bool) self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_record_string_string(
+    (String, String) self,
     SseSerializer serializer,
   );
 
@@ -601,6 +712,9 @@ abstract class RustLibApiImplPlatform extends BaseApiImpl<RustLibWire> {
 
   @protected
   void sse_encode_unit(void self, SseSerializer serializer);
+
+  @protected
+  void sse_encode_usize(BigInt self, SseSerializer serializer);
 }
 
 // Section: wire_class

@@ -10,6 +10,7 @@ pub mod decode;
 pub mod dedupe;
 pub mod diarization;
 pub mod export;
+pub mod flight_recorder;
 pub mod llm_correction;
 pub mod memory;
 pub mod model;
