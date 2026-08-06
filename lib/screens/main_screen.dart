@@ -290,7 +290,7 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                     ),
                     IconButton(
                       icon: Icon(Icons.folder_outlined, size: 18),
-                      tooltip: 'Library',
+                      tooltip: 'Perpustakaan',
                       onPressed: () => Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) {

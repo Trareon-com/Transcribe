@@ -324,7 +324,7 @@ class _TranscriptPlayerScreenState extends ConsumerState<TranscriptPlayerScreen>
                   children: [
                     OutlinedButton.icon(
                       icon: const Icon(Icons.upload_outlined, size: 16),
-                      label: const Text('Export', style: TextStyle(fontSize: 13)),
+                      label: const Text('Ekspor', style: TextStyle(fontSize: 13)),
                       onPressed: () => _exportTranscript(context),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: colors.primary,
