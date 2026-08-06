@@ -62,6 +62,46 @@ jobs:
             dist/transcribe-${{ github.ref_name }}*.dmg
             dist/transcribe-${{ github.ref_name }}*.sha256
 
+  build-linux:
+    name: Build Linux tar.gz
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Linux desktop dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y \
+            clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev \
+            libasound2-dev libxkbcommon-dev libegl1-mesa-dev \
+            libpulse-dev libpcaudio-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            libappindicator3-dev
+      - uses: subosito/flutter-action@v2.23.0
+        with:
+          channel: stable
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2.9.1
+        with:
+          workspaces: rust_core
+
+      - name: Download bundled models
+        run: |
+          mkdir -p models
+          curl -fL -o models/ggml-base.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.bin
+          curl -fL -o models/ggml-large-v3-turbo-q5_0.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large-v3-turbo-q5_0.bin
+
+      - name: Build Linux tar.gz
+        run: |
+          chmod +x scripts/package_linux.sh
+          bash scripts/package_linux.sh "${GITHUB_REF_NAME#v}"
+
+      - name: Upload Linux archive
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/transcribe-${{ github.ref_name }}*.tar.gz
+            dist/transcribe-${{ github.ref_name }}*.sha256
+
   build-windows:
     name: Build Windows ZIP
     runs-on: windows-2022
