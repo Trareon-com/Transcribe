@@ -34,13 +34,13 @@ else
   }
 fi
 
-# Step 2: Verify models directory has tiny model
+# Step 2: Verify bundled model is discoverable
 echo "Step 2: Verifying model files..."
-if [ -f "models/ggml-tiny.bin" ]; then
-  echo "  ✅ tiny model found (75 MB)"
+if [ -f "models/ggml-base.bin" ] || [ -f "models/ggml-large-v3-turbo-q5.bin" ]; then
+  echo "  ✅ bundled model found (base / large-v3-turbo-q5)"
 else
-  echo "  ⚠️  tiny model not found. Download:"
-  echo "     cd rust_core && cargo run --bin download_model -- tiny"
+  echo "  ℹ️  Models are bundled inside the app resources (models/ in repo or app bundle)."
+  echo "     Verify via Library → upload, or check app resources."
 fi
 
 # Step 3: Launch the app
@@ -61,8 +61,7 @@ echo "TC2: Wizard Complete Flow (if first run)"
 echo "  - Step 1: Verify spec detection shows '1. Deteksi Spesifikasi'"
 echo "  - Step 2: Click 'Lanjut' → '2. Pilih Model' visible"
 echo "  - Step 3: Click 'Lanjut' → '3. Setup Audio' visible"
-echo "  - Step 4: Click 'Lanjut' → '4. Unduh Model' visible (skip download)"
-echo "  - Step 5: Click 'Lanjut' → '5. Tone Test' visible"
+echo "  - Step 4: Click 'Lanjut' → '4. Tone Test' visible"
 echo "  - Click 'Selesai' → Main screen visible"
 echo ""
 echo "TC3: Main Screen"
@@ -70,7 +69,7 @@ echo "  - Verify mode selector: Webinar, Rapat Online, Rapat Offline"
 echo "  - Verify MIC indicator present"
 echo "  - Verify SPK indicator present"
 echo "  - Verify 'Mulai' button present"
-echo "  - Verify 'Export' button present"
+echo "  - Verify 'Ekspor' button present"
 echo "  - Verify nav icons: Library, Pengaturan, Shortcuts"
 echo ""
 echo "TC4: Settings Navigation"
