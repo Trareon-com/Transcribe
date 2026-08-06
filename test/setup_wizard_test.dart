@@ -175,22 +175,4 @@ void main() {
 
     expect(bridge.savedSettings.defaultModel, 'large-v3-turbo-q5');
   });
-
-  testWidgets(
-    'downloading a model calls bridge and records a privacy report event',
-    (WidgetTester tester) async {
-      // Models are now bundled — download step no longer exists in the wizard.
-      // This functionality has been removed from the UI.
-    },
-    skip: true,
-  );
-
-  testWidgets(
-    'navigating past download step without clicking does not trigger bridge or privacy report',
-    (WidgetTester tester) async {
-      // Models are now bundled — download step no longer exists in the wizard.
-      // This functionality has been removed from the UI.
-    },
-    skip: true,
-  );
 }
