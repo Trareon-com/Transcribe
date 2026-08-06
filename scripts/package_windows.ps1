@@ -1,7 +1,7 @@
 # Build and package Trareon Transcribe as a .zip for Windows.
 #
 # Per ADR-12/ADR-8: signing uses a self-signed certificate (free, no CA),
-# which still triggers a Windows SmartScreen warning on first run — this
+# which still triggers a Windows SmartScreen warning on first run - this
 # is documented for users at download time rather than hidden. Signing
 # only runs when TRANSCRIBE_PFX_PATH + TRANSCRIBE_PFX_PASSWORD are set
 # (e.g. from a CI secret); without them, this script still produces an
@@ -39,7 +39,7 @@ Pop-Location
 
 $RustDllSource = Join-Path $RustDir "target\release\$DllName"
 if (-not (Test-Path $RustDllSource)) {
-    Write-Error "rust_core DLL not found at $RustDllSource — cargo build may have failed or changed the output path"
+    Write-Error "rust_core DLL not found at $RustDllSource - cargo build may have failed or changed the output path"
     exit 1
 }
 
@@ -63,22 +63,22 @@ if (-not (Test-Path $DllDest)) {
     exit 1
 }
 
-# Bundle models next to the exe — lib/state/models.dart's
+# Bundle models next to the exe - lib/state/models.dart's
 # modelPathForId() looks there first so bundled models actually
 # resolve in a packaged build.
 $ModelsDestDir = Join-Path $BuildDir "models"
 New-Item -ItemType Directory -Force -Path $ModelsDestDir | Out-Null
 if (Test-Path "models\ggml-base.bin") {
     Copy-Item -Path "models\ggml-base.bin" -Destination $ModelsDestDir -Force
-    Write-Host "    → base (142 MB) bundled"
+    Write-Host "    -> base (142 MB) bundled"
 } else {
-    Write-Host "    ⚠️ models\ggml-base.bin not found — skipping"
+    Write-Host "    (!) models\ggml-base.bin not found - skipping"
 }
 if (Test-Path "models\ggml-large-v3-turbo-q5_0.bin") {
     Copy-Item -Path "models\ggml-large-v3-turbo-q5_0.bin" -Destination $ModelsDestDir -Force
-    Write-Host "    → large-v3-turbo-q5 (548 MB) bundled"
+    Write-Host "    -> large-v3-turbo-q5 (548 MB) bundled"
 } else {
-    Write-Host "    ⚠️ models\ggml-large-v3-turbo-q5_0.bin not found — skipping"
+    Write-Host "    (!) models\ggml-large-v3-turbo-q5_0.bin not found - skipping"
 }
 
 $PfxPath = $env:TRANSCRIBE_PFX_PATH
@@ -89,7 +89,7 @@ if ($PfxPath -and $PfxPassword) {
     & signtool sign /f $PfxPath /p $PfxPassword /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 "$BuildDir\$AppName.exe"
     & signtool verify /pa "$BuildDir\$AppName.exe"
 } else {
-    Write-Host "==> Skipping signing (TRANSCRIBE_PFX_PATH/TRANSCRIBE_PFX_PASSWORD not set) — unsigned build"
+    Write-Host "==> Skipping signing (TRANSCRIBE_PFX_PATH/TRANSCRIBE_PFX_PASSWORD not set) - unsigned build"
 }
 
 New-Item -ItemType Directory -Force -Path $DistDir | Out-Null

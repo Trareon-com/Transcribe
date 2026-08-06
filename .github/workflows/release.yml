@@ -5,6 +5,9 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+
 jobs:
   source-release:
     name: Build and publish source release
@@ -14,13 +17,7 @@ jobs:
 
       - name: Create source archive
         run: |
-          tar -czf "transcribe-${GITHUB_REF_NAME}.tar.gz" \
-            --exclude=.git \
-            --exclude=build \
-            --exclude=target \
-            --exclude=.dart_tool \
-            --exclude=rust_core/target \
-            .
+          git archive --format=tar.gz --output="transcribe-${GITHUB_REF_NAME}.tar.gz" "${GITHUB_REF_NAME}"
 
       - name: Generate checksum
         run: sha256sum "transcribe-${GITHUB_REF_NAME}.tar.gz" > "transcribe-${GITHUB_REF_NAME}.tar.gz.sha256"
