@@ -97,7 +97,7 @@ pub fn correct_and_summarize(
 }
 
 #[cfg(feature = "llm")]
-pub use llm_impl::correct_and_summarize as correct_and_summarize_impl;
+pub use llm_impl::correct_and_summarize;
 
 /// Build the prompt that we send to Qwen2.5-7B.
 pub fn build_correction_prompt(transcript: &str) -> String {
@@ -117,6 +117,7 @@ pub fn build_correction_prompt(transcript: &str) -> String {
 mod tests {
     use super::*;
 
+    #[cfg(not(feature = "llm"))]
     #[test]
     fn pass_through_when_disabled() {
         let r = correct_and_summarize("halo dunia", &["A".into()]).unwrap();

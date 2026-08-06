@@ -66,6 +66,7 @@ whisper-rs = "0.14"
 default = ["silero-onnx"]
 silero-onnx = ["dep:ort"]  # Enable Silero VAD via ONNX Runtime
 pyannote = []  # Enable pyannote.audio Python integration for neural diarization
+llm = []       # Enable Qwen2.5-7B post-correction + summarization (delegates to scripts/qwen_correction.py)
 
 # OpenMP hanya untuk Linux — macOS GitHub Actions runner tidak punya libomp
 [target.'cfg(not(any(target_os = "windows", target_os = "macos")))'.dependencies.whisper-rs]

@@ -1,8 +1,25 @@
-//! Live PCM pipeline shared by capture workers.
+//! Offline transcription pipeline — fully local, no network.
 //!
-//! The pipeline deliberately owns only deterministic processing state. Audio
-//! device threads remain responsible for capture and send resampled PCM here;
-//! this keeps cpal platform details out of VAD/STT orchestration.
+//! Composes the four stages of the offline engine (see docs/MASTER_PLAN.md):
+//!
+//!   1. **Silero VAD** → chunk raw PCM at silence boundaries
+//!      (`vad::DualVad`, 10 ms frames, dual mic+speaker channels).
+//!   2. **Whisper large-v3-turbo** → speech to text
+//!      (`stt::WhisperEngine`, via whisper.cpp; backend auto-detected by
+//!      `stt::detect_backend()` — CoreML/Metal on macOS, CUDA/DML/CPU
+//!      elsewhere — and logged at engine init).
+//!   3. **Speaker labels** → per-channel acoustic-feature clustering
+//!      (`diarization::Diarizer`); cross-source echo dedupe runs in
+//!      `session::SessionState::collect_worker_events`.
+//!   4. **Qwen2.5-7B** → post-correction + per-speaker summary
+//!      (`llm_correction::correct_and_summarize`, feature-gated `llm`,
+//!      invoked after the batch is finalized — see `export` for the
+//!      Markdown/TXT/SRT/DOCX writers that consume the result).
+//!
+//! `LivePipeline` is the deterministic per-source stage orchestrator (stages
+//! 1–3). It deliberately owns only processing state; audio device threads
+//! capture and send resampled PCM here, keeping cpal platform details out of
+//! VAD/STT orchestration.
 //!
 //! Each [`LivePipeline`] instance handles exactly one source (mic OR
 //! speaker) — one runs per [`LiveWorker`] thread. Echo-dedupe requires

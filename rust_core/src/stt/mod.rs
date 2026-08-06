@@ -111,6 +111,16 @@ impl WhisperEngine {
         let context = WhisperContext::new_with_params(path_str, params)
             .map_err(|e| TranscribeError::Model(format!("failed to load model: {e}")))?;
 
+        // Auto-detected backend is resolved once at engine initialization
+        // and logged so diagnostics/settings can surface what's actually
+        // running (CoreML/Metal on macOS, CUDA/DML/CPU elsewhere).
+        tracing::info!(
+            backend = detect_backend(),
+            gpu = use_gpu,
+            device = gpu_device,
+            "whisper engine initialized with auto-detected backend"
+        );
+
         Ok(Self {
             context: Mutex::new(context),
             model_path: path_str.to_string(),
