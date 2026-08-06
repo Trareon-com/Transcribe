@@ -377,13 +377,20 @@ fn persist_session_snapshot(session_id: &str) -> Result<(), TranscribeError> {
     write_snapshot_file(&snapshot)
 }
 
+/// Recovery snapshots contain only session configuration metadata
+/// (mode, mic/speaker toggles, model path) — no transcript content.
+/// Stored under the OS app-config directory (not temp), so they persist
+/// across reboots and are isolated per-user.
 fn recovery_dir() -> Result<PathBuf, TranscribeError> {
     if let Some(path) = RECOVERY_DIR_OVERRIDE.with(|slot| slot.borrow().clone()) {
         return Ok(path);
     }
-    Ok(std::env::temp_dir()
+    // OS config dir is per-user and not world-readable (unlike /tmp).
+    let dir = dirs::config_dir()
+        .ok_or_else(|| TranscribeError::InvalidInput("no config dir".into()))?
         .join("TrareonTranscribe")
-        .join("recovery"))
+        .join("recovery");
+    Ok(dir)
 }
 
 fn recovery_path(session_id: &str) -> Result<PathBuf, TranscribeError> {

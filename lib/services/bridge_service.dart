@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io' show Process;
 import 'dart:math';
 import 'dart:typed_data';
 
@@ -377,24 +376,12 @@ class RustEngineBridge implements RustBridge {
 
   /// Detects the frontmost window title on macOS by calling osascript.
   /// Gracefully returns empty string on failure or non-macOS platforms.
+  /// Window title detection has been REMOVED for privacy.
+  /// Reading another app's window title via osascript requires Accessibility
+  /// permission and constitutes a cross-app information leak. Titles are now
+  /// user-entered manually only — no passive observation of foreground apps.
   @override
-  Future<String> detectFrontmostWindowTitle() async {
-    try {
-      final result = await Process.run(
-        'osascript',
-        [
-          '-e',
-          'tell application "System Events" to get title of first window of (first process whose frontmost is true)',
-        ],
-      );
-      if (result.exitCode == 0) {
-        return (result.stdout as String).trim();
-      }
-    } on Object {
-      // Graceful fallback — window detection is non-critical.
-    }
-    return '';
-  }
+  Future<String> detectFrontmostWindowTitle() async => '';
 
   @override
   Stream<double> downloadProgress() {
