@@ -36,6 +36,6 @@ void main() {
 
     expect(find.text('1 network calls since launch'), findsOneWidget);
     expect(find.byIcon(Icons.warning_amber_outlined), findsOneWidget);
-    expect(find.textContaining('Download model "tiny"'), findsOneWidget);
+    expect(find.textContaining('Mengunduh model'), findsOneWidget);
   });
 }

@@ -226,7 +226,7 @@ class _QueueTileState extends State<_QueueTile> {
       BatchFileStatus.decoding => 'Decoding',
       BatchFileStatus.transcribing => 'Transkripsi',
       BatchFileStatus.done => 'Selesai',
-      BatchFileStatus.error => 'Error',
+      BatchFileStatus.error => 'Gagal',
     };
   }
 

@@ -130,7 +130,7 @@ class SessionCard extends StatelessWidget {
               // Actions
               IconButton(
                 icon: Icon(Icons.upload_outlined, size: 18, color: colors.textTertiary),
-                tooltip: 'Export',
+                tooltip: 'Ekspor',
                 onPressed: onExport,
               ),
               IconButton(

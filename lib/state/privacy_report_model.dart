@@ -33,7 +33,7 @@ class PrivacyReportNotifier extends StateNotifier<PrivacyReportState> {
   void recordModelDownload(String modelId) {
     state = state.copyWith(
       networkCallCount: state.networkCallCount + 1,
-      events: [...state.events, 'Download model "$modelId" — ${DateTime.now()}'],
+      events: [...state.events, 'Mengunduh model — ${DateTime.now()}'],
     );
   }
 }
