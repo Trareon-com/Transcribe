@@ -16,7 +16,7 @@ APP_NAME="Trareon Transcribe"
 BUILD_DIR="build/macos/Build/Products/Release"
 APP_PATH="$BUILD_DIR/$APP_NAME.app"
 DIST_DIR="dist"
-DMG_PATH="$DIST_DIR/${APP_NAME}-${VERSION}-macos.dmg"
+DMG_PATH="$DIST_DIR/transcribe-${VERSION}-macos.dmg"
 
 # ── Add cross-compilation targets if missing ──────────────────────────
 echo "==> Ensuring cross-compilation targets"

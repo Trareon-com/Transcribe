@@ -55,9 +55,7 @@ jobs:
       - name: Upload DMG
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            dist/transcribe-${{ github.ref_name }}*.dmg
-            dist/transcribe-${{ github.ref_name }}*.sha256
+          files: dist/*
 
   build-linux:
     name: Build Linux tar.gz
@@ -95,9 +93,7 @@ jobs:
       - name: Upload Linux archive
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            dist/transcribe-${{ github.ref_name }}*.tar.gz
-            dist/transcribe-${{ github.ref_name }}*.sha256
+          files: dist/*
 
   build-windows:
     name: Build Windows ZIP
@@ -126,6 +122,4 @@ jobs:
       - name: Upload ZIP
         uses: softprops/action-gh-release@v2
         with:
-          files: |
-            dist/transcribe-${{ github.ref_name }}*.zip
-            dist/transcribe-${{ github.ref_name }}*.sha256
+          files: dist/*
